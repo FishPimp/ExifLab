@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="splash_background">#FF0E6E64</color>
+    <color name="launcher_background">#FF0E6E64</color>
+    <color name="launcher_accent">#FFD4EE69</color>
+</resources>

@@ -1,0 +1,75 @@
+name: android
+
+on:
+  push:
+    paths-ignore:
+      - 'docs/**'
+      - 'spike/**'
+      - '**/*.md'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false
+  CI: 'true'
+
+jobs:
+  build:
+    name: Engine tests, build, lint, unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install exiftool (reference for engine tests)
+        run: |
+          npm install --no-save --prefix "$RUNNER_TEMP/et" exiftool-vendored.pl@13.59.3
+          echo "EXIFTOOL=perl $RUNNER_TEMP/et/node_modules/exiftool-vendored.pl/bin/exiftool" >> "$GITHUB_ENV"
+
+      - name: Engine tests
+        run: ./gradlew -p engine test --console=plain --stacktrace
+
+      - name: Build, lint and unit tests
+        run: ./gradlew assembleDebug assembleRelease lintDebug testDebugUnitTest --console=plain --continue --stacktrace
+
+      - name: Upload APK
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: exiflab-apk
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: ignore
+
+      - name: Upload reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reports
+          path: |
+            **/build/reports/**
+            **/build/test-results/**
+          if-no-files-found: ignore
+
+      - name: Publish release
+        if: contains(github.event.head_commit.message, '[release]')
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: ExifLab 1.0.${{ github.run_number }}
+          target_commitish: ${{ github.sha }}
+          files: app/build/outputs/apk/release/*.apk
+          body_path: docs/RELEASE_NOTES.md
+          make_latest: true
