@@ -31,6 +31,12 @@ public interface MediaRepository {
     public fun persistFolderAccess(treeUri: Uri)
 
     public fun persistedFolders(): List<Uri>
+
+    /**
+     * A documents-UI URI pointing at the folder that contains [ref] (for EXTRA_INITIAL_URI when asking for folder
+     * access to write a sidecar), or null if unknown.
+     */
+    public fun folderHint(ref: ImageRef): Uri?
 }
 
 /** Reading metadata. */

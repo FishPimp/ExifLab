@@ -17,3 +17,5 @@ local.properties
 *.jks
 captures/
 .claude/
+
+!app/signing/exiflab-personal.jks

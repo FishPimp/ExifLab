@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Common actions -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_save">Save</string>
+    <string name="action_done">Done</string>
+    <string name="action_retry">Try again</string>
+    <string name="action_close">Close</string>
+    <string name="action_back">Back</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_remove">Remove</string>
+    <string name="action_edit">Edit</string>
+    <string name="action_copy">Copy</string>
+    <string name="action_share">Share</string>
+    <string name="action_open">Open</string>
+    <string name="action_continue">Continue</string>
+    <string name="action_allow">Allow</string>
+    <string name="action_not_now">Not now</string>
+    <string name="action_select_all">Select all</string>
+    <string name="action_clear_selection">Clear selection</string>
+    <string name="action_more">More options</string>
+    <string name="action_search">Search</string>
+    <string name="action_save_copy">Save as copy</string>
+    <string name="action_save_in_place">Save to original</string>
+    <string name="action_restore">Restore original</string>
+    <string name="copied_to_clipboard">Copied</string>
+    <string name="loading">Loading</string>
+
+    <!-- Write errors -->
+    <string name="error_no_changes">Nothing to save. The new values match what is already in the file.</string>
+    <string name="error_permission_denied">ExifLab is not allowed to change this file. Save a copy instead.</string>
+    <string name="error_write_consent_required">Android needs your confirmation before ExifLab can change this photo.</string>
+    <string name="error_source_gone">The file no longer exists. It may have been moved or deleted.</string>
+    <string name="error_source_changed">The file changed since it was opened. Open it again and repeat the edit.</string>
+    <string name="error_unsupported_format">ExifLab cannot write this file format.</string>
+    <string name="error_unsupported_layout">This file is built in a way ExifLab cannot edit safely, so it was left untouched.</string>
+    <string name="error_corrupt_file">The file is damaged. Nothing was changed.</string>
+    <string name="error_block_too_large">The metadata would exceed the format\'s size limit. Remove some tags (for example the thumbnail) and try again.</string>
+    <string name="error_invalid_value">One of the values cannot be stored in this tag.</string>
+    <string name="error_verification_failed">The check after writing found an unexpected difference, so the original was kept.</string>
+    <string name="error_sidecar_folder_access">To save the sidecar next to the file, give ExifLab access to its folder.</string>
+    <string name="error_storage_full">Not enough free storage to save safely.</string>
+    <string name="error_io">The file could not be read or written.</string>
+
+    <!-- Privacy categories -->
+    <string name="privacy_location">Location</string>
+    <string name="privacy_serial">Serial number</string>
+    <string name="privacy_person">Name</string>
+    <string name="privacy_device">Device</string>
+    <string name="privacy_software">Software</string>
+    <string name="privacy_unique_id">Unique ID</string>
+    <string name="privacy_sensitive">Sensitive</string>
+
+    <!-- Directory categories -->
+    <string name="category_file">File</string>
+    <string name="category_exif">EXIF</string>
+    <string name="category_gps">GPS</string>
+    <string name="category_makernotes">Maker notes</string>
+    <string name="category_xmp">XMP</string>
+    <string name="category_xmp_sidecar">XMP sidecar</string>
+    <string name="category_iptc">IPTC</string>
+    <string name="category_icc">Colour profile</string>
+    <string name="category_container">Container</string>
+    <string name="category_other">Other</string>
+
+    <!-- Read-only reasons -->
+    <string name="readonly_shared">This photo was shared from another app, which only lets ExifLab read it. Your edits can be saved as a new copy in Pictures/ExifLab.</string>
+    <string name="readonly_picker">The photo picker only gives ExifLab a read-only view. Save your edits as a copy, or open the photo from the ExifLab library to edit the original.</string>
+    <string name="readonly_provider">The app that stores this file does not allow changes. Save your edits as a copy instead.</string>
+    <string name="readonly_format">ExifLab can show this format but cannot write it.</string>
+
+    <!-- Location hints -->
+    <string name="location_hint_permission">Android hides photo locations from apps unless you allow it. Allow access to photo locations to see GPS data.</string>
+    <string name="location_hint_picker">The photo picker removed the location. Open the photo from the ExifLab library to see it.</string>
+    <string name="location_hint_sender">No location found. The app that shared this photo may have removed it before sending.</string>
+
+    <!-- Removal categories -->
+    <string name="removal_location">Location and place names</string>
+    <string name="removal_serials">Serial numbers and unique IDs</string>
+    <string name="removal_people">Names of people</string>
+    <string name="removal_device">Camera and lens</string>
+    <string name="removal_software">Software</string>
+    <string name="removal_dates">Dates and times</string>
+    <string name="removal_comments">Comments and descriptions</string>
+    <string name="removal_makernotes">Maker notes</string>
+    <string name="removal_thumbnail">Embedded thumbnail</string>
+    <string name="removal_xmp">All XMP</string>
+    <string name="removal_iptc">All IPTC</string>
+    <string name="removal_everything">Everything</string>
+
+    <!-- Strip presets -->
+    <string name="preset_location">Location only</string>
+    <string name="preset_location_body">GPS position and place names</string>
+    <string name="preset_location_device">Location, camera and serial numbers</string>
+    <string name="preset_location_device_body">Also removes camera, lens, software and maker notes</string>
+    <string name="preset_everything">Everything</string>
+    <string name="preset_everything_body">Keeps only orientation and colour profile, so the photo still looks right</string>
+
+    <!-- Common fields -->
+    <string name="field_artist">Artist</string>
+    <string name="field_copyright">Copyright</string>
+    <string name="field_description">Description</string>
+    <string name="field_title">Title</string>
+    <string name="field_keywords">Keywords</string>
+    <string name="field_camera_owner">Camera owner</string>
+    <string name="field_rating">Rating</string>
+
+    <!-- Date fields -->
+    <string name="date_original">Taken</string>
+    <string name="date_create">Digitised</string>
+    <string name="date_modify">Modified</string>
+
+    <!-- Change kinds -->
+    <string name="change_add">Added</string>
+    <string name="change_modify">Changed</string>
+    <string name="change_remove">Removed</string>
+
+    <!-- Write destinations -->
+    <string name="destination_in_file">Saved inside the file</string>
+    <string name="destination_sidecar">Saved to an XMP sidecar next to the file</string>
+    <string name="sidecar_explanation">RAW files are never modified. ExifLab writes your edits to an XMP sidecar file with the same name, which Lightroom, darktable, Capture One and exiftool read.</string>
+
+    <plurals name="photos_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <plurals name="tags_count">
+        <item quantity="one">%d tag</item>
+        <item quantity="other">%d tags</item>
+    </plurals>
+    <plurals name="changes_count">
+        <item quantity="one">%d change</item>
+        <item quantity="other">%d changes</item>
+    </plurals>
+</resources>

@@ -1,7 +1,33 @@
 # ExifLab: milestone plan
 
-Status: **proposal, awaiting answers to the questions at the end.**
+Status: **approved; in progress.** Decisions are recorded in the next section.
 Inputs: the project brief and the format/library spike ([`spike-format-matrix.md`](spike-format-matrix.md)).
+
+## Decisions (2026-10-08)
+
+The owner uses the app personally, has no coding background and asked for autonomous completion with an APK at the
+end. The open questions were resolved with the proposed defaults:
+
+* **Q1 build environment:** Google Maven stays blocked in the dev container, so every Android build, lint and test
+  runs on GitHub Actions (`.github/workflows/android.yml`). The engine is a separate pure-JVM build that also runs
+  locally.
+* **Q2 distribution:** personal use only. No Play Store constraints; the app requests `READ_MEDIA_IMAGES` to offer its
+  own gallery, which gives writable MediaStore URIs and unredacted GPS.
+* **Q3 tiles:** OpenStreetMap standard raster tiles by default (personal use is within the tile policy), configurable
+  in Settings together with the search endpoint.
+* **Q4 DNG:** in-file by default, sidecar as a setting.
+* **Q5 backups:** full copies of originals in app storage. The engine never touches image data, so a metadata-only
+  backup would be smaller, but full copies make every restore byte-exact without depending on the current state of
+  the file. Retention (age and size) and storage usage are shown and configurable.
+* **Q6 test files:** no real phone files were supplied; HEIC writing is covered by libheif-generated files and exiftool
+  checks, and the Exif item insertion path is tested separately.
+* **Q7 identity:** ExifLab, `io.github.fishpimp.exiflab`. APKs are signed with a committed personal key so updates
+  install over each other (see `app/signing/README.md`).
+* **Q8 look:** Material 3 Expressive with the ExifLab palette (teal, citrus lime, coral; amber for privacy markers),
+  Bricolage Grotesque and JetBrains Mono. Wallpaper colours are an option in Settings, off by default.
+* **Q9 HEIC on Android 8:** embedded thumbnail or placeholder.
+
+The APK is published on the repository's GitHub Releases page by CI.
 
 ## Architecture in one page
 

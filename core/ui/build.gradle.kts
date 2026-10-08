@@ -1,6 +1,7 @@
 plugins {
     id("exiflab.android.library")
     id("exiflab.android.compose")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -9,7 +10,9 @@ android {
 
 dependencies {
     api(project(":core:designsystem"))
-    api("io.github.fishpimp.exiflab.engine:model")
-    implementation(libs.coil.compose)
+    api(project(":core:data"))
+    api(libs.coil.compose)
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.kotlinx.serialization.json)
 }

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_cancel">Avbryt</string>
+    <string name="action_save">Spara</string>
+    <string name="action_done">Klar</string>
+    <string name="action_retry">Försök igen</string>
+    <string name="action_close">Stäng</string>
+    <string name="action_back">Tillbaka</string>
+    <string name="action_delete">Radera</string>
+    <string name="action_remove">Ta bort</string>
+    <string name="action_edit">Redigera</string>
+    <string name="action_copy">Kopiera</string>
+    <string name="action_share">Dela</string>
+    <string name="action_open">Öppna</string>
+    <string name="action_continue">Fortsätt</string>
+    <string name="action_allow">Tillåt</string>
+    <string name="action_not_now">Inte nu</string>
+    <string name="action_select_all">Markera alla</string>
+    <string name="action_clear_selection">Avmarkera</string>
+    <string name="action_more">Fler alternativ</string>
+    <string name="action_search">Sök</string>
+    <string name="action_save_copy">Spara som kopia</string>
+    <string name="action_save_in_place">Spara i originalet</string>
+    <string name="action_restore">Återställ original</string>
+    <string name="copied_to_clipboard">Kopierat</string>
+    <string name="loading">Laddar</string>
+
+    <string name="error_no_changes">Inget att spara. De nya värdena är samma som i filen.</string>
+    <string name="error_permission_denied">ExifLab får inte ändra den här filen. Spara en kopia i stället.</string>
+    <string name="error_write_consent_required">Android behöver ditt godkännande innan ExifLab kan ändra bilden.</string>
+    <string name="error_source_gone">Filen finns inte längre. Den kan ha flyttats eller raderats.</string>
+    <string name="error_source_changed">Filen har ändrats sedan den öppnades. Öppna den igen och gör om ändringen.</string>
+    <string name="error_unsupported_format">ExifLab kan inte skriva det här filformatet.</string>
+    <string name="error_unsupported_layout">Filen är uppbyggd på ett sätt som ExifLab inte kan redigera säkert, så den lämnades orörd.</string>
+    <string name="error_corrupt_file">Filen är skadad. Inget ändrades.</string>
+    <string name="error_block_too_large">Metadata skulle bli större än formatet tillåter. Ta bort några taggar (till exempel miniatyrbilden) och försök igen.</string>
+    <string name="error_invalid_value">Ett av värdena kan inte lagras i den här taggen.</string>
+    <string name="error_verification_failed">Kontrollen efter skrivningen hittade en oväntad skillnad, så originalet behölls.</string>
+    <string name="error_sidecar_folder_access">Ge ExifLab åtkomst till mappen för att spara sidecar-filen bredvid bilden.</string>
+    <string name="error_storage_full">Det finns inte tillräckligt med lagringsutrymme för att spara säkert.</string>
+    <string name="error_io">Filen kunde inte läsas eller skrivas.</string>
+
+    <string name="privacy_location">Plats</string>
+    <string name="privacy_serial">Serienummer</string>
+    <string name="privacy_person">Namn</string>
+    <string name="privacy_device">Enhet</string>
+    <string name="privacy_software">Programvara</string>
+    <string name="privacy_unique_id">Unikt id</string>
+    <string name="privacy_sensitive">Känslig</string>
+
+    <string name="category_file">Fil</string>
+    <string name="category_exif">EXIF</string>
+    <string name="category_gps">GPS</string>
+    <string name="category_makernotes">Tillverkardata</string>
+    <string name="category_xmp">XMP</string>
+    <string name="category_xmp_sidecar">XMP-sidecar</string>
+    <string name="category_iptc">IPTC</string>
+    <string name="category_icc">Färgprofil</string>
+    <string name="category_container">Container</string>
+    <string name="category_other">Övrigt</string>
+
+    <string name="readonly_shared">Bilden delades från en annan app som bara låter ExifLab läsa den. Dina ändringar kan sparas som en ny kopia i Pictures/ExifLab.</string>
+    <string name="readonly_picker">Bildväljaren ger bara ExifLab läsbehörighet. Spara ändringarna som en kopia, eller öppna bilden från ExifLabs bibliotek för att ändra originalet.</string>
+    <string name="readonly_provider">Appen som lagrar filen tillåter inte ändringar. Spara ändringarna som en kopia i stället.</string>
+    <string name="readonly_format">ExifLab kan visa det här formatet men inte skriva det.</string>
+
+    <string name="location_hint_permission">Android döljer bilders plats för appar som inte fått tillstånd. Tillåt åtkomst till bildplatser för att se GPS-data.</string>
+    <string name="location_hint_picker">Bildväljaren tog bort platsen. Öppna bilden från ExifLabs bibliotek för att se den.</string>
+    <string name="location_hint_sender">Ingen plats hittades. Appen som delade bilden kan ha tagit bort den innan den skickades.</string>
+
+    <string name="removal_location">Plats och ortnamn</string>
+    <string name="removal_serials">Serienummer och unika id</string>
+    <string name="removal_people">Personnamn</string>
+    <string name="removal_device">Kamera och objektiv</string>
+    <string name="removal_software">Programvara</string>
+    <string name="removal_dates">Datum och tider</string>
+    <string name="removal_comments">Kommentarer och beskrivningar</string>
+    <string name="removal_makernotes">Tillverkardata</string>
+    <string name="removal_thumbnail">Inbäddad miniatyrbild</string>
+    <string name="removal_xmp">All XMP</string>
+    <string name="removal_iptc">All IPTC</string>
+    <string name="removal_everything">Allt</string>
+
+    <string name="preset_location">Bara plats</string>
+    <string name="preset_location_body">GPS-position och ortnamn</string>
+    <string name="preset_location_device">Plats, kamera och serienummer</string>
+    <string name="preset_location_device_body">Tar även bort kamera, objektiv, programvara och tillverkardata</string>
+    <string name="preset_everything">Allt</string>
+    <string name="preset_everything_body">Behåller bara orientering och färgprofil, så att bilden fortfarande ser rätt ut</string>
+
+    <string name="field_artist">Fotograf</string>
+    <string name="field_copyright">Upphovsrätt</string>
+    <string name="field_description">Beskrivning</string>
+    <string name="field_title">Titel</string>
+    <string name="field_keywords">Nyckelord</string>
+    <string name="field_camera_owner">Kameraägare</string>
+    <string name="field_rating">Betyg</string>
+
+    <string name="date_original">Tagen</string>
+    <string name="date_create">Digitaliserad</string>
+    <string name="date_modify">Ändrad</string>
+
+    <string name="change_add">Tillagd</string>
+    <string name="change_modify">Ändrad</string>
+    <string name="change_remove">Borttagen</string>
+
+    <string name="destination_in_file">Sparas i filen</string>
+    <string name="destination_sidecar">Sparas i en XMP-sidecar bredvid filen</string>
+    <string name="sidecar_explanation">RAW-filer ändras aldrig. ExifLab skriver dina ändringar till en XMP-sidecar med samma namn, som Lightroom, darktable, Capture One och exiftool läser.</string>
+
+    <plurals name="photos_count">
+        <item quantity="one">%d bild</item>
+        <item quantity="other">%d bilder</item>
+    </plurals>
+    <plurals name="tags_count">
+        <item quantity="one">%d tagg</item>
+        <item quantity="other">%d taggar</item>
+    </plurals>
+    <plurals name="changes_count">
+        <item quantity="one">%d ändring</item>
+        <item quantity="other">%d ändringar</item>
+    </plurals>
+</resources>

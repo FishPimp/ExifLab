@@ -38,6 +38,8 @@ public data class ImageRef(
     /** MediaStore id when known (gallery items, resolved picker items). */
     val mediaId: Long? = null,
     val dateTakenMillis: Long? = null,
+    /** MediaStore RELATIVE_PATH (e.g. "DCIM/Camera/") when known. */
+    val relativePath: String? = null,
 )
 
 /** A gallery item from MediaStore. */
