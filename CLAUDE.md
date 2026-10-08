@@ -31,21 +31,22 @@ Work milestone by milestone; commit after each, and keep the build and tests gre
 
 * JDK 21. Gradle wrapper (once M1 lands). Dependencies come from Maven Central and Google Maven only, declared in
   `gradle/libs.versions.toml`.
-* **Google Maven (`dl.google.com`, `maven.google.com`) is blocked in the cloud dev container** unless the environment's
-  network settings allow it. Without it the Android modules cannot build. The pure-JVM modules (`core:model`,
-  `core:metadata`, `spike/`) still build and test.
+* **Google Maven (`dl.google.com`, `maven.google.com`) is blocked in the cloud dev container.** The Android modules
+  are therefore compiled, linted and tested on GitHub Actions (`.github/workflows/android.yml`). The engine is a
+  separate pure-JVM Gradle build in `engine/` (included by the root build) so it builds and tests locally:
+  `./gradlew -p engine test`.
 * exiftool is the reference for engine tests. It is not on the image by default: install
   `libimage-exiftool-perl` (apt), or set `EXIFTOOL="perl /path/to/exiftool"`. CI installs it via apt.
   Tests that need exiftool skip locally with a clear message if it is missing, but never in CI.
-* Before every commit run: `./gradlew spotlessCheck lint testDebugUnitTest :core:metadata:test`. Add
-  `connectedDebugAndroidTest` when touching share-target, write-target or batch code and an emulator is available.
+* Before every commit: `./gradlew -p engine test` locally; the Android checks (`assembleDebug lint testDebugUnitTest`,
+  emulator tests) run on CI for every push. A push is only considered done when CI is green.
 
 ## Code layout
 
 ```
 app/                  activity, nav graph, intent routing (SEND, SEND_MULTIPLE, VIEW), Hilt setup
-core/model            pure Kotlin types
-core/metadata         pure Kotlin/JVM engine: readers, writers, verification, formatting. No android.* imports.
+engine/model          pure Kotlin types (separate JVM build, see above)
+engine/metadata       pure Kotlin/JVM engine: readers, writers, verification, formatting. No android.* imports.
 core/data             MediaStore/SAF, write targets, Room (backups, journal, history), DataStore, WorkManager
 core/network          OkHttp, MapLibre tile config, Nominatim client. The only module allowed network access.
 core/designsystem     theme, tokens, icons, base components
@@ -54,7 +55,7 @@ feature/<name>        viewer, editor, batch, history, share, export, settings
 spike/                throwaway format spike (JVM). Not part of the app build.
 ```
 
-Package root: `io.github.fishpimp.exiflab` (pending confirmation, see PLAN Q7).
+Package root: `io.github.fishpimp.exiflab` (engine: `io.github.fishpimp.exiflab.engine`, model: `...exiflab.model`).
 
 ## Kotlin and architecture
 
@@ -92,7 +93,7 @@ Package root: `io.github.fishpimp.exiflab` (pending confirmation, see PLAN Q7).
   * no other tag lost or changed
   * MakerNote tag count unchanged
   * no new warnings
-* Test corpus lives in `core/metadata/src/test/resources/corpus/`, with a README stating each file's origin and
+* Test corpus lives in `engine/metadata/src/test/resources/corpus/`, with a README stating each file's origin and
   licence.
 
 ## UI and design
@@ -128,7 +129,7 @@ Package root: `io.github.fishpimp.exiflab` (pending confirmation, see PLAN Q7).
 
 ## Testing
 
-* `core:metadata`: JUnit 5, golden tests against committed exiftool JSON, roundtrip tests, corrupt/truncated-input
+* `engine:metadata`: JUnit (Jupiter), golden tests against committed exiftool JSON, roundtrip tests, corrupt/truncated-input
   tests, fault-injection tests for the write pipeline.
 * Android: ViewModel tests with Turbine; Compose UI tests; instrumented tests for share-target routing, write targets
   and batch workers.
