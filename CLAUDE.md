@@ -6,7 +6,7 @@ Work milestone by milestone; commit after each, and keep the build and tests gre
 
 ## Non-negotiables
 
-1. **Never re-encode pixel data.** All metadata writes go through the `core:metadata` engine. That means the
+1. **Never re-encode pixel data.** All metadata writes go through the `engine:metadata` engine. That means the
    append-only TIFF updater plus container writers, or an XMP sidecar. Never use `ExifInterface.saveAttributes`,
    Commons Imaging, `Bitmap.compress` or similar on a user's file. The spike shows why.
 2. **Verify before replace.** Every write follows backup, then temp file, then verify (re-parse, check values,
