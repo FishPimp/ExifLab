@@ -27,6 +27,7 @@ dependencies {
 }
 
 tasks.test {
+    failOnNoDiscoveredTests = false
     useJUnitPlatform()
     // exiftool is the reference implementation for every engine test. CI sets EXIFTOOL; locally it may be
     // "perl /path/to/exiftool". Tests that need it are skipped when it is missing, unless CI=true.
