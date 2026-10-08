@@ -1,0 +1,32 @@
+name: apidump
+# Dumps public signatures of AndroidX/Coil libraries into docs/api-reference (Google Maven is not reachable from the
+# dev container). Runs when a commit message contains [apidump].
+on:
+  push:
+permissions:
+  contents: write
+jobs:
+  dump:
+    if: contains(github.event.head_commit.message, '[apidump]')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Download sources jars
+        run: ./gradlew -p tools/apidump dumpSources --console=plain
+      - name: Extract signatures
+        run: |
+          ls tools/apidump/build/sources
+          python3 tools/apidump.py docs/api-reference tools/apidump/build/sources/*-sources.jar
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/api-reference
+          git commit -m "Update API reference dumps [skip ci]" || echo "nothing to commit"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
