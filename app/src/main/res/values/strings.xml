@@ -44,6 +44,138 @@
         <item quantity="other">%d photos</item>
     </plurals>
 
+    <!-- Photo viewer -->
+    <string name="photo_more_options">More options</string>
+    <string name="photo_copy_all">Copy all as text</string>
+    <string name="photo_copy_all_header">Group\tTag\tID\tValue\tRaw value</string>
+    <plurals name="photo_copied_all">
+        <item quantity="one">%d tag copied</item>
+        <item quantity="other">%d tags copied</item>
+    </plurals>
+    <string name="photo_save_copy">Save as copy</string>
+    <string name="photo_open_original">Open original file</string>
+    <string name="photo_loading">Reading metadata</string>
+    <string name="photo_working">Please wait</string>
+    <string name="photo_retry">Try again</string>
+    <string name="photo_load_unsupported_title">Not a supported photo</string>
+    <string name="photo_load_unsupported_body">ExifLab cannot read metadata from this kind of file.</string>
+    <string name="photo_load_damaged_title">This file looks damaged</string>
+    <string name="photo_load_damaged_body">No metadata could be read from it. The file may be incomplete or corrupted.</string>
+    <string name="photo_load_access_title">Access to this photo was lost</string>
+    <string name="photo_load_access_body">ExifLab can no longer open this file. Open it again from where you found it.</string>
+    <string name="photo_load_missing_title">Photo not found</string>
+    <string name="photo_load_missing_body">It may have been moved, renamed or deleted.</string>
+    <string name="photo_load_failed_title">The photo could not be read</string>
+    <string name="photo_load_failed_body">Something went wrong while reading it. Try again.</string>
+
+    <string name="photo_view_full_screen">View full screen</string>
+    <string name="photo_no_camera_title">No camera details</string>
+    <string name="photo_no_camera_body">This file does not say which camera took it. Screenshots, edited exports and images from the web often carry little metadata.</string>
+    <string name="photo_lens_description">Lens: %1$s</string>
+    <string name="photo_spec_aperture">Aperture</string>
+    <string name="photo_spec_shutter">Shutter speed</string>
+    <string name="photo_spec_iso">Sensitivity</string>
+    <string name="photo_spec_focal_length">Focal length</string>
+    <string name="photo_spec_exposure_bias">Exposure</string>
+    <string name="photo_spec_resolution">Resolution</string>
+    <string name="photo_value_aperture">f/%1$s</string>
+    <string name="photo_value_shutter">%1$s s</string>
+    <string name="photo_value_iso">ISO %1$s</string>
+    <string name="photo_value_focal_length">%1$s mm</string>
+    <string name="photo_value_focal_length_equivalent">%1$s mm equiv.</string>
+    <string name="photo_value_exposure_bias">%1$s EV</string>
+    <string name="photo_value_megapixels">%1$s MP</string>
+    <string name="photo_value_dimensions">%1$d × %2$d</string>
+    <string name="photo_captured">Taken</string>
+    <string name="photo_value_utc_offset">UTC%1$s</string>
+    <string name="photo_offset_from_exif">Time zone from Exif</string>
+    <string name="photo_offset_from_xmp">Time zone from XMP</string>
+    <string name="photo_offset_from_gps">Time zone estimated from GPS time</string>
+    <string name="photo_offset_from_makernote">Time zone from camera settings</string>
+    <string name="photo_time_zone_unknown">Time zone unknown</string>
+    <string name="photo_file">File</string>
+    <string name="photo_read_only_picker">Photos from the photo picker are read-only. Edits will be saved as a copy.</string>
+    <string name="photo_read_only_share">Shared photos are read-only. Edits will be saved as a copy.</string>
+    <string name="photo_read_only_file">ExifLab cannot change this file where it is. Edits will be saved as a copy.</string>
+
+    <string name="photo_privacy_title">Privacy</string>
+    <string name="photo_privacy_found">This photo carries data that can identify people, places or devices. Tap a category to see its tags.</string>
+    <string name="photo_privacy_clean">No location, names, serial numbers or other identifying data found.</string>
+    <string name="privacy_category_location">Location</string>
+    <string name="privacy_category_serial_number">Serial numbers</string>
+    <string name="privacy_category_person_name">Person names</string>
+    <string name="privacy_category_device_id">Device IDs</string>
+    <string name="privacy_category_people">People</string>
+    <plurals name="photo_tag_count">
+        <item quantity="one">%d tag</item>
+        <item quantity="other">%d tags</item>
+    </plurals>
+
+    <string name="photo_location_title">Location</string>
+    <string name="photo_location_altitude">Altitude</string>
+    <string name="photo_location_direction">Direction</string>
+    <string name="photo_value_altitude">%1$d m</string>
+    <string name="photo_value_altitude_below">%1$d m below sea level</string>
+    <string name="photo_value_direction">%1$d° %2$s</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NE</string>
+    <string name="compass_e">E</string>
+    <string name="compass_se">SE</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SW</string>
+    <string name="compass_w">W</string>
+    <string name="compass_nw">NW</string>
+    <string name="photo_copy_coordinates">Copy coordinates</string>
+    <string name="photo_copied_coordinates">Coordinates copied</string>
+    <string name="photo_location_removed_title">Location removed</string>
+    <string name="photo_location_none_title">No location</string>
+    <string name="photo_location_shared_redacted">The location fields in this file are blank. Android\'s photo picker and many apps, Google Photos included, remove the location when a photo is shared. A camera without a GPS fix can also leave them empty.</string>
+    <string name="photo_location_shared_absent">This file has no location. Android\'s photo picker and many apps, Google Photos included, remove the location when a photo is shared, so the original may still have it.</string>
+    <string name="photo_location_shared_hint">Open the original file to see everything it holds, or save a copy you can edit.</string>
+    <string name="photo_location_redacted">The location fields exist but are blank. The camera may have had no GPS fix, or an app removed the location.</string>
+    <string name="photo_location_absent">This photo has no location data.</string>
+
+    <string name="photo_tags_title">Metadata</string>
+    <plurals name="photo_group_count">
+        <item quantity="one">%d group</item>
+        <item quantity="other">%d groups</item>
+    </plurals>
+    <plurals name="photo_tags_matching">
+        <item quantity="one">%1$d of %2$d tag</item>
+        <item quantity="other">%1$d of %2$d tags</item>
+    </plurals>
+    <plurals name="photo_match_count">
+        <item quantity="one">%d match</item>
+        <item quantity="other">%d matches</item>
+    </plurals>
+    <plurals name="photo_warning_count">
+        <item quantity="one">%d warning</item>
+        <item quantity="other">%d warnings</item>
+    </plurals>
+    <string name="photo_search_hint">Search tags and values</string>
+    <string name="photo_search_clear">Clear search</string>
+    <string name="photo_mode_readable">Readable</string>
+    <string name="photo_mode_raw">Raw</string>
+    <string name="photo_expand_all">Expand all</string>
+    <string name="photo_collapse_all">Collapse all</string>
+    <string name="photo_section_expand">Expand</string>
+    <string name="photo_section_collapse">Collapse</string>
+    <string name="photo_section_expanded">Expanded</string>
+    <string name="photo_section_collapsed">Collapsed</string>
+    <string name="photo_warnings_title">Warnings</string>
+    <string name="photo_filter_clear">Show all tags</string>
+    <string name="photo_no_matches_title">No matching tags</string>
+    <string name="photo_no_matches_body">Nothing matches “%1$s”. Try another word, or a tag ID such as 0x829A.</string>
+    <string name="photo_show_more">Show more</string>
+    <string name="photo_show_less">Show less</string>
+    <string name="photo_tag_details">Show details</string>
+    <string name="photo_copy_value">Copy value</string>
+    <string name="photo_copy_name_value">Copy name and value</string>
+    <string name="photo_copied_value">%1$s copied</string>
+    <string name="photo_tag_sensitive">Sensitive: %1$s</string>
+    <string name="photo_value_readable">Readable value</string>
+    <string name="photo_value_raw">Raw value</string>
+
     <!-- Library -->
     <string name="library_empty_title">No folders yet</string>
     <string name="library_empty_body">Folders you give ExifLab access to will show up here, ready to browse and edit.</string>

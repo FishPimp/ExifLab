@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.data.settings.SettingsRepository
 import io.github.fishpimp.exiflab.data.store.JsonListStore
 import io.github.fishpimp.exiflab.data.store.libraryPreferences
 import io.github.fishpimp.exiflab.metadata.Metadata
+import io.github.fishpimp.exiflab.metadata.MetadataReader
 import io.github.fishpimp.exiflab.thumbnails.photoImageLoader
 
 /**
@@ -26,6 +27,9 @@ class AppGraph(context: Context) {
     val settingsRepository: SettingsRepository by lazy { SettingsRepository(appContext) }
 
     val photoRepository: PhotoRepository by lazy { PhotoRepository(appContext) }
+
+    /** Parses photo metadata. Stateless and thread-safe; blocking, so call it off the main thread. */
+    val metadataReader: MetadataReader get() = Metadata.reader
 
     val folderRepository: FolderRepository by lazy {
         FolderRepository(
