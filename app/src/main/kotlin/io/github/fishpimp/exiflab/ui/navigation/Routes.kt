@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import kotlinx.serialization.Serializable
 
 /** Every screen the app can show. Keys are serializable so back stacks survive process death. */
@@ -24,7 +25,25 @@ sealed interface Route : NavKey {
     @Serializable data object Settings : Route
     @Serializable data object Privacy : Route
     @Serializable data object Licenses : Route
+
+    /** One photo, opened from any source. */
+    @Serializable data class Photo(val ref: PhotoRef) : Route
+
+    /** Several photos picked or shared at once, shown as a grid. */
+    @Serializable data class Selection(val refs: List<PhotoRef>) : Route
+
+    /**
+     * A folder inside a granted folder tree.
+     *
+     * @property folderTreeUri The granted tree the folder belongs to.
+     * @property documentUri The folder itself, as a tree-based document URI.
+     * @property title The folder name, shown before its content loads.
+     */
+    @Serializable data class Folder(val folderTreeUri: String, val documentUri: String, val title: String) : Route
 }
+
+/** The route that shows [refs]: the photo itself for one, a selection grid for several. */
+fun routeFor(refs: List<PhotoRef>): Route = refs.singleOrNull()?.let(Route::Photo) ?: Route.Selection(refs)
 
 /** Destinations shown in the navigation bar or rail. Each keeps its own back stack. */
 enum class TopLevelDestination(
