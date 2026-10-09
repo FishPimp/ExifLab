@@ -100,6 +100,10 @@ private val SectionCorner = 20.dp
 private val RowCorner = 4.dp
 private val RowGap = 2.dp
 private const val COLLAPSED_VALUE_LINES = 8
+private const val NAME_COLUMN_WEIGHT = 0.38f
+
+/** List width from which tag rows put the name next to the value. */
+val WIDE_ROWS_MIN_WIDTH = 560.dp
 
 /**
  * The searchable, grouped tag list: a header with counts, a sticky search field, the
@@ -108,6 +112,7 @@ private const val COLLAPSED_VALUE_LINES = 8
  *
  * @param gutter horizontal padding of every item; the list itself has none so the sticky search
  *   field can span its full width.
+ * @param wideRows put tag names and values side by side, for lists wider than [WIDE_ROWS_MIN_WIDTH].
  */
 @OptIn(ExperimentalFoundationApi::class)
 fun LazyListScope.tagBrowser(
@@ -118,6 +123,7 @@ fun LazyListScope.tagBrowser(
     filterCount: Int,
     callbacks: TagBrowserCallbacks,
     gutter: Dp,
+    wideRows: Boolean,
 ) {
     item(key = BROWSER_HEADER_KEY, contentType = "browser-header") {
         BrowserHeader(browser, callbacks.onSetAllExpanded, Modifier.padding(horizontal = gutter).padding(top = 8.dp))
@@ -150,7 +156,7 @@ fun LazyListScope.tagBrowser(
             val itemModifier = Modifier.animateItem().padding(horizontal = gutter)
             when (row) {
                 is SectionHeaderRow -> SectionHeader(row, callbacks.onToggleSection, itemModifier)
-                is TagRow -> TagRowItem(row, mode, callbacks, itemModifier)
+                is TagRow -> TagRowItem(row, mode, wideRows, callbacks, itemModifier)
                 is WarningRow -> WarningRowItem(row, itemModifier)
             }
         }
@@ -327,7 +333,7 @@ private fun rowShape(isLast: Boolean): RoundedCornerShape =
     }
 
 @Composable
-private fun TagRowItem(row: TagRow, mode: ValueMode, callbacks: TagBrowserCallbacks, modifier: Modifier = Modifier) {
+private fun TagRowItem(row: TagRow, mode: ValueMode, wide: Boolean, callbacks: TagBrowserCallbacks, modifier: Modifier = Modifier) {
     val haptics = LocalHapticFeedback.current
     var expanded by rememberSaveable { mutableStateOf(false) }
     var isLong by remember(row.value) { mutableStateOf(false) }
@@ -337,7 +343,7 @@ private fun TagRowItem(row: TagRow, mode: ValueMode, callbacks: TagBrowserCallba
     )
     val name = remember(row.tag.name, row.nameMatches, highlight) { highlighted(row.tag.name, row.nameMatches, highlight) }
     val value = remember(row.value, row.valueMatches, highlight) { highlighted(row.value, row.valueMatches, highlight) }
-    val sensitivity = row.tag.sensitivity
+    val sensitivity = row.sensitivity
     val raw = mode == ValueMode.Raw
 
     val copyValue = stringResource(R.string.photo_copy_value)
@@ -384,59 +390,80 @@ private fun TagRowItem(row: TagRow, mode: ValueMode, callbacks: TagBrowserCallba
                 )
             }
             .heightIn(min = 56.dp)
-            .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = if (isLong) 2.dp else 12.dp),
+            .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = if (isLong) 2.dp else 12.dp),
+        verticalAlignment = if (isLong) Alignment.Top else Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Column(Modifier.weight(1f)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        val hexId = row.tag.hexId?.takeIf { row.showId }
+        val id: (@Composable () -> Unit)? = hexId?.let {
+            {
                 Text(
-                    name,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.weight(1f, fill = false),
+                    remember(hexId, row.idMatches, highlight) { highlighted(hexId, row.idMatches, highlight) },
+                    style = ExifLabTheme.extendedTypography.monoSmall,
+                    color = MaterialTheme.colorScheme.primary,
                 )
-                val hexId = row.tag.hexId
-                if (row.showId && hexId != null) {
-                    Text(
-                        remember(hexId, row.idMatches, highlight) { highlighted(hexId, row.idMatches, highlight) },
-                        style = ExifLabTheme.extendedTypography.monoSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                    )
-                }
             }
-            Text(
-                value,
-                style = if (raw) ExifLabTheme.extendedTypography.monoMedium else MaterialTheme.typography.bodyLarge,
-                maxLines = if (expanded) Int.MAX_VALUE else COLLAPSED_VALUE_LINES,
-                overflow = TextOverflow.Ellipsis,
-                onTextLayout = { if (it.hasVisualOverflow) isLong = true },
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            row.otherMatch?.let { other ->
-                val label = stringResource(if (other.mode == ValueMode.Raw) R.string.photo_value_raw else R.string.photo_value_readable)
+        }
+        val nameText: @Composable (Modifier) -> Unit = { textModifier ->
+            Text(name, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = textModifier)
+        }
+        val valueBlock: @Composable (Modifier) -> Unit = { blockModifier ->
+            Column(blockModifier) {
                 Text(
-                    remember(other, highlight, label) {
-                        buildAnnotatedString {
-                            append(label)
-                            append(": ")
-                            append(highlighted(other.text, other.matches, highlight))
-                        }
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 3,
+                    value,
+                    style = if (raw) ExifLabTheme.extendedTypography.monoMedium else MaterialTheme.typography.bodyLarge,
+                    maxLines = if (expanded) Int.MAX_VALUE else COLLAPSED_VALUE_LINES,
                     overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 4.dp),
+                    onTextLayout = { if (it.hasVisualOverflow) isLong = true },
                 )
-            }
-            if (isLong) {
-                TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 0.dp)) {
-                    Text(toggleLength)
+                row.otherMatch?.let { other -> OtherMatch(other, highlight) }
+                if (isLong) {
+                    TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(horizontal = 0.dp)) {
+                        Text(toggleLength)
+                    }
                 }
             }
         }
-        if (sensitivity != null) SensitiveMark(sensitivity, Modifier.padding(top = 2.dp))
+        if (wide) {
+            // Name and value side by side: denser, and long values get a readable measure.
+            Row(Modifier.weight(1f), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(Modifier.weight(NAME_COLUMN_WEIGHT).alignByBaseline()) {
+                    nameText(Modifier)
+                    id?.invoke()
+                }
+                valueBlock(Modifier.weight(1f - NAME_COLUMN_WEIGHT).alignByBaseline())
+            }
+        } else {
+            Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    nameText(Modifier.weight(1f, fill = false))
+                    id?.invoke()
+                }
+                valueBlock(Modifier.padding(top = 2.dp))
+            }
+        }
+        if (sensitivity != null) SensitiveMark(sensitivity)
     }
+}
+
+/** Why a row matched when the hit is in the value form that is not shown. */
+@Composable
+private fun OtherMatch(other: OtherValueMatch, highlight: SpanStyle) {
+    val label = stringResource(if (other.mode == ValueMode.Raw) R.string.photo_value_raw else R.string.photo_value_readable)
+    Text(
+        remember(other, highlight, label) {
+            buildAnnotatedString {
+                append(label)
+                append(": ")
+                append(highlighted(other.text, other.matches, highlight))
+            }
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 3,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.padding(top = 4.dp),
+    )
 }
 
 /** A small sensitive-colored icon marking a privacy-sensitive tag; the row's description says it in words. */

@@ -20,13 +20,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Adjust
 import androidx.compose.material.icons.rounded.Camera
 import androidx.compose.material.icons.rounded.CenterFocusStrong
 import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Exposure
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.Iso
-import androidx.compose.material.icons.rounded.Lens
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.OpenInFull
 import androidx.compose.material.icons.rounded.PhotoCamera
@@ -170,7 +170,7 @@ fun CameraSummary(summary: PhotoSummary, modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.clearAndSetSemantics { contentDescription = description },
             ) {
-                Icon(Icons.Rounded.Lens, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                Icon(Icons.Rounded.Adjust, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
                 Text(lens, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -349,16 +349,16 @@ private fun SpecTileView(
         contentColor = group.content,
         modifier = modifier.clearAndSetSemantics { contentDescription = description },
     ) {
-        Column(Modifier.padding(horizontal = SpecPaddingHorizontal, vertical = 14.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(tile.icon, contentDescription = null, tint = group.accent, modifier = Modifier.size(18.dp))
-                Text(tile.label, style = MaterialTheme.typography.labelMedium)
-            }
-            Spacer(Modifier.height(8.dp))
+        // Values share a top line and labels a bottom line across a row, whatever wraps in between.
+        Column(Modifier.fillMaxHeight().padding(horizontal = SpecPaddingHorizontal, vertical = 14.dp)) {
+            Icon(tile.icon, contentDescription = null, tint = group.accent, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.height(10.dp))
             Text(tile.value, style = numeralStyle, maxLines = if (wrap) Int.MAX_VALUE else 1, softWrap = wrap)
             tile.supporting?.let {
                 Text(it, style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 2.dp))
             }
+            Spacer(Modifier.weight(1f).heightIn(min = 6.dp))
+            Text(tile.label, style = MaterialTheme.typography.labelMedium)
         }
     }
 }

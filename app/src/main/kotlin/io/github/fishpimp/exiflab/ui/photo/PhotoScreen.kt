@@ -71,6 +71,7 @@ import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.photos.formatLabel
 import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
+import io.github.fishpimp.exiflab.metadata.model.SensitiveFinding
 import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.messageRes
@@ -191,16 +192,17 @@ fun PhotoContent(
     val name = ref.displayName ?: report?.fileName ?: stringResource(R.string.photo_untitled)
     val copier = rememberClipboardCopier(snackbarHostState)
     ScreenScaffold(
-        title = name,
+        title = remember(name) { breakableFileName(name) },
         subtitle = fileSubtitle(ref, report),
         onBack = actions.onBack,
         actions = {
-            PhotoMenu(
-                report = report,
-                onCopyAll = { report?.let(copier::copyAll) },
-                onSaveCopy = actions.onSaveCopy,
-                onOpenOriginal = actions.onOpenOriginal.takeIf { ref.origin == PhotoOrigin.Picker || ref.origin == PhotoOrigin.Share },
-            )
+            if (report != null) {
+                PhotoMenu(
+                    onCopyAll = { copier.copyAll(report) },
+                    onSaveCopy = actions.onSaveCopy,
+                    onOpenOriginal = actions.onOpenOriginal.takeIf { ref.origin == PhotoOrigin.Picker || ref.origin == PhotoOrigin.Share },
+                )
+            }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
@@ -237,7 +239,8 @@ private fun LoadedPhoto(
     var detailsKey by rememberSaveable { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
     val twoPane = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
-    val filterCount = state.filter?.let { category -> report.sensitiveFindings.firstOrNull { it.category == category }?.tagKeys?.size } ?: 0
+    val findings = remember(report) { TagBrowserBuilder.visibleFindings(report) }
+    val filterCount = state.filter?.let { category -> findings.firstOrNull { it.category == category }?.tagKeys?.size } ?: 0
 
     val browserCallbacks = remember(actions, copier, state.mode) {
         TagBrowserCallbacks(
@@ -261,6 +264,7 @@ private fun LoadedPhoto(
         PhotoOverview(
             ref = ref,
             report = report,
+            findings = findings,
             name = name,
             filter = state.filter,
             onOpenPreview = { showFullScreen = true },
@@ -275,6 +279,8 @@ private fun LoadedPhoto(
     if (twoPane) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val overviewWidth = (maxWidth * 0.4f).coerceIn(340.dp, 480.dp)
+            val tagPaneWidth = (maxWidth - overviewWidth).coerceAtMost(TagPaneMaxWidth)
+            val wideRows = tagPaneWidth - PaneGutter * 2 >= WIDE_ROWS_MIN_WIDTH
             Row(Modifier.fillMaxSize()) {
                 Column(
                     Modifier
@@ -291,20 +297,39 @@ private fun LoadedPhoto(
                         modifier = Modifier.widthIn(max = TagPaneMaxWidth).fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 32.dp),
                     ) {
-                        tagBrowser(state.browser, query, state.mode, state.filter, filterCount, browserCallbacks, gutter = PaneGutter)
+                        tagBrowser(
+                            browser = state.browser,
+                            query = query,
+                            mode = state.mode,
+                            filter = state.filter,
+                            filterCount = filterCount,
+                            callbacks = browserCallbacks,
+                            gutter = PaneGutter,
+                            wideRows = wideRows,
+                        )
                     }
                 }
             }
         }
     } else {
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+            val wideRows = maxWidth.coerceAtMost(SingleColumnMaxWidth) - CompactGutter * 2 >= WIDE_ROWS_MIN_WIDTH
             LazyColumn(
                 state = listState,
                 modifier = Modifier.widthIn(max = SingleColumnMaxWidth).fillMaxSize(),
                 contentPadding = PaddingValues(bottom = 32.dp),
             ) {
                 item(key = "overview", contentType = "overview") { overview(Modifier.padding(horizontal = CompactGutter)) }
-                tagBrowser(state.browser, query, state.mode, state.filter, filterCount, browserCallbacks, gutter = CompactGutter)
+                tagBrowser(
+                    browser = state.browser,
+                    query = query,
+                    mode = state.mode,
+                    filter = state.filter,
+                    filterCount = filterCount,
+                    callbacks = browserCallbacks,
+                    gutter = CompactGutter,
+                    wideRows = wideRows,
+                )
             }
         }
     }
@@ -337,6 +362,7 @@ private fun LoadedPhoto(
 private fun PhotoOverview(
     ref: PhotoRef,
     report: MetadataReport,
+    findings: List<SensitiveFinding>,
     name: String,
     filter: SensitivityCategory?,
     onOpenPreview: () -> Unit,
@@ -349,24 +375,28 @@ private fun PhotoOverview(
     Column(modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(28.dp)) {
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             if (maxWidth >= WideOverviewMinWidth) {
-                Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                    PhotoPreview(ref, report, name, onOpenPreview, Modifier.weight(1f), maxHeight = 360.dp)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(20.dp)) {
-                        CameraSummary(report.summary)
-                        SpecGrid(report.summary)
+                // Medium widths: the preview beside camera and capture facts, the numbers full width below.
+                Column(verticalArrangement = Arrangement.spacedBy(28.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        PhotoPreview(ref, report, name, onOpenPreview, Modifier.weight(1f), maxHeight = 360.dp)
+                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+                            CameraSummary(report.summary)
+                            PhotoFacts(ref, report)
+                        }
                     }
+                    SpecGrid(report.summary)
                 }
             } else {
                 Column(verticalArrangement = Arrangement.spacedBy(24.dp)) {
                     PhotoPreview(ref, report, name, onOpenPreview)
                     CameraSummary(report.summary)
                     SpecGrid(report.summary)
+                    PhotoFacts(ref, report, Modifier.padding(top = 4.dp))
                 }
             }
         }
-        PhotoFacts(ref, report)
         if (!ref.writable) ReadOnlyBanner(ref.origin)
-        PrivacySection(report.sensitiveFindings, filter, onToggleFilter)
+        PrivacySection(findings, filter, onToggleFilter)
         LocationSection(
             location = report.location,
             status = report.locationStatus,
@@ -380,7 +410,6 @@ private fun PhotoOverview(
 
 @Composable
 private fun PhotoMenu(
-    report: MetadataReport?,
     onCopyAll: () -> Unit,
     onSaveCopy: () -> Unit,
     onOpenOriginal: (() -> Unit)?,
@@ -394,7 +423,6 @@ private fun PhotoMenu(
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.photo_copy_all)) },
                 leadingIcon = { Icon(Icons.Rounded.ContentCopy, contentDescription = null) },
-                enabled = report != null,
                 onClick = {
                     open = false
                     onCopyAll()
@@ -443,6 +471,20 @@ private fun LoadError(error: PhotoLoadError, onRetry: () -> Unit) {
         )
     }
 }
+
+/**
+ * [name] with invisible break opportunities after "_" and "-", so a long camera file name such as
+ * "PXL_20260614_174207123.jpg" wraps between its parts instead of in the middle of a number.
+ */
+internal fun breakableFileName(name: String): String =
+    buildString(name.length + 8) {
+        name.forEach { char ->
+            append(char)
+            if (char == '_' || char == '-') append(ZERO_WIDTH_SPACE)
+        }
+    }
+
+private const val ZERO_WIDTH_SPACE = '\u200B'
 
 /** "JPEG · 3.2 MB" under the title. */
 @Composable

@@ -2,9 +2,11 @@ package io.github.fishpimp.exiflab.ui.photo
 
 import androidx.compose.runtime.Immutable
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
+import io.github.fishpimp.exiflab.metadata.model.LocationStatus
 import io.github.fishpimp.exiflab.metadata.model.MetadataDirectory
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.MetadataTag
+import io.github.fishpimp.exiflab.metadata.model.SensitiveFinding
 import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 
 /** Which form of a tag value the browser shows. */
@@ -45,6 +47,7 @@ data class SectionHeaderRow(
  * One tag. Match ranges index into [MetadataTag.name], [value] and [MetadataTag.hexId].
  *
  * @property value the shown value: [MetadataTag.displayValue] or [MetadataTag.rawValue] depending on the mode.
+ * @property sensitivity the privacy category the row is marked with; see [TagBrowserBuilder.visibleFindings].
  * @property showId true in raw mode, or when the search matched the tag id.
  * @property otherMatch a search hit in the value form that is not shown, so the row can explain why it matched.
  * @property isLast the last row of its section, which rounds the section's bottom corners.
@@ -57,6 +60,7 @@ data class TagRow(
     val nameMatches: List<IntRange>,
     val valueMatches: List<IntRange>,
     val idMatches: List<IntRange>,
+    val sensitivity: SensitivityCategory?,
     val showId: Boolean,
     val otherMatch: OtherValueMatch?,
     val isLast: Boolean,
@@ -112,6 +116,24 @@ object TagBrowserBuilder {
         add(WARNINGS_SECTION)
     }
 
+    /**
+     * The findings worth a privacy badge. A redacted GPS block (zeroed or blank, as the photo
+     * picker leaves it) identifies nothing, so its tags do not count as location data.
+     */
+    fun visibleFindings(report: MetadataReport): List<SensitiveFinding> {
+        if (report.locationStatus != LocationStatus.Redacted) return report.sensitiveFindings
+        val blankGps = report.directories.filter { it.group == DirectoryGroup.Gps }.flatMapTo(HashSet()) { directory ->
+            directory.tags.map { it.key }
+        }
+        return report.sensitiveFindings.mapNotNull { finding ->
+            if (finding.category != SensitivityCategory.Location) {
+                finding
+            } else {
+                finding.tagKeys.filterNot { it in blankGps }.takeIf { it.isNotEmpty() }?.let { finding.copy(tagKeys = it) }
+            }
+        }
+    }
+
     /** Every section id of [report], for "collapse all". */
     fun allSections(report: MetadataReport): Set<String> = buildSet {
         report.directories.forEach { add(it.id) }
@@ -132,16 +154,17 @@ object TagBrowserBuilder {
     ): TagBrowser {
         val needle = query.trim()
         val isFiltering = needle.isNotEmpty() || filter != null
-        val filterKeys = filter?.let { category ->
-            report.sensitiveFindings.firstOrNull { it.category == category }?.tagKeys?.toHashSet() ?: emptySet()
-        }
+        val findings = visibleFindings(report)
+        val sensitivity = HashMap<String, SensitivityCategory>()
+        findings.forEach { finding -> finding.tagKeys.forEach { sensitivity[it] = finding.category } }
+        val filterKeys = filter?.let { category -> findings.firstOrNull { it.category == category }?.tagKeys?.toHashSet() ?: emptySet() }
         val rows = ArrayList<BrowserRow>(report.tagCount + report.directories.size + 2)
         var matchingTags = 0
         var anyExpanded = false
 
         for (directory in report.directories) {
             val matches = directory.tags.mapNotNull { tag ->
-                if (filterKeys != null && tag.key !in filterKeys) null else matchTag(tag, directory, needle, mode)
+                if (filterKeys != null && tag.key !in filterKeys) null else matchTag(tag, directory, needle, mode, sensitivity[tag.key])
             }
             if (isFiltering && matches.isEmpty()) continue
             matchingTags += matches.size
@@ -194,7 +217,13 @@ object TagBrowserBuilder {
     }
 
     /** The row for [tag], or null when [needle] is set and matches none of its fields. */
-    private fun matchTag(tag: MetadataTag, directory: MetadataDirectory, needle: String, mode: ValueMode): TagRow? {
+    private fun matchTag(
+        tag: MetadataTag,
+        directory: MetadataDirectory,
+        needle: String,
+        mode: ValueMode,
+        sensitivity: SensitivityCategory?,
+    ): TagRow? {
         val shown = if (mode == ValueMode.Raw) tag.rawValue else tag.displayValue
         val other = if (mode == ValueMode.Raw) tag.displayValue else tag.rawValue
         val hexId = tag.hexId.orEmpty()
@@ -218,6 +247,7 @@ object TagBrowserBuilder {
             nameMatches = nameHits,
             valueMatches = valueHits,
             idMatches = idHits,
+            sensitivity = sensitivity,
             showId = tag.hexId != null && (mode == ValueMode.Raw || idHits.isNotEmpty()),
             otherMatch = otherMatch,
             isLast = false,
