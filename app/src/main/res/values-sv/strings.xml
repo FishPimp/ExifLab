@@ -9,15 +9,69 @@
     <!-- Common actions -->
     <string name="action_back">Tillbaka</string>
     <string name="action_close">Stäng</string>
+    <string name="action_cancel">Avbryt</string>
+    <string name="action_remove">Ta bort</string>
 
     <!-- Home -->
     <string name="home_tagline">Se vad dina bilder berättar, och bestäm vad de får behålla.</string>
     <string name="home_privacy_title">Dina bilder stannar på enheten</string>
     <string name="home_privacy_body">Ingen uppladdning, inga annonser, ingen spårning. Se hur ExifLab hanterar dina data.</string>
+    <string name="home_action_photos_title">Öppna bilder</string>
+    <string name="home_action_photos_body">Välj i galleriet med bildväljaren</string>
+    <string name="home_action_files_title">Öppna filer</string>
+    <string name="home_action_files_body">Bläddra bland filer, även RAW, och redigera dem där de ligger</string>
+    <string name="home_action_folders_title">Bläddra i mappar</string>
+    <string name="home_action_folders_body">Gå igenom hela mappar som du ger ExifLab åtkomst till</string>
+    <string name="home_recent">Senaste</string>
+    <string name="home_opening">Öppnar bilder</string>
+    <string name="home_no_picker">Det finns ingen app på enheten som kan välja filer.</string>
+
+    <!-- Photos -->
+    <string name="photo_untitled">Bild</string>
+    <string name="photo_description_read_only">%1$s, skrivskyddad</string>
+    <string name="photo_preview_description">Förhandsvisning av %1$s</string>
+    <string name="photo_read_only">Skrivskyddad</string>
+    <string name="photo_error_not_found">Bilden hittades inte. Den kan ha flyttats eller raderats.</string>
+    <string name="photo_error_permission">ExifLab har inte åtkomst till bilden. Öppna den igen för att fortsätta.</string>
+    <string name="photo_error_unsupported">Filen är inte en bild som ExifLab kan öppna.</string>
+    <string name="photo_error_read">Bilden kunde inte läsas.</string>
+    <string name="photo_error_write">Kopian kunde inte sparas.</string>
+    <string name="share_open_failed">ExifLab kunde inte öppna den delade bilden.</string>
+    <plurals name="photo_count">
+        <item quantity="one">%d bild</item>
+        <item quantity="other">%d bilder</item>
+    </plurals>
 
     <!-- Library -->
     <string name="library_empty_title">Inga mappar än</string>
     <string name="library_empty_body">Mappar som du ger ExifLab åtkomst till visas här, redo att bläddra i och redigera.</string>
+    <string name="library_add_folder">Lägg till mapp</string>
+    <string name="library_add_failed">ExifLab kunde inte få åtkomst till mappen.</string>
+    <string name="library_access_read_write">Visa och redigera</string>
+    <string name="library_access_read_only">Endast visning</string>
+    <string name="library_access_lost">Åtkomst förlorad</string>
+    <string name="library_access_lost_body">ExifLab kan inte längre öppna mappen. Ge åtkomst igen för att fortsätta bläddra i den.</string>
+    <string name="library_regrant">Ge åtkomst igen</string>
+    <string name="library_folder_options">Fler alternativ för %1$s</string>
+    <string name="library_remove_folder">Ta bort från biblioteket</string>
+    <string name="library_remove_title">Ta bort ”%1$s”?</string>
+    <string name="library_remove_body">ExifLab får inte längre åtkomst till mappen. Mappen och bilderna i den finns kvar på enheten, inget raderas.</string>
+
+    <!-- Folder browser -->
+    <string name="folder_section_folders">Mappar</string>
+    <string name="folder_section_photos">Bilder</string>
+    <string name="folder_loading">Läser in mappen</string>
+    <string name="folder_tile_description">%1$s, mapp</string>
+    <string name="folder_empty_title">Inga bilder här</string>
+    <string name="folder_empty_body">Mappen innehåller inga bilder eller undermappar som ExifLab kan öppna.</string>
+    <string name="folder_error_title">Mappen kan inte öppnas</string>
+    <string name="folder_error_access_body">ExifLab har inte längre åtkomst till den. Ge åtkomst igen från Biblioteket.</string>
+    <string name="folder_error_missing_body">Den kan ha flyttats, bytt namn eller raderats.</string>
+    <string name="folder_error_read_body">Något gick fel när den lästes. Försök igen senare.</string>
+    <plurals name="folder_count">
+        <item quantity="one">%d mapp</item>
+        <item quantity="other">%d mappar</item>
+    </plurals>
 
     <!-- History -->
     <string name="history_empty_title">Inget redigerat än</string>

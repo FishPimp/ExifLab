@@ -42,6 +42,7 @@ val ossComponents = listOf(
     OssComponent("MaterialKolor", "MIT License"),
     OssComponent("metadata-extractor", "Apache License 2.0"),
     OssComponent("Adobe XMP Core", "BSD 3-Clause License"),
+    OssComponent("Coil", "Apache License 2.0"),
     OssComponent("Bricolage Grotesque", "SIL Open Font License 1.1", "licenses/OFL-BricolageGrotesque.txt"),
     OssComponent("JetBrains Mono", "SIL Open Font License 1.1", "licenses/OFL-JetBrainsMono.txt"),
 )

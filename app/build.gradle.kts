@@ -89,12 +89,16 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.datastore.preferences)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.materialkolor)
 
     implementation(libs.compose.material3.navigation.suite)
     implementation(libs.compose.material3.adaptive)
     implementation(libs.compose.material3.adaptive.layout)
     implementation(libs.compose.material3.adaptive.navigation3)
+
+    implementation(libs.coil.compose)
+    implementation(libs.coil.core)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)

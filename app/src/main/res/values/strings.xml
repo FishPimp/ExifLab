@@ -11,15 +11,69 @@
     <!-- Common actions -->
     <string name="action_back">Back</string>
     <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_remove">Remove</string>
 
     <!-- Home -->
     <string name="home_tagline">See what your photos say, and decide what they keep.</string>
     <string name="home_privacy_title">Your photos stay on this device</string>
     <string name="home_privacy_body">No uploads, no ads, no tracking. See how ExifLab handles your data.</string>
+    <string name="home_action_photos_title">Open photos</string>
+    <string name="home_action_photos_body">Pick from your gallery with the photo picker</string>
+    <string name="home_action_files_title">Open files</string>
+    <string name="home_action_files_body">Browse files, RAW included, and edit them where they are</string>
+    <string name="home_action_folders_title">Browse folders</string>
+    <string name="home_action_folders_body">Work through whole folders you give ExifLab access to</string>
+    <string name="home_recent">Recent</string>
+    <string name="home_opening">Opening photos</string>
+    <string name="home_no_picker">No app on this device can pick files.</string>
+
+    <!-- Photos -->
+    <string name="photo_untitled">Photo</string>
+    <string name="photo_description_read_only">%1$s, read-only</string>
+    <string name="photo_preview_description">Preview of %1$s</string>
+    <string name="photo_read_only">Read-only</string>
+    <string name="photo_error_not_found">The photo could not be found. It may have been moved or deleted.</string>
+    <string name="photo_error_permission">ExifLab does not have access to this photo. Open it again to continue.</string>
+    <string name="photo_error_unsupported">This file is not a photo ExifLab can open.</string>
+    <string name="photo_error_read">The photo could not be read.</string>
+    <string name="photo_error_write">The copy could not be saved.</string>
+    <string name="share_open_failed">ExifLab could not open the shared photo.</string>
+    <plurals name="photo_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
 
     <!-- Library -->
     <string name="library_empty_title">No folders yet</string>
     <string name="library_empty_body">Folders you give ExifLab access to will show up here, ready to browse and edit.</string>
+    <string name="library_add_folder">Add folder</string>
+    <string name="library_add_failed">ExifLab could not get access to that folder.</string>
+    <string name="library_access_read_write">View and edit</string>
+    <string name="library_access_read_only">View only</string>
+    <string name="library_access_lost">Access lost</string>
+    <string name="library_access_lost_body">ExifLab can no longer open this folder. Grant access again to keep browsing it.</string>
+    <string name="library_regrant">Grant access again</string>
+    <string name="library_folder_options">More options for %1$s</string>
+    <string name="library_remove_folder">Remove from library</string>
+    <string name="library_remove_title">Remove “%1$s”?</string>
+    <string name="library_remove_body">ExifLab will no longer have access to this folder. The folder and its photos stay on your device; nothing is deleted.</string>
+
+    <!-- Folder browser -->
+    <string name="folder_section_folders">Folders</string>
+    <string name="folder_section_photos">Photos</string>
+    <string name="folder_loading">Loading folder</string>
+    <string name="folder_tile_description">%1$s, folder</string>
+    <string name="folder_empty_title">No photos here</string>
+    <string name="folder_empty_body">This folder has no photos or subfolders that ExifLab can open.</string>
+    <string name="folder_error_title">This folder cannot be opened</string>
+    <string name="folder_error_access_body">ExifLab no longer has access to it. Grant access again from the Library.</string>
+    <string name="folder_error_missing_body">It may have been moved, renamed or deleted.</string>
+    <string name="folder_error_read_body">Something went wrong while reading it. Try again later.</string>
+    <plurals name="folder_count">
+        <item quantity="one">%d folder</item>
+        <item quantity="other">%d folders</item>
+    </plurals>
 
     <!-- History -->
     <string name="history_empty_title">Nothing edited yet</string>
