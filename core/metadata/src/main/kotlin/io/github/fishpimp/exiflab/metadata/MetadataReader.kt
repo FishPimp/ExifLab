@@ -31,8 +31,8 @@ interface PreviewExtractor {
     fun extract(source: ImageSource, maxBytes: Int = 24 * 1024 * 1024): EmbeddedPreview?
 }
 
-/** Entry point for the app; implementations live in this module. */
+/** Entry point for the app; implementations live in this module. Both are stateless and thread-safe. */
 object Metadata {
-    val reader: MetadataReader get() = TODO("Implemented in M1 read engine")
-    val previewExtractor: PreviewExtractor get() = TODO("Implemented in M1 read engine")
+    val reader: MetadataReader = DefaultMetadataReader()
+    val previewExtractor: PreviewExtractor = DefaultPreviewExtractor()
 }

@@ -40,6 +40,8 @@ val ossComponents = listOf(
     OssComponent("AndroidX and Jetpack Compose", "Apache License 2.0"),
     OssComponent("Kotlin and kotlinx libraries", "Apache License 2.0"),
     OssComponent("MaterialKolor", "MIT License"),
+    OssComponent("metadata-extractor", "Apache License 2.0"),
+    OssComponent("Adobe XMP Core", "BSD 3-Clause License"),
     OssComponent("Bricolage Grotesque", "SIL Open Font License 1.1", "licenses/OFL-BricolageGrotesque.txt"),
     OssComponent("JetBrains Mono", "SIL Open Font License 1.1", "licenses/OFL-JetBrainsMono.txt"),
 )
