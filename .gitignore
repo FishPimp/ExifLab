@@ -12,3 +12,6 @@ build/
 *.aab
 *.keystore
 *.jks
+
+# Agent worktrees
+/.claude/worktrees/
