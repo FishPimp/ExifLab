@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Navigation -->
+    <string name="nav_home">Hem</string>
+    <string name="nav_library">Bibliotek</string>
+    <string name="nav_history">Historik</string>
+    <string name="nav_settings">Inställningar</string>
+
+    <!-- Common actions -->
+    <string name="action_back">Tillbaka</string>
+    <string name="action_close">Stäng</string>
+
+    <!-- Home -->
+    <string name="home_tagline">Se vad dina bilder berättar, och bestäm vad de får behålla.</string>
+    <string name="home_privacy_title">Dina bilder stannar på enheten</string>
+    <string name="home_privacy_body">Ingen uppladdning, inga annonser, ingen spårning. Se hur ExifLab hanterar dina data.</string>
+
+    <!-- Library -->
+    <string name="library_empty_title">Inga mappar än</string>
+    <string name="library_empty_body">Mappar som du ger ExifLab åtkomst till visas här, redo att bläddra i och redigera.</string>
+
+    <!-- History -->
+    <string name="history_empty_title">Inget redigerat än</string>
+    <string name="history_empty_body">Varje ändring du sparar listas här, och originalet sparas så att du kan återställa det.</string>
+
+    <!-- Settings -->
+    <string name="settings_section_appearance">Utseende</string>
+    <string name="settings_section_language">Språk</string>
+    <string name="settings_section_about">Om</string>
+    <string name="settings_theme">Tema</string>
+    <string name="settings_theme_system">System</string>
+    <string name="settings_theme_light">Ljust</string>
+    <string name="settings_theme_dark">Mörkt</string>
+    <string name="settings_dynamic_color">Bakgrundsfärger</string>
+    <string name="settings_dynamic_color_body">Anpassa appen efter färgerna i din bakgrundsbild</string>
+    <string name="settings_palette">Färgpalett</string>
+    <string name="settings_contrast">Kontrast</string>
+    <string name="settings_contrast_body">Högre kontrast gör text och kontroller lättare att urskilja</string>
+    <string name="settings_contrast_system">System</string>
+    <string name="settings_contrast_standard">Standard</string>
+    <string name="settings_contrast_medium">Medel</string>
+    <string name="settings_contrast_high">Hög</string>
+    <string name="settings_language">Appens språk</string>
+    <string name="settings_language_system">System</string>
+    <string name="settings_privacy_body">Vad ExifLab gör, och inte gör, med dina data</string>
+    <string name="settings_version">Version</string>
+
+    <string name="palette_lagoon">Lagun</string>
+    <string name="palette_citrus">Citrus</string>
+    <string name="palette_ember">Glöd</string>
+    <string name="palette_iris">Iris</string>
+    <string name="palette_moss">Mossa</string>
+    <string name="palette_graphite">Grafit</string>
+
+    <!-- Privacy -->
+    <string name="privacy_title">Integritet</string>
+    <string name="privacy_subtitle">Så hanterar ExifLab dina bilder</string>
+    <string name="privacy_offline_title">Offline från grunden</string>
+    <string name="privacy_offline_body">ExifLab läser och redigerar dina bilder på den här enheten. Bilderna och deras metadata laddas aldrig upp någonstans.</string>
+    <string name="privacy_tracking_title">Inga annonser, ingen analys eller spårning</string>
+    <string name="privacy_tracking_body">Det finns inga annonser, ingen analys, ingen kraschrapportering och inga konton. ExifLab samlar inte in något om dig eller hur du använder appen.</string>
+    <string name="privacy_network_title">Det här använder internet</string>
+    <string name="privacy_network_body">Bara två funktioner går ut på nätet, och bara medan du använder dem: kartbilder från OpenFreeMap (OpenStreetMap-data) när en karta visas, och platssökning från Photon (Komoot) när du söker efter en plats. Förfrågningarna innehåller ett kartområde eller din söktext, aldrig dina bilder. Offlineläget stänger av båda.</string>
+    <string name="privacy_files_title">Bara filerna du väljer</string>
+    <string name="privacy_files_body">ExifLab kan bara öppna bilder som du väljer, bilder som delas till appen och mappar som du ger åtkomst till. Du kan ta bort mappåtkomsten när som helst.</string>
+    <string name="privacy_backups_title">Säkerhetskopior stannar på enheten</string>
+    <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen.</string>
+    <string name="privacy_permissions_title">Behörigheter</string>
+    <string name="privacy_permissions_body">Bilder och mappar öppnas via systemets bildväljare och mappåtkomst. Aviseringar visar förloppet för batchredigeringar. Internet används bara för kartor och platssökning.</string>
+
+    <!-- Licenses -->
+    <string name="licenses_title">Licenser för öppen källkod</string>
+</resources>
