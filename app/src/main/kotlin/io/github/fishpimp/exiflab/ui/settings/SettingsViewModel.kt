@@ -30,6 +30,7 @@ class SettingsViewModel(private val repository: SettingsRepository) : ViewModel(
     fun setDynamicColor(enabled: Boolean) = viewModelScope.launch { repository.setDynamicColor(enabled) }
     fun setPalette(palette: BrandPalette) = viewModelScope.launch { repository.setPalette(palette) }
     fun setContrast(contrast: ContrastPreference) = viewModelScope.launch { repository.setContrast(contrast) }
+    fun setOfflineMode(enabled: Boolean) = viewModelScope.launch { repository.setOfflineMode(enabled) }
 
     fun setLanguage(language: AppLanguage) {
         _language.value = language

@@ -82,6 +82,7 @@
     <!-- Settings -->
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_language">Language</string>
+    <string name="settings_section_privacy">Privacy and network</string>
     <string name="settings_section_about">About</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_system">System</string>
@@ -101,6 +102,8 @@
     <string name="settings_language_english" translatable="false">English</string>
     <string name="settings_language_swedish" translatable="false">Svenska</string>
     <string name="settings_privacy_body">What ExifLab does, and does not do, with your data</string>
+    <string name="settings_offline_mode">Offline mode</string>
+    <string name="settings_offline_mode_body">Turns off the map and place search, so ExifLab never connects to the internet. Everything else keeps working.</string>
     <string name="settings_version">Version</string>
 
     <string name="palette_lagoon">Lagoon</string>
@@ -118,14 +121,45 @@
     <string name="privacy_tracking_title">No ads, analytics or tracking</string>
     <string name="privacy_tracking_body">There are no ads, no analytics, no crash reporting and no accounts. ExifLab collects nothing about you or how you use it.</string>
     <string name="privacy_network_title">What uses the internet</string>
-    <string name="privacy_network_body">Only two features go online, and only while you use them: map tiles from OpenFreeMap (OpenStreetMap data) when a map is shown, and place search from Photon (Komoot) when you search for a place. These requests contain a map area or your search text, never your photos. Offline mode turns both off.</string>
+    <string name="privacy_network_body">Only two features go online, and only while you use them. These are the only servers ExifLab ever contacts, and requests carry a map area or your search text, never your photos or their metadata.</string>
+    <string name="privacy_network_tiles">Map tiles from OpenFreeMap, with OpenStreetMap data, when a map is shown</string>
+    <string name="privacy_network_search">Place search by Photon (Komoot), when you search for a place</string>
+    <string name="privacy_network_offline">Offline mode in Settings turns both off.</string>
     <string name="privacy_files_title">Only the files you choose</string>
     <string name="privacy_files_body">ExifLab can only open photos you pick, photos shared to it, and folders you grant access to. You can remove folder access at any time.</string>
     <string name="privacy_backups_title">Backups stay on your device</string>
     <string name="privacy_backups_body">Before a photo is changed, the original is copied to ExifLab\'s private storage so you can restore it. Backups are deleted after 30 days, or when you uninstall the app.</string>
     <string name="privacy_permissions_title">Permissions</string>
-    <string name="privacy_permissions_body">Photos and folders are opened through the system photo picker and folder access. Notifications show the progress of batch edits. Internet access is used for maps and place search only.</string>
+    <string name="privacy_permissions_body">Photos and folders are opened through the system photo picker and folder access. Notifications show the progress of batch edits. Internet access is used for maps and place search only, and network status only to tell whether you are online. ExifLab never asks for your location.</string>
 
     <!-- Licenses -->
     <string name="licenses_title">Open-source licenses</string>
+    <string name="licenses_section_libraries">Libraries and fonts</string>
+    <string name="licenses_section_map">Map data and styles</string>
+
+    <!-- Map -->
+    <string name="map_title">Map</string>
+    <string name="map_description">Map showing %1$s</string>
+    <string name="map_description_no_location">Map without a location</string>
+    <string name="map_action_open">Open map</string>
+    <string name="map_action_zoom_in">Zoom in</string>
+    <string name="map_action_zoom_out">Zoom out</string>
+    <string name="map_action_pin_center">Place pin at map center</string>
+    <string name="map_note_offline">Map off in offline mode</string>
+    <string name="map_note_no_connection">No internet connection</string>
+    <string name="map_note_unavailable">Map not available on this device</string>
+    <string name="map_attribution">OpenFreeMap © OpenMapTiles © OpenStreetMap contributors</string>
+    <string name="map_credits_action">Show map credits</string>
+    <string name="map_credits_title">Map data</string>
+    <string name="map_credit_openfreemap" translatable="false">OpenFreeMap</string>
+    <string name="map_credit_openfreemap_role">Map tiles and map styles</string>
+    <string name="map_credit_openmaptiles" translatable="false">© OpenMapTiles</string>
+    <string name="map_credit_openmaptiles_role">Vector tile schema and map design</string>
+    <string name="map_credit_openstreetmap">© OpenStreetMap contributors</string>
+    <string name="map_credit_openstreetmap_role">Map data, available under the Open Database License</string>
+    <string name="map_coordinates">Coordinates</string>
+    <string name="map_copy_coordinates">Copy coordinates</string>
+    <string name="map_coordinates_copied">Coordinates copied</string>
+    <string name="map_open_in_other_app">Open in another app</string>
+    <string name="map_no_app">No app on this device can show the location.</string>
 </resources>

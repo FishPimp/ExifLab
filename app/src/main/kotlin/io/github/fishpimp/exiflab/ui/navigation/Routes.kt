@@ -40,6 +40,13 @@ sealed interface Route : NavKey {
      * @property title The folder name, shown before its content loads.
      */
     @Serializable data class Folder(val folderTreeUri: String, val documentUri: String, val title: String) : Route
+
+    /**
+     * A full-screen, interactive map of one location.
+     *
+     * @property title shown in the top bar and as the label in other map apps, e.g. the photo name.
+     */
+    @Serializable data class MapView(val latitude: Double, val longitude: Double, val title: String? = null) : Route
 }
 
 /** The route that shows [refs]: the photo itself for one, a selection grid for several. */

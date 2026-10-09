@@ -17,6 +17,11 @@ enum class AppLanguage(val tag: String?) {
             return entries.firstOrNull { it.tag == language } ?: System
         }
 
+        /** The language the app shows right now: the in-app choice, else the system language. */
+        fun resolvedLanguageCode(): String? =
+            AppCompatDelegate.getApplicationLocales()[0]?.language
+                ?: LocaleListCompat.getAdjustedDefault()[0]?.language
+
         fun apply(language: AppLanguage) {
             val locales = language.tag?.let { LocaleListCompat.forLanguageTags(it) }
                 ?: LocaleListCompat.getEmptyLocaleList()

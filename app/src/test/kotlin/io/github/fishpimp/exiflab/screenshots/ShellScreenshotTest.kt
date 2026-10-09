@@ -45,7 +45,7 @@ class ShellScreenshotTest {
     private fun SettingsUnderTest() = SettingsContent(
         settings = AppSettings(dynamicColor = false),
         language = AppLanguage.System,
-        onThemeMode = {}, onDynamicColor = {}, onPalette = {}, onContrast = {}, onLanguage = {},
+        onThemeMode = {}, onDynamicColor = {}, onPalette = {}, onContrast = {}, onLanguage = {}, onOfflineMode = {},
         onOpenPrivacy = {}, onOpenLicenses = {},
     )
 }
