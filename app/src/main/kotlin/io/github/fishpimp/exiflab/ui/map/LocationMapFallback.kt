@@ -51,9 +51,10 @@ internal enum class MapNote(val icon: ImageVector, @param:StringRes val text: In
 }
 
 /**
- * A map-like surface drawn entirely in Compose: a graticule over soft contour lines, the pin at
- * the center, and the coordinates. Shown in offline mode, without a connection, in previews and
- * tests, and on devices that cannot render MapLibre. Nothing here touches the network.
+ * A map-like surface drawn entirely in Compose: a graticule over soft contour lines, the pin in
+ * the middle of the space the chips leave, a note on why the real map is off, and the
+ * coordinates. Shown in offline mode, without a connection, in previews and tests, and on devices
+ * that cannot render MapLibre. Nothing here touches the network.
  *
  * @param note why the real map is not shown, or null to say nothing (previews, loading).
  * @param showCoordinates shows the coordinates in a chip; hosts that show them elsewhere turn it off.

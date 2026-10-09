@@ -49,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
 import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
@@ -171,7 +172,7 @@ private fun CoordinatesBar(location: LatLng, modifier: Modifier = Modifier) {
  */
 private fun Context.openInMapApp(location: LatLng, label: String): Boolean {
     val point = location.formatted(COPY_DECIMALS).replace(" ", "")
-    val uri = Uri.parse("geo:$point?q=${Uri.encode("$point($label)")}")
+    val uri = "geo:$point?q=${Uri.encode("$point($label)")}".toUri()
     return try {
         startActivity(Intent(Intent.ACTION_VIEW, uri))
         true

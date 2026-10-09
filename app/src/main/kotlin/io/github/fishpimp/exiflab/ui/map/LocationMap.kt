@@ -71,11 +71,13 @@ fun LocationMap(
     ).joinToString(separator = ". ")
     val openLabel = stringResource(R.string.map_action_open)
     val palette = rememberMapPalette()
+    val live = availability == MapAvailability.Live && !failed
 
     Box(
         modifier
             .clip(shape)
-            .background(palette.sketchSurface)
+            // Matches MapLibre's loading color, so the first frame does not flash.
+            .background(if (live) palette.land else palette.sketchSurface)
             .then(
                 if (isInteractive) {
                     Modifier
@@ -94,7 +96,7 @@ fun LocationMap(
                 },
             ),
     ) {
-        if (availability == MapAvailability.Live && !failed) {
+        if (live) {
             LiveLocationMap(
                 marker = position,
                 interactive = isInteractive,

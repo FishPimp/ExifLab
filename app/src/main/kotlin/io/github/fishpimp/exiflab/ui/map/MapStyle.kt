@@ -18,6 +18,10 @@ import org.maplibre.geojson.Point
 /**
  * OpenFreeMap's own Positron (light) and Dark styles, bundled so no style request is needed.
  * Their tiles, sprites and glyphs still come from tiles.openfreemap.org.
+ *
+ * Source: styles/positron and styles/dark in github.com/hyperknot/openfreemap-styles (MIT; designs
+ * CC BY 4.0 from OpenMapTiles), with the `__TILEJSON_DOMAIN__` placeholder replaced by
+ * tiles.openfreemap.org, as OpenFreeMap serves them, and the unused shaded-relief source removed.
  */
 internal object MapStyles {
     private const val LIGHT = "asset://map/openfreemap-positron.json"
