@@ -59,5 +59,6 @@ internal fun mapPalette(scheme: ColorScheme, dark: Boolean): MapPalette = MapPal
     sketchSurface = scheme.surfaceContainerHigh,
     sketchGrid = scheme.outlineVariant.copy(alpha = if (dark) 0.45f else 0.6f),
     sketchContour = lerp(scheme.outlineVariant, scheme.primary, 0.25f).copy(alpha = if (dark) 0.55f else 0.7f),
-    sketchHill = scheme.primaryContainer.copy(alpha = if (dark) 0.35f else 0.45f),
+    // Two overlapping fills shade the hilltop; a light touch of primary keeps it from reading as water.
+    sketchHill = scheme.primary.copy(alpha = if (dark) 0.10f else 0.08f),
 )

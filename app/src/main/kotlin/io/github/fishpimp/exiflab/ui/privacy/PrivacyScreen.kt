@@ -31,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -143,12 +145,17 @@ private fun HostRow(icon: ImageVector, host: String, purpose: String) {
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(12.dp).semantics(mergeDescendants = true) { },
+            modifier = Modifier.padding(12.dp).clearAndSetSemantics { contentDescription = "$host, $purpose" },
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(host, style = ExifLabTheme.extendedTypography.monoMedium, color = MaterialTheme.colorScheme.onSurface)
+                // Large text wraps after a dot instead of mid-word.
+                Text(
+                    host.replace(".", ".\u200B"),
+                    style = ExifLabTheme.extendedTypography.monoMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
                 Text(purpose, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }

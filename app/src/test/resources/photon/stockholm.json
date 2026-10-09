@@ -1,0 +1,61 @@
+{
+  "features": [
+    {
+      "geometry": {"coordinates": [18.0710935, 59.3251172], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R", "osm_id": 398021, "extent": [17.7607919, 59.4249077, 18.1999257, 59.2244383],
+        "country": "Sverige", "osm_key": "place", "countrycode": "SE", "osm_value": "city",
+        "name": "Stockholm", "county": "Stockholms kommun", "state": "Stockholms län", "type": "city"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0710935, 59.3251172], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "N", "osm_id": 50272301, "country": "Sverige", "osm_key": "place", "countrycode": "SE",
+        "osm_value": "city", "name": "Stockholm", "county": "Stockholms kommun", "state": "Stockholms län", "type": "city"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0582745, 59.3302285], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 46356931, "country": "Sverige", "city": "Stockholm", "countrycode": "SE",
+        "postcode": "111 20", "county": "Stockholms kommun", "type": "house", "osm_key": "railway",
+        "housenumber": "15", "street": "Centralplan", "district": "Norrmalm", "osm_value": "station",
+        "name": "Stockholm Centralstation", "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [17.9237, 59.6519], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 23395613, "extent": [17.8840271, 59.6719447, 17.9640358, 59.6305081],
+        "country": "Sverige", "city": "Sigtuna", "countrycode": "SE", "postcode": "190 45",
+        "county": "Sigtuna kommun", "type": "house", "osm_key": "aeroway", "osm_value": "aerodrome",
+        "name": "Stockholm Arlanda flygplats", "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0636, 59.4452], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 28349421, "extent": [18.0601, 59.4471, 18.0672, 59.4433],
+        "country": "Sverige", "city": "Täby", "countrycode": "SE", "postcode": "183 30",
+        "county": "Täby kommun", "type": "street", "osm_key": "highway", "osm_value": "residential",
+        "name": "Stockholmsvägen", "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.3394, 59.4917], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R", "osm_id": 54391, "extent": [17.2421, 60.2072, 19.6372, 58.7128],
+        "country": "Sverige", "osm_key": "boundary", "countrycode": "SE", "osm_value": "administrative",
+        "name": "Stockholms län", "type": "state"
+      }
+    }
+  ],
+  "type": "FeatureCollection"
+}

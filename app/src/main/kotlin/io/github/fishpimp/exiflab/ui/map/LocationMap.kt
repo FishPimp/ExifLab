@@ -9,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
@@ -145,8 +146,12 @@ internal enum class MapAvailability {
     Preview,
 }
 
+/** Lets screenshot tests show a given state, such as offline mode, without the app graph. */
+internal val LocalMapAvailabilityOverride = staticCompositionLocalOf<MapAvailability?> { null }
+
 @Composable
 private fun rememberMapAvailability(): MapAvailability {
+    LocalMapAvailabilityOverride.current?.let { return it }
     if (LocalInspectionMode.current) return MapAvailability.Preview
     val context = LocalContext.current
     val graph = remember(context) { (context.applicationContext as? ExifLabApplication)?.graph }

@@ -20,7 +20,7 @@ import org.maplibre.android.maps.MapView
 internal fun MapViewLifecycle(mapView: MapView) {
     val context = LocalContext.current
     val lifecycle = LocalLifecycleOwner.current.lifecycle
-    val stepper = remember(mapView) { MapLifecycleStepper(mapView) }
+    val stepper = remember(mapView) { MapLifecycleStepper(MapViewCallbacks(mapView)) }
 
     DisposableEffect(mapView) {
         val observer = LifecycleEventObserver { _, event ->
@@ -50,8 +50,28 @@ internal fun MapViewLifecycle(mapView: MapView) {
     }
 }
 
-/** Moves a [MapView] between lifecycle states one step at a time. Starts out created. */
-internal class MapLifecycleStepper(private val mapView: MapView) {
+/** The lifecycle calls a map view needs, in the order MapLibre expects them. */
+internal interface MapLifecycleCallbacks {
+    fun onStart()
+    fun onResume()
+    fun onPause()
+    fun onStop()
+    fun onDestroy()
+}
+
+private class MapViewCallbacks(private val mapView: MapView) : MapLifecycleCallbacks {
+    override fun onStart() = mapView.onStart()
+    override fun onResume() = mapView.onResume()
+    override fun onPause() = mapView.onPause()
+    override fun onStop() = mapView.onStop()
+    override fun onDestroy() = mapView.onDestroy()
+}
+
+/**
+ * Moves a map view between lifecycle states one step at a time, so it never sees resume without
+ * start or destroy without stop. Starts out created; once destroyed it stays destroyed.
+ */
+internal class MapLifecycleStepper(private val mapView: MapLifecycleCallbacks) {
     var state: Lifecycle.State = Lifecycle.State.CREATED
         private set
 

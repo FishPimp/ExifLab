@@ -1,0 +1,44 @@
+{
+  "features": [
+    {
+      "geometry": {"coordinates": [18.0662196, 59.3313426], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "N", "osm_id": 2532153012, "country": "Sverige", "city": "Stockholm", "countrycode": "SE",
+        "postcode": "111 51", "county": "Stockholms kommun", "type": "house", "osm_key": "place",
+        "housenumber": "12", "street": "Drottninggatan", "district": "Norrmalm", "osm_value": "house",
+        "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0642, 59.3326], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 24992364, "country": "Sverige", "city": "Stockholm", "countrycode": "SE",
+        "postcode": "111 51", "county": "Stockholms kommun", "type": "house", "osm_key": "amenity",
+        "housenumber": "3", "street": "Sergels torg", "district": "Norrmalm", "osm_value": "arts_centre",
+        "name": "Kulturhuset Stadsteatern", "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0665, 59.3335], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 4074537, "extent": [18.0581, 59.3384, 18.0716, 59.3277],
+        "country": "Sverige", "city": "Stockholm", "countrycode": "SE", "county": "Stockholms kommun",
+        "type": "street", "osm_key": "highway", "osm_value": "pedestrian", "district": "Norrmalm",
+        "name": "Drottninggatan", "state": "Stockholms län"
+      }
+    },
+    {
+      "geometry": {"coordinates": [18.0675, 59.3349], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R", "osm_id": 1606424, "country": "Sverige", "city": "Stockholm", "countrycode": "SE",
+        "county": "Stockholms kommun", "type": "district", "osm_key": "place", "osm_value": "suburb",
+        "name": "Norrmalm", "state": "Stockholms län"
+      }
+    }
+  ],
+  "type": "FeatureCollection"
+}
