@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -101,6 +102,7 @@ private val RowCorner = 4.dp
 private val RowGap = 2.dp
 private const val COLLAPSED_VALUE_LINES = 8
 private const val NAME_COLUMN_WEIGHT = 0.38f
+private const val RESULTS_END_FRACTION = 0.8f
 
 /** List width from which tag rows put the name next to the value. */
 val WIDE_ROWS_MIN_WIDTH = 560.dp
@@ -159,6 +161,13 @@ fun LazyListScope.tagBrowser(
                 is TagRow -> TagRowItem(row, mode, wideRows, callbacks, itemModifier)
                 is WarningRow -> WarningRowItem(row, itemModifier)
             }
+        }
+    }
+    if (browser?.isFiltering == true) {
+        // Room below short result lists, so the search field stays put while typing instead of
+        // sliding down as the list runs out of content to scroll.
+        item(key = "browser-results-end", contentType = "browser-results-end") {
+            Spacer(Modifier.fillParentMaxHeight(RESULTS_END_FRACTION))
         }
     }
 }

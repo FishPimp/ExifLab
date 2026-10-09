@@ -391,7 +391,7 @@ fun PhotoFacts(ref: PhotoRef, report: MetadataReport, modifier: Modifier = Modif
             icon = Icons.AutoMirrored.Rounded.InsertDriveFile,
             shape = MaterialShapes.Arch,
             label = stringResource(R.string.photo_file),
-            value = ref.displayName ?: report.fileName ?: stringResource(R.string.photo_untitled),
+            value = breakableFileName(ref.displayName ?: report.fileName ?: stringResource(R.string.photo_untitled)),
             supporting = listOf(
                 listOfNotNull(report.format.displayName, sizeText, summary.colorProfile).joinToString(SEPARATOR),
             ),
