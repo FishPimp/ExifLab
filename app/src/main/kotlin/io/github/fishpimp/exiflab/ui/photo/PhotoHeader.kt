@@ -47,9 +47,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -105,7 +105,7 @@ fun PhotoPreview(
                 .heightIn(max = maxHeight)
                 .aspectRatio(ratio ?: DEFAULT_PREVIEW_RATIO)
                 .clip(shape)
-                .clickable(onClickLabel = openLabel, role = Role.Image, onClick = onOpen),
+                .clickable(onClickLabel = openLabel, role = Role.Button, onClick = onOpen),
         ) {
             PhotoThumbnail(
                 ref = ref,
@@ -203,7 +203,7 @@ fun SpecGrid(summary: PhotoSummary, modifier: Modifier = Modifier) {
 
 @Composable
 private fun specTiles(summary: PhotoSummary): Pair<List<SpecTile>, List<SpecTile>> {
-    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    val locale = LocalLocale.current.platformLocale
     val aperture = summary.fNumber?.let { ExposureFormat.fNumber(it, locale) }?.let {
         SpecTile(Icons.Rounded.Camera, stringResource(R.string.photo_spec_aperture), stringResource(R.string.photo_value_aperture, it))
     }
@@ -366,7 +366,7 @@ private fun SpecTileView(
 /** When the photo was taken and what the file is. */
 @Composable
 fun PhotoFacts(ref: PhotoRef, report: MetadataReport, modifier: Modifier = Modifier) {
-    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    val locale = LocalLocale.current.platformLocale
     val summary = report.summary
     Column(modifier, verticalArrangement = Arrangement.spacedBy(16.dp)) {
         summary.capturedAt?.let { local ->

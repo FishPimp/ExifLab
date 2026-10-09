@@ -136,7 +136,7 @@ fun PhotoScreen(
         ref = ref,
         state = state,
         query = viewModel.query,
-        actions = remember(viewModel, onBack) {
+        actions = remember(viewModel, onBack, createCopy, openOriginal, report?.fileName) {
             PhotoActions(
                 onBack = onBack,
                 onRetry = viewModel::reload,
@@ -146,11 +146,13 @@ fun PhotoScreen(
                 onClearFilter = viewModel::clearFilter,
                 onToggleSection = viewModel::toggleSection,
                 onSetAllExpanded = viewModel::setAllExpanded,
+                onSaveCopy = {
+                    val suggestedName = ref.displayName ?: report?.fileName ?: resources.getString(R.string.photo_untitled)
+                    launchPicker { createCopy.launch(suggestedName) }
+                },
+                onOpenOriginal = { launchPicker { openOriginal.launch(PhotoFormats.documentPickerMimeTypes) } },
             )
-        }.copy(
-            onSaveCopy = { launchPicker { createCopy.launch(ref.displayName ?: report?.fileName ?: resources.getString(R.string.photo_untitled)) } },
-            onOpenOriginal = { launchPicker { openOriginal.launch(PhotoFormats.documentPickerMimeTypes) } },
-        ),
+        },
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
@@ -242,7 +244,7 @@ private fun LoadedPhoto(
     val findings = remember(report) { TagBrowserBuilder.visibleFindings(report) }
     val filterCount = state.filter?.let { category -> findings.firstOrNull { it.category == category }?.tagKeys?.size } ?: 0
 
-    val browserCallbacks = remember(actions, copier, state.mode) {
+    val browserCallbacks = remember(actions, copier) {
         TagBrowserCallbacks(
             onQueryChange = actions.onQueryChange,
             onModeChange = actions.onModeChange,
