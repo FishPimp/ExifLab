@@ -44,21 +44,30 @@ sealed interface EditOperation {
         val alsoModifyDate: Boolean = false,
     ) : EditOperation
 
-    /** Moves every capture/creation date field by [by] (positive or negative), keeping offsets. */
+    /**
+     * Moves every capture/creation/modification date field by [by] (positive or negative), keeping
+     * offsets and sub-seconds. GPS date and time stamps move too, so they stay consistent with the
+     * corrected clock. Warns when the file has no date.
+     */
     data class ShiftCaptureTime(val by: Duration) : EditOperation
 
     /**
      * Fixes a camera clock that was set to the wrong time zone: the recorded local times are read
      * as [cameraZone] wall-clock times and rewritten as [actualZone] wall-clock times for the same
      * instant (daylight saving resolved for each photo's own date). Offset tags are set to the
-     * [actualZone] offset.
+     * [actualZone] offset. A wall time inside a daylight saving gap of [cameraZone] is moved
+     * forward by the gap; an ambiguous one takes the earlier offset. GPS time stamps (UTC) stay.
      */
     data class ChangeTimeZone(val cameraZone: ZoneId, val actualZone: ZoneId) : EditOperation
 
     /** Records the UTC offset without changing the local times. */
     data class SetUtcOffset(val offset: ZoneOffset) : EditOperation
 
-    /** Sets GPS position (EXIF GPS IFD and XMP exif:GPS*), optionally altitude. */
+    /**
+     * Sets GPS position (EXIF GPS IFD and XMP exif:GPS*), optionally altitude. Without an altitude
+     * an existing one is kept only while the position stays the same. Coordinates out of range
+     * produce a warning and no change.
+     */
     data class SetLocation(val latitude: Double, val longitude: Double, val altitudeMeters: Double? = null) : EditOperation
 
     /** Removes GPS data from EXIF and XMP and, when [includePlaceNames], city/country fields too. */
