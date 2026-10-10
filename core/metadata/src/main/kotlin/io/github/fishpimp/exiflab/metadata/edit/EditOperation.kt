@@ -21,8 +21,17 @@ sealed interface EditOperation {
     /** Removes one EXIF tag. */
     data class RemoveExifTag(val ifd: ExifIfd, val tag: Int) : EditOperation
 
-    /** Escape hatch for edits that are already expressed as low-level changes (XMP/IPTC fields). */
-    data class Raw(val changes: MetadataChanges, val description: String) : EditOperation
+    /**
+     * Escape hatch for edits that are already expressed as low-level changes (XMP/IPTC fields).
+     * [syncExisting] holds companion changes that only apply where the field already exists, so
+     * an edit can keep an existing copy in another block in sync (dc:title and IPTC Object Name)
+     * without creating that block. Removals in it always apply.
+     */
+    data class Raw(
+        val changes: MetadataChanges,
+        val description: String,
+        val syncExisting: MetadataChanges = MetadataChanges(),
+    ) : EditOperation
 
     /**
      * Sets the capture time. Updates DateTimeOriginal, DateTimeDigitized (CreateDate), SubSec*,
@@ -55,8 +64,17 @@ sealed interface EditOperation {
     /** Removes GPS data from EXIF and XMP and, when [includePlaceNames], city/country fields too. */
     data class RemoveLocation(val includePlaceNames: Boolean = true) : EditOperation
 
-    /** Sets (or clears, with null) the author and copyright in EXIF, XMP (dc:creator, dc:rights) and IPTC. */
-    data class SetAuthorship(val artist: String?, val copyright: String?) : EditOperation
+    /**
+     * Sets (or clears, with null) the author and copyright in EXIF, XMP (dc:creator, dc:rights) and IPTC.
+     * With [changeArtist] or [changeCopyright] false that half is left as it is, so one of the two
+     * can be edited on its own.
+     */
+    data class SetAuthorship(
+        val artist: String?,
+        val copyright: String?,
+        val changeArtist: Boolean = true,
+        val changeCopyright: Boolean = true,
+    ) : EditOperation
 
     /** Removes the metadata of the given categories. */
     data class Strip(val categories: Set<StripCategory>) : EditOperation
