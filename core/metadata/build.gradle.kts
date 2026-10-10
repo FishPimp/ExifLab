@@ -26,4 +26,7 @@ dependencies {
 tasks.test {
     // The opt-in real-world sample test (RealWorldSamplesTest) reads EXIFLAB_SAMPLES_DIR; rerun when it changes.
     inputs.property("exiflabSamplesDir", providers.environmentVariable("EXIFLAB_SAMPLES_DIR").orElse(""))
+    // Optional output directory for the files the sample writer test produces.
+    inputs.property("exiflabSamplesOut", providers.environmentVariable("EXIFLAB_SAMPLES_OUT").orElse(""))
+    inputs.property("exiflabWriteTestOut", providers.environmentVariable("EXIFLAB_WRITE_TEST_OUT").orElse(""))
 }
