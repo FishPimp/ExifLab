@@ -333,8 +333,8 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         state.setExif(ExifIfd.Gps, ExifTags.GPS_MAP_DATUM, ExifValue.Ascii("WGS-84"))
 
         if (state.hasXmp) {
-            state.setXmp(xmpExif("GPSLatitude"), XmpShape.Simple, listOf(ExifToXmp.formatCoordinate(latitudeDms, latitudeRef[0])!!))
-            state.setXmp(xmpExif("GPSLongitude"), XmpShape.Simple, listOf(ExifToXmp.formatCoordinate(longitudeDms, longitudeRef[0])!!))
+            setXmpCoordinate(xmpExif("GPSLatitude"), latitudeDms, latitudeRef[0])
+            setXmpCoordinate(xmpExif("GPSLongitude"), longitudeDms, longitudeRef[0])
             if (altitude != null) {
                 state.setXmp(xmpExif("GPSAltitude"), XmpShape.Simple, listOf(altitudeRational.toString()))
                 state.setXmp(xmpExif("GPSAltitudeRef"), XmpShape.Simple, listOf(if (altitude < 0) "1" else "0"))
@@ -343,6 +343,15 @@ internal class PlanSteps(private val state: WorkingMetadata) {
                 state.removeXmp(xmpExif("GPSAltitudeRef"))
             }
         }
+    }
+
+    /** Writes an XMP coordinate ("59,19.7520N") unless the existing one is the same position written differently. */
+    private fun setXmpCoordinate(name: XmpName, dms: List<Rational>, ref: Char) {
+        val text = ExifToXmp.formatCoordinate(dms, ref) ?: return
+        val existing = GpsCoordinates.parseXmp(state.xmpValue(name))
+        val target = GpsCoordinates.parseXmp(text)
+        if (existing != null && target != null && abs(existing - target) <= SAME_POSITION) return
+        state.setXmp(name, XmpShape.Simple, listOf(text))
     }
 
     /** The EXIF GPS position in the working copy, or null when absent or unreadable. */
@@ -445,14 +454,19 @@ internal class PlanSteps(private val state: WorkingMetadata) {
     private fun stripAll() {
         val orientation = state.exifRaw(ExifIfd.Primary, ExifTags.ORIENTATION)?.trim()?.toIntOrNull()?.takeIf { it in 1..8 }
             ?: state.xmpValue(XmpName(XmpNs.TIFF, "Orientation"))?.trim()?.toIntOrNull()?.takeIf { it in 1..8 }
-        for (block in listOf(MetadataBlock.Exif, MetadataBlock.Xmp, MetadataBlock.Iptc, MetadataBlock.PhotoshopResources, MetadataBlock.Comments)) {
-            state.removeBlock(block)
-        }
-        if (orientation != null) state.setExif(ExifIfd.Primary, ExifTags.ORIENTATION, ExifValue.Shorts(listOf(orientation)))
+        // An EXIF block holding only the orientation and the layout tags a JPEG needs is what a
+        // previous strip left; removing and rebuilding it would change nothing.
+        val alreadyMinimal = !state.uncertain && state.exif.keys.all { it.ifd == ExifIfd.Primary && it.tag in MINIMAL_IFD0 }
+        val blocks = listOf(MetadataBlock.Xmp, MetadataBlock.Iptc, MetadataBlock.PhotoshopResources, MetadataBlock.Comments)
+        for (block in if (alreadyMinimal) blocks else listOf(MetadataBlock.Exif) + blocks) state.removeBlock(block)
+        if (orientation != null && !alreadyMinimal) state.setExif(ExifIfd.Primary, ExifTags.ORIENTATION, ExifValue.Shorts(listOf(orientation)))
     }
 
     private companion object {
         val OFFSET_TAGS = setOf(ExifTags.OFFSET_TIME, ExifTags.OFFSET_TIME_ORIGINAL, ExifTags.OFFSET_TIME_DIGITIZED)
+
+        /** Orientation, X/YResolution, ResolutionUnit and YCbCrPositioning. */
+        val MINIMAL_IFD0 = setOf(ExifTags.ORIENTATION, 0x011A, 0x011B, 0x0128, 0x0213)
 
         val XMP_DATES = listOf(
             XmpDateSlot(XmpName(XmpNs.EXIF, "DateTimeOriginal"), DateRole.Original),
@@ -498,6 +512,16 @@ internal object GpsCoordinates {
             Rational(units % perDegree / perMinute, 1),
             Rational(units % perMinute, SECOND_DENOMINATOR),
         )
+    }
+
+    private val xmpPattern = Regex("""^(\d{1,3}),(\d{1,2}(?:\.\d+)?)(?:,(\d{1,2}(?:\.\d+)?))?([NSEWnsew])$""")
+
+    /** Signed degrees of an XMP GPS coordinate, "DDD,MM.mmk" or "DDD,MM,SSk"; null when malformed. */
+    fun parseXmp(text: String?): Double? {
+        val match = text?.trim()?.let(xmpPattern::matchEntire) ?: return null
+        val (degrees, minutes, seconds, ref) = match.destructured
+        val value = degrees.toDouble() + minutes.toDouble() / 60 + (seconds.toDoubleOrNull() ?: 0.0) / 3600
+        return if (ref.uppercase() == "S" || ref.uppercase() == "W") -value else value
     }
 
     /** |[meters]| in centimeters, or whole meters when exact. */

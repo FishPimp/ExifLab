@@ -1,6 +1,7 @@
 package io.github.fishpimp.exiflab.metadata.edit
 
 import com.adobe.internal.xmp.XMPMetaFactory
+import java.math.BigInteger
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.MetadataTag
@@ -18,9 +19,33 @@ internal data class ExifKey(val ifd: ExifIfd, val tag: Int)
 /** An EXIF value: [raw] in the report's raw form, [display] human-readable, [value] when the plan set it. */
 internal class ExifEntry(val raw: String, val display: String, val value: ExifValue?) {
     fun sameAs(other: ExifEntry): Boolean {
-        if (raw != other.raw) return false
+        // "45/1" and "450000/10000" are the same value written differently.
+        if (raw != other.raw) return sameRationals(raw, other.raw)
         // Long binary values are shortened in raw form; the decoded text tells them apart.
         return !ExifText.isTruncated(raw) || display == other.display
+    }
+
+    private fun sameRationals(a: String, b: String): Boolean {
+        val left = rationals(a) ?: return false
+        val right = rationals(b) ?: return false
+        return left.size == right.size && left.indices.all { i ->
+            left[i].first * right[i].second == right[i].first * left[i].second
+        }
+    }
+
+    private fun rationals(raw: String): List<Pair<BigInteger, BigInteger>>? {
+        val parts = raw.trim().split(' ')
+        if (parts.isEmpty()) return null
+        return parts.map { part ->
+            val match = RATIONAL.matchEntire(part) ?: return null
+            val denominator = match.groupValues[2].toBigInteger()
+            if (denominator.signum() == 0) return null
+            match.groupValues[1].toBigInteger() to denominator
+        }
+    }
+
+    private companion object {
+        val RATIONAL = Regex("""^(-?\d+)/(\d+)$""")
     }
 }
 
@@ -72,7 +97,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
     private val presentBlocks: Set<MetadataBlock> = buildSet {
         val directories = report.directories
         if (directories.any { it.group == DirectoryGroup.Exif || it.group == DirectoryGroup.Gps || it.group == DirectoryGroup.MakerNote }) add(MetadataBlock.Exif)
-        if (directories.any { it.group == DirectoryGroup.MakerNote }) add(MetadataBlock.MakerNote)
+        if (directories.any { it.group == DirectoryGroup.MakerNote } || hasRawMakerNote()) add(MetadataBlock.MakerNote)
         if (directories.any { it.id.startsWith("exif-thumbnail") }) add(MetadataBlock.ExifThumbnail)
         if (directories.any { it.group == DirectoryGroup.Xmp }) add(MetadataBlock.Xmp)
         if (directories.any { it.group == DirectoryGroup.Iptc }) addAll(listOf(MetadataBlock.Iptc, MetadataBlock.PhotoshopResources))
@@ -80,7 +105,8 @@ internal class WorkingMetadata(val report: MetadataReport) {
         if (directories.any { it.group == DirectoryGroup.Icc }) add(MetadataBlock.IccProfile)
         if (directories.any { isCommentDirectory(it.id) }) add(MetadataBlock.Comments)
     }
-    private val uncertain = report.warnings.isNotEmpty()
+    /** True when the report had parse problems, so it may not show everything the file holds. */
+    val uncertain = report.warnings.isNotEmpty()
 
     // ---- EXIF ----
 
@@ -160,9 +186,10 @@ internal class WorkingMetadata(val report: MetadataReport) {
         when (block) {
             MetadataBlock.Exif -> exif.clear()
             MetadataBlock.ExifThumbnail -> exif.keys.removeAll { it.ifd == ExifIfd.Thumbnail }
+            MetadataBlock.MakerNote -> exif.remove(MAKER_NOTE_KEY)
             MetadataBlock.Xmp -> xmp.clear()
             MetadataBlock.Iptc, MetadataBlock.PhotoshopResources -> iptc.clear()
-            MetadataBlock.MakerNote, MetadataBlock.IccProfile, MetadataBlock.Comments -> Unit
+            MetadataBlock.IccProfile, MetadataBlock.Comments -> Unit
         }
     }
 
@@ -209,7 +236,8 @@ internal class WorkingMetadata(val report: MetadataReport) {
     private fun effectiveBlocks(): Set<MetadataBlock> = removedBlocks.filterTo(LinkedHashSet()) { it in presentBlocks || uncertain }
 
     private fun exifCleared(key: ExifKey): Boolean = MetadataBlock.Exif in removedBlocks || key.ifd in droppedIfds ||
-        (key.ifd == ExifIfd.Thumbnail && MetadataBlock.ExifThumbnail in removedBlocks)
+        (key.ifd == ExifIfd.Thumbnail && MetadataBlock.ExifThumbnail in removedBlocks) ||
+        (key == MAKER_NOTE_KEY && MetadataBlock.MakerNote in removedBlocks)
 
     private fun xmpBlockRemoved(): Boolean = MetadataBlock.Xmp in removedBlocks
 
@@ -291,8 +319,12 @@ internal class WorkingMetadata(val report: MetadataReport) {
             if (count > 0) block("EXIF data", DirectoryGroup.Exif, plural(count, "tag"))
         }
         val makerNotes = directories.filter { it.group == DirectoryGroup.MakerNote }
-        if ((exifRemoved || MetadataBlock.MakerNote in blocks) && makerNotes.isNotEmpty()) {
-            block("MakerNote", DirectoryGroup.MakerNote, "${makerNotes.first().name}, ${plural(makerNotes.sumOf { it.tags.size }, "tag")}")
+        if (exifRemoved || MetadataBlock.MakerNote in blocks) {
+            when {
+                makerNotes.isNotEmpty() ->
+                    block("MakerNote", DirectoryGroup.MakerNote, "${makerNotes.first().name}, ${plural(makerNotes.sumOf { it.tags.size }, "tag")}")
+                hasRawMakerNote() -> block("MakerNote", DirectoryGroup.MakerNote, "Vendor data")
+            }
         }
         if ((exifRemoved || MetadataBlock.ExifThumbnail in blocks) && directories.any { it.id.startsWith("exif-thumbnail") }) {
             block("Thumbnail", DirectoryGroup.Exif, "Embedded preview image")
@@ -362,6 +394,9 @@ internal class WorkingMetadata(val report: MetadataReport) {
         }
         return lines.withIndex().sortedWith(compareBy({ it.value.first }, { it.index })).map { it.value.second }
     }
+
+    /** A MakerNote tag the reader could not decode into a vendor directory. */
+    private fun hasRawMakerNote(): Boolean = MAKER_NOTE_KEY in originalExif
 
     private fun isImportant(key: ExifKey): Boolean =
         key in IMPORTANT_EXIF || (key.ifd != ExifIfd.Gps && exifTags[key]?.sensitivity != null)
@@ -458,6 +493,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
             "exif-thumbnail" to ExifIfd.Thumbnail,
         )
         val ITEM = Regex("""^\[\d+]$""")
+        val MAKER_NOTE_KEY = ExifKey(ExifIfd.Exif, ExifTags.MAKER_NOTE)
         const val MAX_DIFF_TEXT = 200
 
         /** Fields listed individually even when their whole block is removed. */
