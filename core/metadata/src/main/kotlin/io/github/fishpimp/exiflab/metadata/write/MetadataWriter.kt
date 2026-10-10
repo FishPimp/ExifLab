@@ -53,9 +53,9 @@ class ImageDataMismatchException(message: String) : IllegalStateException(messag
 /** Thrown when a file's structure is too unusual to rewrite safely (e.g. a HEIF layout the writer does not handle). */
 class UnsupportedEditException(message: String) : IllegalArgumentException(message)
 
-/** Entry point for the app; implementations live in this module. */
+/** Entry point for the app; implementations live in this module. All three are stateless and thread-safe. */
 object MetadataWriting {
-    val writer: MetadataWriter get() = TODO("Implemented in M3 write engine")
-    val digest: ImageDataDigest get() = TODO("Implemented in M3 write engine")
-    val sidecar: SidecarWriter get() = TODO("Implemented in M3 write engine")
+    val writer: MetadataWriter = DefaultMetadataWriter()
+    val digest: ImageDataDigest = DefaultImageDataDigest()
+    val sidecar: SidecarWriter = XmpSidecarWriter()
 }
