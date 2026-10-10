@@ -293,10 +293,12 @@ private fun DetailList(
         }
         item(key = "changes-title") {
             SectionHeader(
-                if (state.diff.isEmpty()) {
-                    stringResource(R.string.history_detail_changes)
-                } else {
-                    pluralStringResource(R.plurals.history_change_count, state.diff.size, state.diff.size)
+                when {
+                    state.diff.isEmpty() -> stringResource(R.string.history_detail_changes)
+                    // These were never applied, or were undone right away.
+                    record.state == EditState.Failed || record.state == EditState.RolledBack ->
+                        pluralStringResource(R.plurals.history_change_count_planned, state.diff.size, state.diff.size)
+                    else -> pluralStringResource(R.plurals.history_change_count, state.diff.size, state.diff.size)
                 },
             )
         }
@@ -409,7 +411,8 @@ private fun OutcomeCard(record: EditRecord, onOpenRecord: (String) -> Unit) {
                 if (linked != null) {
                     TextButton(
                         onClick = { onOpenRecord(linked) },
-                        contentPadding = ButtonDefaults.TextButtonWithIconContentPadding,
+                        // Line the label up with the text above it.
+                        contentPadding = PaddingValues(end = 12.dp, top = 8.dp, bottom = 8.dp),
                         colors = ButtonDefaults.textButtonColors(contentColor = outcome.content),
                     ) {
                         Text(stringResource(R.string.history_action_view_edit))

@@ -261,6 +261,10 @@
         <item quantity="one">%d change</item>
         <item quantity="other">%d changes</item>
     </plurals>
+    <plurals name="history_change_count_planned">
+        <item quantity="one">%d planned change</item>
+        <item quantity="other">%d planned changes</item>
+    </plurals>
     <string name="history_detail_no_changes">No field changes were recorded for this edit.</string>
     <string name="history_detail_saved_to">Saved to %1$s</string>
     <string name="history_detail_backup">Backup</string>

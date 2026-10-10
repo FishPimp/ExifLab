@@ -59,6 +59,8 @@ android {
                 // Robolectric's SDK 36 runtime needs this on JDK 21+.
                 test.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
                 test.maxHeapSize = "3g"
+                // EditHistorySchemaTest compares the exported Room schemas with the entities.
+                test.inputs.dir("schemas").withPathSensitivity(PathSensitivity.RELATIVE)
                 // Optional mirror for Robolectric's android-all downloads (set in ~/.gradle/gradle.properties).
                 providers.gradleProperty("exiflab.robolectricRepoUrl").orNull?.let {
                     test.systemProperty("robolectric.dependency.repo.url", it)
@@ -130,7 +132,6 @@ dependencies {
     testImplementation(libs.truth)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.okhttp.mockwebserver)
-    testImplementation(libs.androidx.room.testing)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.androidx.test.ext.junit)

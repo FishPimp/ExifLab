@@ -259,6 +259,10 @@
         <item quantity="one">%d ändring</item>
         <item quantity="other">%d ändringar</item>
     </plurals>
+    <plurals name="history_change_count_planned">
+        <item quantity="one">%d planerad ändring</item>
+        <item quantity="other">%d planerade ändringar</item>
+    </plurals>
     <string name="history_detail_no_changes">Inga fältändringar sparades för den här redigeringen.</string>
     <string name="history_detail_saved_to">Sparad i %1$s</string>
     <string name="history_detail_backup">Säkerhetskopia</string>
