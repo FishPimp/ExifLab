@@ -15,6 +15,9 @@ import kotlinx.serialization.Serializable
  * @property origin How the photo reached ExifLab; decides whether access can outlive the session.
  * @property writable True when ExifLab may write to the file in place. Picker and shared photos
  *   are never writable; documents and folder files are writable when the provider allows it.
+ * @property parentDocumentUri The folder holding the photo (a tree-based document URI) for files
+ *   inside a granted folder tree, so siblings such as an XMP sidecar can be found or created.
+ *   Null for every other origin, and for refs persisted before it existed.
  */
 @Serializable
 data class PhotoRef(
@@ -25,6 +28,7 @@ data class PhotoRef(
     val lastModified: Long?,
     val origin: PhotoOrigin,
     val writable: Boolean,
+    val parentDocumentUri: String? = null,
 )
 
 /** Where a [PhotoRef] came from. */

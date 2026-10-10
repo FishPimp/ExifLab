@@ -8,6 +8,7 @@ import io.github.fishpimp.exiflab.designsystem.theme.ThemeMode
 import io.github.fishpimp.exiflab.ui.ExifLabApp
 import io.github.fishpimp.exiflab.ui.privacy.LicensesScreen
 import io.github.fishpimp.exiflab.ui.privacy.PrivacyScreen
+import io.github.fishpimp.exiflab.ui.settings.BackupUsage
 import io.github.fishpimp.exiflab.ui.settings.SettingsContent
 import org.junit.Rule
 import org.junit.Test
@@ -33,13 +34,13 @@ class ShellScreenshotTest {
     @Test @Config(qualifiers = "w1280dp-h800dp-land-xhdpi")
     fun home_tablet() = compose.snapshot("home_tablet_landscape", palette = BrandPalette.Iris) { ExifLabApp() }
 
-    @Test @Config(qualifiers = "w411dp-h1700dp-xxhdpi")
+    @Test @Config(qualifiers = "w411dp-h2500dp-xxhdpi")
     fun settings_light() = compose.snapshot("settings_phone_light") { SettingsUnderTest(offlineMode = true) }
 
-    @Test @Config(qualifiers = "w411dp-h3200dp-xxhdpi", fontScale = 2.0f)
+    @Test @Config(qualifiers = "w411dp-h4800dp-xxhdpi", fontScale = 2.0f)
     fun settings_large_font() = compose.snapshot("settings_phone_font200") { SettingsUnderTest() }
 
-    @Test @Config(qualifiers = "sv-w411dp-h1700dp-xxhdpi")
+    @Test @Config(qualifiers = "sv-w411dp-h2600dp-xxhdpi")
     fun settings_swedish() = compose.snapshot("settings_phone_sv", ThemeMode.Dark, BrandPalette.Ember) { SettingsUnderTest() }
 
     @Test @Config(qualifiers = "w411dp-h2000dp-xxhdpi")
@@ -60,7 +61,9 @@ class ShellScreenshotTest {
     private fun SettingsUnderTest(offlineMode: Boolean = false) = SettingsContent(
         settings = AppSettings(dynamicColor = false, offlineMode = offlineMode),
         language = AppLanguage.System,
+        backups = BackupUsage(usedBytes = 184_320_000),
         onThemeMode = {}, onDynamicColor = {}, onPalette = {}, onContrast = {}, onLanguage = {}, onOfflineMode = {},
+        onBackupRetention = {}, onSidecarNaming = {}, onDeleteAllBackups = {},
         onOpenPrivacy = {}, onOpenLicenses = {},
     )
 }

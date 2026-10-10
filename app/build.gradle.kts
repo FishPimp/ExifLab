@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.roborazzi)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -57,6 +59,8 @@ android {
                 // Robolectric's SDK 36 runtime needs this on JDK 21+.
                 test.jvmArgs("--add-opens=java.base/jdk.internal.access=ALL-UNNAMED")
                 test.maxHeapSize = "3g"
+                // EditHistorySchemaTest compares the exported Room schemas with the entities.
+                test.inputs.dir("schemas").withPathSensitivity(PathSensitivity.RELATIVE)
                 // Optional mirror for Robolectric's android-all downloads (set in ~/.gradle/gradle.properties).
                 providers.gradleProperty("exiflab.robolectricRepoUrl").orNull?.let {
                     test.systemProperty("robolectric.dependency.repo.url", it)
@@ -70,6 +74,11 @@ android {
             excludes += setOf("/META-INF/{AL2.0,LGPL2.1}", "/META-INF/LICENSE*", "/META-INF/NOTICE*")
         }
     }
+}
+
+room {
+    // Exported schemas are checked in so every future migration can be tested against them.
+    schemaDirectory("$projectDir/schemas")
 }
 
 kotlin {
@@ -104,6 +113,10 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.coil.core)
+
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.kotlinx.coroutines.android)

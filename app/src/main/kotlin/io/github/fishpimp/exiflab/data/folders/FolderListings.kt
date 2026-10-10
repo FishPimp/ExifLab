@@ -26,12 +26,14 @@ internal object FolderListings {
      *
      * @param documentUri builds the tree-based document URI for a document id.
      * @param canWrite whether ExifLab holds a write grant for the folder tree.
+     * @param parentDocumentUri the folder being listed, recorded on each photo so its sidecar can be found.
      */
     fun build(
         rows: List<DocumentRow>,
         documentUri: (String) -> String,
         canWrite: Boolean,
         isLoading: Boolean = false,
+        parentDocumentUri: String? = null,
         collator: Comparator<in String> = Collator.getInstance(),
     ): FolderListing {
         val subfolders = ArrayList<Subfolder>()
@@ -49,6 +51,7 @@ internal object FolderListings {
                     lastModified = row.lastModified,
                     origin = PhotoOrigin.Folder,
                     writable = canWrite && (row.flags and DocumentsContract.Document.FLAG_SUPPORTS_WRITE) != 0,
+                    parentDocumentUri = parentDocumentUri,
                 )
             }
         }

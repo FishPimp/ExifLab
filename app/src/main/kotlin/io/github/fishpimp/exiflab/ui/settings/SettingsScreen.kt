@@ -60,6 +60,8 @@ import io.github.fishpimp.exiflab.BuildConfig
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.data.settings.AppLanguage
 import io.github.fishpimp.exiflab.data.settings.AppSettings
+import io.github.fishpimp.exiflab.data.settings.BackupRetention
+import io.github.fishpimp.exiflab.data.settings.SidecarNaming
 import io.github.fishpimp.exiflab.designsystem.component.Choice
 import io.github.fishpimp.exiflab.designsystem.component.ChoiceRow
 import io.github.fishpimp.exiflab.designsystem.component.GroupSurface
@@ -80,15 +82,20 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val language by viewModel.language.collectAsStateWithLifecycle()
+    val backupUsage by viewModel.backupUsage.collectAsStateWithLifecycle()
     SettingsContent(
         settings = settings,
         language = language,
+        backups = BackupUsage(usedBytes = backupUsage, sizeCapBytes = viewModel.backupSizeCap),
         onThemeMode = viewModel::setThemeMode,
         onDynamicColor = viewModel::setDynamicColor,
         onPalette = viewModel::setPalette,
         onContrast = viewModel::setContrast,
         onLanguage = viewModel::setLanguage,
         onOfflineMode = viewModel::setOfflineMode,
+        onBackupRetention = viewModel::setBackupRetention,
+        onSidecarNaming = viewModel::setSidecarNaming,
+        onDeleteAllBackups = viewModel::deleteAllBackups,
         onOpenPrivacy = onOpenPrivacy,
         onOpenLicenses = onOpenLicenses,
         modifier = modifier,
@@ -99,12 +106,16 @@ fun SettingsScreen(
 fun SettingsContent(
     settings: AppSettings,
     language: AppLanguage,
+    backups: BackupUsage,
     onThemeMode: (ThemeMode) -> Unit,
     onDynamicColor: (Boolean) -> Unit,
     onPalette: (BrandPalette) -> Unit,
     onContrast: (ContrastPreference) -> Unit,
     onLanguage: (AppLanguage) -> Unit,
     onOfflineMode: (Boolean) -> Unit,
+    onBackupRetention: (BackupRetention) -> Unit,
+    onSidecarNaming: (SidecarNaming) -> Unit,
+    onDeleteAllBackups: () -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
@@ -197,6 +208,13 @@ fun SettingsContent(
                         )
                     }
                 }
+                editingAndBackupSettings(
+                    settings = settings,
+                    backups = backups,
+                    onBackupRetention = onBackupRetention,
+                    onSidecarNaming = onSidecarNaming,
+                    onDeleteAllBackups = onDeleteAllBackups,
+                )
                 item { SectionHeader(stringResource(R.string.settings_section_about)) }
                 item {
                     GroupSurface {
@@ -252,7 +270,7 @@ private fun SwitchRow(
 }
 
 @Composable
-private fun LabeledControl(
+internal fun LabeledControl(
     title: String,
     supporting: String? = null,
     content: @Composable () -> Unit,

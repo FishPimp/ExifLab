@@ -13,6 +13,7 @@
     <string name="action_close">Close</string>
     <string name="action_cancel">Cancel</string>
     <string name="action_remove">Remove</string>
+    <string name="action_delete">Delete</string>
 
     <!-- Home -->
     <string name="home_tagline">See what your photos say, and decide what they keep.</string>
@@ -210,6 +211,134 @@
     <!-- History -->
     <string name="history_empty_title">Nothing edited yet</string>
     <string name="history_empty_body">Every change you save is listed here, with the original kept so you can restore it.</string>
+    <string name="history_today">Today</string>
+    <string name="history_yesterday">Yesterday</string>
+    <string name="history_mode_in_place">In place</string>
+    <string name="history_mode_copy">Copy</string>
+    <string name="history_mode_sidecar">Sidecar</string>
+    <string name="history_state_saving">Saving</string>
+    <string name="history_state_saved">Saved</string>
+    <string name="history_state_restored">Restored</string>
+    <string name="history_state_rolled_back">Rolled back</string>
+    <string name="history_state_failed">Failed</string>
+    <string name="history_summary_metadata">Metadata changed</string>
+    <string name="history_summary_restore">Original restored</string>
+    <string name="history_summary_restore_of">Restore of: %1$s</string>
+    <plurals name="history_batch_saved">
+        <item quantity="one">%d saved</item>
+        <item quantity="other">%d saved</item>
+    </plurals>
+    <plurals name="history_batch_failed">
+        <item quantity="one">%d failed</item>
+        <item quantity="other">%d failed</item>
+    </plurals>
+    <plurals name="history_batch_cancelled">
+        <item quantity="one">%d cancelled</item>
+        <item quantity="other">%d cancelled</item>
+    </plurals>
+    <string name="history_batch_restore_of">Restored: %1$s</string>
+    <string name="history_batch_show">Show photos</string>
+    <string name="history_batch_hide">Hide photos</string>
+    <string name="history_batch_expanded">Expanded</string>
+    <string name="history_batch_collapsed">Collapsed</string>
+    <string name="history_action_restore_all">Restore all</string>
+    <string name="history_batch_restore_title">Restore all originals?</string>
+    <plurals name="history_batch_restore_body">
+        <item quantity="one">%d photo goes back to exactly how it was before this batch. Its current state is backed up first, so you can undo this.</item>
+        <item quantity="other">%d photos go back to exactly how they were before this batch. Their current state is backed up first, so you can undo this.</item>
+    </plurals>
+    <plurals name="history_batch_restored">
+        <item quantity="one">%d photo restored</item>
+        <item quantity="other">%d photos restored</item>
+    </plurals>
+    <plurals name="history_batch_restored_partial">
+        <item quantity="one">Restored %1$d of %2$d photo</item>
+        <item quantity="other">Restored %1$d of %2$d photos</item>
+    </plurals>
+    <string name="history_detail_title">Edit</string>
+    <string name="history_detail_changes">Changes</string>
+    <plurals name="history_change_count">
+        <item quantity="one">%d change</item>
+        <item quantity="other">%d changes</item>
+    </plurals>
+    <plurals name="history_change_count_planned">
+        <item quantity="one">%d planned change</item>
+        <item quantity="other">%d planned changes</item>
+    </plurals>
+    <string name="history_detail_no_changes">No field changes were recorded for this edit.</string>
+    <string name="history_detail_saved_to">Saved to %1$s</string>
+    <string name="history_detail_backup">Backup</string>
+    <string name="history_detail_missing_title">Edit not found</string>
+    <string name="history_detail_missing_body">It is no longer in History.</string>
+    <string name="history_diff_added">Added</string>
+    <string name="history_diff_changed">Changed</string>
+    <string name="history_diff_removed">Removed</string>
+    <string name="history_diff_before">Before</string>
+    <string name="history_diff_after">After</string>
+    <string name="history_diff_empty_value">(empty)</string>
+    <string name="history_group_exif" translatable="false">EXIF</string>
+    <string name="history_group_gps" translatable="false">GPS</string>
+    <string name="history_group_makernote" translatable="false">MakerNote</string>
+    <string name="history_group_xmp" translatable="false">XMP</string>
+    <string name="history_group_iptc" translatable="false">IPTC</string>
+    <string name="history_group_icc" translatable="false">ICC</string>
+    <string name="history_group_container">Container</string>
+    <string name="history_group_file">File</string>
+    <string name="history_group_other">Other</string>
+    <string name="history_outcome_pending_title">Saving in progress</string>
+    <string name="history_outcome_pending_body">If ExifLab stopped while saving, the file is checked and put right the next time the app starts.</string>
+    <string name="history_outcome_restore_title">This restored an earlier edit</string>
+    <string name="history_outcome_restore_body">The file went back to how it was before that edit. You can undo this restore.</string>
+    <string name="history_outcome_restored_title">Original restored</string>
+    <string name="history_outcome_restored_body">This edit was undone. The file is back to how it was before it.</string>
+    <string name="history_outcome_not_saved_title">Not saved</string>
+    <string name="history_outcome_rolled_back_body">%1$s The file was put back exactly as it was.</string>
+    <string name="history_outcome_unchanged_body">%1$s Nothing was changed.</string>
+    <string name="history_outcome_damaged_title">The file may be damaged</string>
+    <string name="history_error_read">The file could not be read.</string>
+    <string name="history_error_source_changed">The file changed while it was being saved.</string>
+    <string name="history_error_backup">The backup could not be made. The device may be full.</string>
+    <string name="history_error_backup_damaged">The backup is damaged and cannot be used.</string>
+    <string name="history_error_image_data">The edit would have changed the image itself, so it was stopped.</string>
+    <string name="history_error_unsupported">This file is laid out in a way ExifLab cannot edit safely.</string>
+    <string name="history_error_check">The edited file did not pass the safety check.</string>
+    <string name="history_error_write">The file could not be written.</string>
+    <string name="history_error_verification">What was written did not match when it was read back.</string>
+    <string name="history_error_rollback">Writing failed and the original could not be put back. Restore it from the backup.</string>
+    <string name="history_error_interrupted">ExifLab stopped while saving.</string>
+    <string name="history_error_recovery">ExifLab stopped while saving and could not put the file right. Restore it from the backup.</string>
+    <string name="history_error_unknown">Something went wrong.</string>
+    <string name="history_action_restore">Restore original</string>
+    <string name="history_action_undo_restore">Undo restore</string>
+    <string name="history_action_open_photo">Open photo</string>
+    <string name="history_action_delete_backup">Delete backup</string>
+    <string name="history_action_view_edit">View that edit</string>
+    <string name="history_restore_title">Restore the original?</string>
+    <string name="history_restore_body">%1$s goes back to exactly how it was before this edit. Its current state is backed up first, so you can undo this.</string>
+    <string name="history_undo_restore_title">Undo the restore?</string>
+    <string name="history_undo_restore_body">%1$s goes back to how it was before the restore. Its current state is backed up first.</string>
+    <string name="history_delete_backup_title">Delete this backup?</string>
+    <string name="history_delete_backup_body_size">This frees %1$s. Restoring the original of this edit will no longer be possible.</string>
+    <string name="history_delete_backup_body">Restoring the original of this edit will no longer be possible.</string>
+    <string name="history_backup_kept">Backup kept</string>
+    <string name="history_backup_kept_until">%1$s, kept until %2$s</string>
+    <string name="history_backup_kept_forever">%1$s, kept until you delete it</string>
+    <string name="history_backup_only_copy">%1$s. This is the only intact copy of the file, so it is kept until you delete it.</string>
+    <string name="history_backup_pending">%1$s, kept while the save is in progress</string>
+    <string name="history_backup_not_needed">No backup needed</string>
+    <string name="history_backup_copy_body">The original was not changed. The edit was saved as a copy.</string>
+    <string name="history_backup_new_sidecar_body">There was no sidecar before. Restoring the original removes it.</string>
+    <string name="history_backup_none">No backup kept</string>
+    <string name="history_backup_none_body">Nothing was changed, so there is nothing to restore.</string>
+    <string name="history_backup_removed">Backup removed</string>
+    <string name="history_backup_removed_body">Restoring the original of this edit is no longer possible.</string>
+    <string name="history_restored">Original restored</string>
+    <string name="history_restore_failed">Could not restore. %1$s</string>
+    <string name="history_backup_deleted">Backup deleted</string>
+    <string name="history_backup_delete_failed">The backup could not be deleted.</string>
+    <string name="history_photo_unavailable">The photo is no longer available.</string>
+    <string name="history_select_title">Pick an edit</string>
+    <string name="history_select_body">Its changes, backup and restore options show up here.</string>
 
     <!-- Settings -->
     <string name="settings_section_appearance">Appearance</string>
@@ -237,6 +366,28 @@
     <string name="settings_offline_mode">Offline mode</string>
     <string name="settings_offline_mode_body">Turns off the map and place search, so ExifLab never connects to the internet. Everything else keeps working.</string>
     <string name="settings_version">Version</string>
+    <string name="settings_section_editing">Editing</string>
+    <string name="settings_sidecar_naming">Sidecar file name</string>
+    <string name="settings_sidecar_naming_body">RAW files are never changed. Edits go to an XMP sidecar next to them, named like this.</string>
+    <string name="settings_sidecar_example_base" translatable="false">IMG_1234.xmp</string>
+    <string name="settings_sidecar_example_full" translatable="false">IMG_1234.RAF.xmp</string>
+    <string name="settings_section_backups">Backups</string>
+    <string name="settings_backup_storage">Storage used</string>
+    <string name="settings_backup_storage_value">%1$s of %2$s</string>
+    <string name="settings_backup_storage_measuring">Measuring</string>
+    <string name="settings_backup_retention">Keep backups for</string>
+    <string name="settings_backup_retention_body">ExifLab backs up each photo before changing it, so you can restore the original. Older backups are deleted automatically, oldest first when they take more than %1$s. The newest backup of each photo stays for the whole period.</string>
+    <plurals name="settings_backup_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <string name="settings_backup_forever">Forever</string>
+    <string name="settings_backup_delete_all">Delete all backups</string>
+    <string name="settings_backup_delete_all_body">Frees %1$s</string>
+    <string name="settings_backup_delete_all_none">There are no backups right now</string>
+    <string name="settings_backup_delete_all_title">Delete all backups?</string>
+    <string name="settings_backup_delete_all_confirm">This frees %1$s. You will no longer be able to restore the originals of photos you have already edited. Backups of saves in progress are kept.</string>
+    <string name="settings_backup_delete_all_action">Delete all</string>
 
     <string name="palette_lagoon">Lagoon</string>
     <string name="palette_citrus">Citrus</string>
