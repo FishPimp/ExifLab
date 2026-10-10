@@ -159,8 +159,10 @@ class PhotoSaver(
             var skipped = emptyList<String>()
             val outcome = journaled(newRecord(draft, EditMode.InPlace, targetUri = null, targetName = null), requireBackup = true) { original, temp ->
                 val source = FileImageSource(checkNotNull(original), ref.displayName)
-                skipped = temp.outputStream().use { out -> engine.write(source, changes, out) }.skipped
-                engine.verifyReadable(FileImageSource(temp, ref.displayName), format)
+                val result = temp.outputStream().use { out -> engine.write(source, changes, out) }
+                skipped = result.skipped
+                // The writer sniffs the container, so its format wins over the file extension.
+                engine.verifyReadable(FileImageSource(temp, ref.displayName), result.format)
                 NewContent.Written
             }
             outcome.withSkipped(skipped)
@@ -178,8 +180,9 @@ class PhotoSaver(
             val record = newRecord(draft, EditMode.Copy, targetUri = destinationUri, targetName = targetName)
             val outcome = journaled(record, requireBackup = false) { _, temp ->
                 val source = DocumentImageSource(documents, ref.uri, ref.displayName, ref.size)
-                skipped = temp.outputStream().use { out -> engine.write(source, changes, out) }.skipped
-                engine.verifyReadable(FileImageSource(temp, targetName ?: ref.displayName), format)
+                val result = temp.outputStream().use { out -> engine.write(source, changes, out) }
+                skipped = result.skipped
+                engine.verifyReadable(FileImageSource(temp, targetName ?: ref.displayName), result.format)
                 NewContent.Written
             }
             outcome.withSkipped(skipped)
