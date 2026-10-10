@@ -1,6 +1,7 @@
 package io.github.fishpimp.exiflab.ui.history
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +77,7 @@ import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.designsystem.component.SectionHeader
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
+import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
 
 /**
  * The History tab. On phones an edit opens [onOpenRecord] (its own screen); on expanded widths
@@ -295,32 +297,26 @@ private fun HistoryList(
 @Composable
 private fun HistoryRecordCard(record: EditRecord, state: HistoryUiState, selected: Boolean, onClick: () -> Unit) {
     val ref = remember(record.id) { record.photoRef() }
+    val largeFont = isLargeFontScale()
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.large,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerLow,
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         modifier = Modifier
             .fillMaxWidth()
             .semantics { this.selected = selected },
     ) {
-        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+        Row(Modifier.padding(12.dp), horizontalArrangement = Arrangement.spacedBy(if (largeFont) 12.dp else 16.dp)) {
             PhotoThumbnail(
                 ref = ref,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(64.dp)
+                    .size(if (largeFont) 48.dp else 64.dp)
                     .clip(MaterialTheme.shapes.medium),
             )
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text(record.title(), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    Text(
-                        timeLabel(record.createdAt, state.zone),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
+                TitleAndTime(record.title(), timeLabel(record.createdAt, state.zone), stacked = largeFont)
                 Text(
                     record.summaryLine(),
                     style = MaterialTheme.typography.bodyMedium,
@@ -337,6 +333,22 @@ private fun HistoryRecordCard(record: EditRecord, state: HistoryUiState, selecte
                     StateChip(record.state)
                 }
             }
+        }
+    }
+}
+
+/** A title with its time at the end, or below it when large text leaves no room beside it. */
+@Composable
+private fun TitleAndTime(title: String, time: String, stacked: Boolean) {
+    val timeStyle = MaterialTheme.typography.labelMedium
+    val timeColor = MaterialTheme.colorScheme.onSurfaceVariant
+    if (stacked) {
+        Text(title, style = MaterialTheme.typography.titleMedium)
+        Text(time, style = timeStyle, color = timeColor)
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+            Text(time, style = timeStyle, color = timeColor, modifier = Modifier.padding(top = 2.dp))
         }
     }
 }
@@ -372,15 +384,7 @@ private fun HistoryBatchCard(
             ) {
                 BatchThumbnails(item.records)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                        Text(
-                            timeLabel(batch.createdAt, state.zone),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
+                    TitleAndTime(title, timeLabel(batch.createdAt, state.zone), stacked = isLargeFontScale())
                     Text(
                         pluralStringResource(R.plurals.photo_count, batch.total, batch.total),
                         style = MaterialTheme.typography.bodyMedium,
@@ -434,8 +438,8 @@ private fun BatchCounts(item: HistoryItem.Batch, modifier: Modifier = Modifier) 
         StatusChip(
             icon = Icons.Rounded.CheckCircle,
             text = pluralStringResource(R.plurals.history_batch_saved, batch.succeeded, batch.succeeded),
-            containerColor = colors.secondaryContainer,
-            contentColor = colors.onSecondaryContainer,
+            containerColor = colors.primaryContainer,
+            contentColor = colors.onPrimaryContainer,
         )
         if (batch.failed > 0) {
             StatusChip(
@@ -497,10 +501,12 @@ private fun BatchThumbnails(records: List<EditRecord>) {
 @Composable
 private fun BatchMemberRow(record: EditRecord, selected: Boolean, onClick: () -> Unit) {
     val ref = remember(record.id) { record.photoRef() }
+    val largeFont = isLargeFontScale()
     Surface(
         onClick = onClick,
         shape = MaterialTheme.shapes.medium,
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainer,
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         modifier = Modifier
             .fillMaxWidth()
             .semantics { this.selected = selected },
@@ -520,8 +526,15 @@ private fun BatchMemberRow(record: EditRecord, selected: Boolean, onClick: () ->
                     .size(40.dp)
                     .clip(MaterialTheme.shapes.small),
             )
-            Text(record.title(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-            StateChip(record.state)
+            if (largeFont) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(record.title(), style = MaterialTheme.typography.bodyLarge)
+                    StateChip(record.state)
+                }
+            } else {
+                Text(record.title(), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                StateChip(record.state)
+            }
         }
     }
 }

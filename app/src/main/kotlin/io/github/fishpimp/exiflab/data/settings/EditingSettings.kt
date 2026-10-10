@@ -44,5 +44,5 @@ enum class SidecarNaming {
     }
 }
 
-/** Total size backups may take before the oldest are pruned: 2 GB. */
-const val DEFAULT_BACKUP_SIZE_CAP_BYTES: Long = 2L * 1024 * 1024 * 1024
+/** Total size backups may take before the oldest are pruned: 2 GB (decimal, as Android shows sizes). */
+const val DEFAULT_BACKUP_SIZE_CAP_BYTES: Long = 2_000_000_000L

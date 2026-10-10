@@ -39,6 +39,7 @@ import io.github.fishpimp.exiflab.data.history.SaveError
 import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
+import io.github.fishpimp.exiflab.ui.photo.breakableFileName
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -92,7 +93,7 @@ fun StateChip(state: EditState, modifier: Modifier = Modifier) {
     val colors = MaterialTheme.colorScheme
     val (container, content) = when (state) {
         EditState.Pending -> colors.surfaceContainerHighest to colors.onSurfaceVariant
-        EditState.Committed -> colors.secondaryContainer to colors.onSecondaryContainer
+        EditState.Committed -> colors.primaryContainer to colors.onPrimaryContainer
         EditState.Restored -> colors.tertiaryContainer to colors.onTertiaryContainer
         EditState.RolledBack -> colors.surfaceContainerHighest to colors.onSurface
         EditState.Failed -> colors.errorContainer to colors.onErrorContainer
@@ -206,9 +207,13 @@ val SaveError.messageRes: Int
         SaveError.Unknown -> R.string.history_error_unknown
     }
 
-/** The file name History shows for a record: the photo's, or a generic one. */
+/**
+ * The file name History shows for a record: the photo's, or a generic one. Long camera names wrap
+ * between their parts rather than inside numbers.
+ */
 @Composable
-fun EditRecord.title(): String = displayName?.takeIf { it.isNotBlank() } ?: stringResource(R.string.photo_untitled)
+fun EditRecord.title(): String =
+    displayName?.takeIf { it.isNotBlank() }?.let(::breakableFileName) ?: stringResource(R.string.photo_untitled)
 
 /** The one-line summary of a record. */
 @Composable

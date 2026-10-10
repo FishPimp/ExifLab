@@ -79,6 +79,7 @@ import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
+import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
@@ -125,9 +126,7 @@ fun HistoryDetailPane(
     val viewModel: HistoryDetailViewModel = viewModel(key = "history-detail-$recordId", factory = HistoryDetailViewModel.factory(recordId))
     val state by viewModel.state.collectAsStateWithLifecycle()
     HistoryDetailEffects(viewModel, snackbarHostState, onOpenPhoto, onOpenRecord)
-    Box(modifier, contentAlignment = Alignment.TopCenter) {
-        HistoryDetailBody(state, viewModel.actions(), Modifier.widthIn(max = 720.dp).fillMaxSize(), showTitle = true)
-    }
+    HistoryDetailBody(state, viewModel.actions(), modifier, showTitle = true)
 }
 
 private fun HistoryDetailViewModel.actions() = HistoryDetailActions(
@@ -187,9 +186,7 @@ fun HistoryDetailContent(
         onBack = onBack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Box(Modifier.padding(padding).fillMaxSize(), contentAlignment = Alignment.TopCenter) {
-            HistoryDetailBody(state, actions, Modifier.widthIn(max = 720.dp).fillMaxSize(), showTitle = false)
-        }
+        HistoryDetailBody(state, actions, Modifier.padding(padding).fillMaxSize(), showTitle = false)
     }
 }
 
@@ -218,34 +215,8 @@ fun HistoryDetailBody(
                 body = stringResource(R.string.history_detail_missing_body),
             )
         }
-        else -> LazyColumn(
-            modifier = modifier,
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item(key = "header") { DetailHeader(record, state, showTitle) }
-            item(key = "status") { OutcomeCard(record, onOpenRecord = actions.onOpenRecord) }
-            item(key = "actions") {
-                DetailActions(
-                    record = record,
-                    busy = state.busy,
-                    onRestore = { confirmRestore = true },
-                    onOpenPhoto = actions.onOpenPhoto,
-                    onDeleteBackup = { confirmDelete = true },
-                )
-            }
-            item(key = "changes-title") {
-                SectionHeader(
-                    if (state.diff.isEmpty()) {
-                        stringResource(R.string.history_detail_changes)
-                    } else {
-                        pluralStringResource(R.plurals.history_change_count, state.diff.size, state.diff.size)
-                    },
-                )
-            }
-            item(key = "changes") { DiffList(state.diff) }
-            item(key = "backup-title") { SectionHeader(stringResource(R.string.history_detail_backup)) }
-            item(key = "backup") { BackupCard(record, state) }
+        else -> Box(modifier, contentAlignment = Alignment.TopCenter) {
+            DetailList(state, record, actions, showTitle, onRestore = { confirmRestore = true }, onDeleteBackup = { confirmDelete = true })
         }
     }
 
@@ -292,6 +263,46 @@ fun HistoryDetailBody(
             },
             dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
+    }
+}
+
+@Composable
+private fun DetailList(
+    state: HistoryDetailUiState,
+    record: EditRecord,
+    actions: HistoryDetailActions,
+    showTitle: Boolean,
+    onRestore: () -> Unit,
+    onDeleteBackup: () -> Unit,
+) {
+    LazyColumn(
+        modifier = Modifier.widthIn(max = 720.dp).fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "header") { DetailHeader(record, state, showTitle) }
+        item(key = "status") { OutcomeCard(record, onOpenRecord = actions.onOpenRecord) }
+        item(key = "actions") {
+            DetailActions(
+                record = record,
+                busy = state.busy,
+                onRestore = onRestore,
+                onOpenPhoto = actions.onOpenPhoto,
+                onDeleteBackup = onDeleteBackup,
+            )
+        }
+        item(key = "changes-title") {
+            SectionHeader(
+                if (state.diff.isEmpty()) {
+                    stringResource(R.string.history_detail_changes)
+                } else {
+                    pluralStringResource(R.plurals.history_change_count, state.diff.size, state.diff.size)
+                },
+            )
+        }
+        item(key = "changes") { DiffList(state.diff) }
+        item(key = "backup-title") { SectionHeader(stringResource(R.string.history_detail_backup)) }
+        item(key = "backup") { BackupCard(record, state) }
     }
 }
 
@@ -487,12 +498,8 @@ private fun DiffRow(change: FieldDiff) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            itemVerticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
                 Text(change.label, style = MaterialTheme.typography.titleSmall)
                 Text(
                     stringResource(change.group.labelRes),
@@ -509,19 +516,28 @@ private fun DiffRow(change: FieldDiff) {
 
 @Composable
 private fun ValueLine(label: String, value: String, emphasized: Boolean) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.widthIn(min = 56.dp),
-        )
+    val labelText: @Composable (Modifier) -> Unit = { modifier ->
+        Text(label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
+    }
+    val valueText: @Composable (Modifier) -> Unit = { modifier ->
         Text(
             value.ifEmpty { stringResource(R.string.history_diff_empty_value) },
             style = ExifLabTheme.extendedTypography.monoMedium,
             color = if (emphasized) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(1f),
+            modifier = modifier,
         )
+    }
+    if (isLargeFontScale()) {
+        // Large text leaves no room for a label column; the label goes above the value.
+        Column {
+            labelText(Modifier)
+            valueText(Modifier)
+        }
+    } else {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            labelText(Modifier.widthIn(min = 56.dp))
+            valueText(Modifier.weight(1f))
+        }
     }
 }
 
