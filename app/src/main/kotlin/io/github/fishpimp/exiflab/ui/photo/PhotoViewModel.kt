@@ -19,6 +19,9 @@ import io.github.fishpimp.exiflab.data.photos.PhotoAccessException
 import io.github.fishpimp.exiflab.data.photos.OpenResult
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import io.github.fishpimp.exiflab.data.save.SaveOutcome
+import io.github.fishpimp.exiflab.data.save.SaveRejection
+import io.github.fishpimp.exiflab.data.save.SavedEditNotice
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
 import io.github.fishpimp.exiflab.metadata.UnsupportedImageException
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
@@ -34,6 +37,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -98,6 +103,7 @@ sealed interface PhotoLoad {
  *
  * @property browser the tag list for the current search, filter and collapse state; null until first built.
  * @property isWorking true while a copy is saved or another file is opened.
+ * @property savedNotice an edit the editor just saved to this photo, to announce (with Undo) once.
  */
 @Immutable
 data class PhotoUiState(
@@ -106,6 +112,7 @@ data class PhotoUiState(
     val mode: ValueMode = ValueMode.Readable,
     val filter: SensitivityCategory? = null,
     val isWorking: Boolean = false,
+    val savedNotice: SavedEditNotice? = null,
 )
 
 /** One-off outcomes the screen reacts to. */
@@ -118,6 +125,12 @@ sealed interface PhotoEvent {
 
     /** Opening the picked original failed. */
     data class OpenFailed(val error: PhotoAccessError) : PhotoEvent
+
+    /** Undo after an edit put the original back. */
+    data object Undone : PhotoEvent
+
+    /** Undo after an edit failed; History still has the record. */
+    data object UndoFailed : PhotoEvent
 }
 
 /**
@@ -128,6 +141,9 @@ sealed interface PhotoEvent {
  * @param readReport reads the report; blocking work belongs on an IO dispatcher inside it.
  * @param saveCopy copies [ref] byte for byte to a document the user created; returns the copy.
  * @param openDocument resolves a document the user picked.
+ * @param savedEdits edits the editor saved to this photo; each one reloads the report and is announced.
+ * @param consumeSavedEdit marks a saved edit as announced.
+ * @param restoreOriginal undoes a saved edit by its History record.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class PhotoViewModel(
@@ -137,6 +153,9 @@ class PhotoViewModel(
     private val saveCopy: suspend (PhotoRef, Uri) -> PhotoRef,
     private val openDocument: suspend (Uri) -> PhotoRef,
     computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    savedEdits: Flow<SavedEditNotice?> = emptyFlow(),
+    private val consumeSavedEdit: (SavedEditNotice) -> Unit = {},
+    private val restoreOriginal: suspend (String) -> SaveOutcome = { SaveOutcome.Rejected(SaveRejection.NotFound) },
 ) : ViewModel() {
     private val load = MutableStateFlow<PhotoLoad>(PhotoLoad.Loading)
     private val queryFlow = MutableStateFlow(savedState.get<String>(KEY_QUERY).orEmpty())
@@ -146,6 +165,7 @@ class PhotoViewModel(
     private val collapsedFlow = savedState.getStateFlow<ArrayList<String>?>(KEY_COLLAPSED, null)
     private val filterCollapsedFlow = savedState.getStateFlow(KEY_FILTER_COLLAPSED, ArrayList<String>())
     private val working = MutableStateFlow(false)
+    private val notice = MutableStateFlow<SavedEditNotice?>(null)
     private var loadJob: Job? = null
 
     /** Search text, bound to the search field. */
@@ -171,12 +191,52 @@ class PhotoViewModel(
         input?.let { TagBrowserBuilder.build(it.report, it.query, it.mode, it.filter, it.collapsed) }
     }.flowOn(computeDispatcher)
 
-    val state: StateFlow<PhotoUiState> = combine(load, browser, modeFlow, filterFlow, working) { load, browser, mode, filter, working ->
-        PhotoUiState(load = load, browser = browser, mode = mode, filter = filter, isWorking = working)
+    val state: StateFlow<PhotoUiState> = combine(
+        load,
+        browser,
+        modeFlow,
+        filterFlow,
+        combine(working, notice, ::Pair),
+    ) { load, browser, mode, filter, (working, notice) ->
+        PhotoUiState(load = load, browser = browser, mode = mode, filter = filter, isWorking = working, savedNotice = notice)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT_MILLIS), PhotoUiState())
 
     init {
         reload()
+        viewModelScope.launch {
+            savedEdits.filterNotNull().collect { saved ->
+                // The file changed under the viewer: read it again, then announce the save.
+                if (saved != notice.value) {
+                    notice.value = saved
+                    reload()
+                }
+            }
+        }
+    }
+
+    /** The saved-edit notice was shown; it will not be shown again. */
+    fun onSavedNoticeShown(saved: SavedEditNotice) {
+        if (notice.value == saved) notice.value = null
+        consumeSavedEdit(saved)
+    }
+
+    /** Undoes a just-saved edit by restoring what History backed up, then reads the photo again. */
+    fun undoEdit(recordId: String) {
+        if (working.value) return
+        working.value = true
+        viewModelScope.launch {
+            val event = try {
+                if (restoreOriginal(recordId) is SaveOutcome.Saved) PhotoEvent.Undone else PhotoEvent.UndoFailed
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                PhotoEvent.UndoFailed
+            } finally {
+                working.value = false
+            }
+            reload()
+            _events.send(event)
+        }
     }
 
     /** Reads (or re-reads, after an error) the photo's metadata. */
@@ -319,6 +379,9 @@ class PhotoViewModel(
                             is OpenResult.Failed -> throw PhotoAccessException(result.error)
                         }
                     },
+                    savedEdits = graph.savedEditNotices.forPhoto(ref.uri),
+                    consumeSavedEdit = graph.savedEditNotices::consume,
+                    restoreOriginal = { recordId -> graph.editSaving.undo(recordId) },
                 )
             }
         }

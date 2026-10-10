@@ -20,6 +20,7 @@ import io.github.fishpimp.exiflab.data.history.EditHistoryDatabase
 import io.github.fishpimp.exiflab.data.places.PlaceSearchRepository
 import io.github.fishpimp.exiflab.data.save.ContentResolverDocuments
 import io.github.fishpimp.exiflab.data.save.PhotoSaver
+import io.github.fishpimp.exiflab.data.save.SavedEditNotices
 import io.github.fishpimp.exiflab.data.save.WriteEngine
 import io.github.fishpimp.exiflab.data.settings.AppLanguage
 import io.github.fishpimp.exiflab.data.settings.SettingsRepository
@@ -28,6 +29,8 @@ import io.github.fishpimp.exiflab.data.store.libraryPreferences
 import io.github.fishpimp.exiflab.metadata.Metadata
 import io.github.fishpimp.exiflab.metadata.MetadataReader
 import io.github.fishpimp.exiflab.thumbnails.photoImageLoader
+import io.github.fishpimp.exiflab.ui.edit.EditSaving
+import io.github.fishpimp.exiflab.ui.edit.PhotoSaverEditSaving
 import io.github.fishpimp.exiflab.ui.map.MapRuntime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -116,18 +119,27 @@ class AppGraph(context: Context) {
         )
     }
 
+    /** The metadata writers as the save pipeline sees them. */
+    val writeEngine: WriteEngine by lazy { WriteEngine.default() }
+
     /** Saves edits (in place, as a copy or to a sidecar) and restores originals; see [PhotoSaver]. */
     val photoSaver: PhotoSaver by lazy {
         PhotoSaver(
             dao = editHistoryDao,
             backups = backupStore,
             documents = ContentResolverDocuments(appContext.contentResolver),
-            engine = WriteEngine.default(),
+            engine = writeEngine,
             tempDirectory = appContext.cacheDir.resolve(SAVE_TEMP_DIRECTORY),
             sidecarNaming = { settingsRepository.settings.first().sidecarNaming },
             afterSave = ::requestBackupPrune,
         )
     }
+
+    /** The editor's view of the save pipeline. */
+    val editSaving: EditSaving by lazy { PhotoSaverEditSaving(saver = { photoSaver }, engine = { writeEngine }) }
+
+    /** Saves the editor finished, waiting for the photo's viewer to reload and offer Undo. */
+    val savedEditNotices: SavedEditNotices by lazy { SavedEditNotices() }
 
     private var pruneJob: Job? = null
 

@@ -29,6 +29,9 @@ sealed interface Route : NavKey {
     /** One photo, opened from any source. */
     @Serializable data class Photo(val ref: PhotoRef) : Route
 
+    /** The metadata editor for one photo. */
+    @Serializable data class Edit(val ref: PhotoRef) : Route
+
     /** Several photos picked or shared at once, shown as a grid. */
     @Serializable data class Selection(val refs: List<PhotoRef>) : Route
 
