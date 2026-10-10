@@ -21,6 +21,10 @@ data class AppSettings(
     val contrast: ContrastPreference = ContrastPreference.System,
     /** When on, ExifLab makes no network requests at all: no map tiles, no place search. */
     val offlineMode: Boolean = false,
+    /** How long backups of edited originals are kept. */
+    val backupRetention: BackupRetention = BackupRetention.Default,
+    /** How XMP sidecars next to RAW files are named. */
+    val sidecarNaming: SidecarNaming = SidecarNaming.Default,
 )
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -36,6 +40,8 @@ class SettingsRepository(context: Context) {
             palette = prefs[Keys.Palette].toEnum(BrandPalette.Lagoon),
             contrast = prefs[Keys.Contrast].toEnum(ContrastPreference.System),
             offlineMode = prefs[Keys.OfflineMode] ?: false,
+            backupRetention = prefs[Keys.BackupRetention].toEnum(BackupRetention.Default),
+            sidecarNaming = prefs[Keys.SidecarNaming].toEnum(SidecarNaming.Default),
         )
     }
 
@@ -52,12 +58,18 @@ class SettingsRepository(context: Context) {
 
     suspend fun setOfflineMode(enabled: Boolean) = dataStore.edit { it[Keys.OfflineMode] = enabled }
 
+    suspend fun setBackupRetention(retention: BackupRetention) = dataStore.edit { it[Keys.BackupRetention] = retention.name }
+
+    suspend fun setSidecarNaming(naming: SidecarNaming) = dataStore.edit { it[Keys.SidecarNaming] = naming.name }
+
     private object Keys {
         val ThemeMode = stringPreferencesKey("theme_mode")
         val DynamicColor = booleanPreferencesKey("dynamic_color")
         val Palette = stringPreferencesKey("palette")
         val Contrast = stringPreferencesKey("contrast")
         val OfflineMode = booleanPreferencesKey("offline_mode")
+        val BackupRetention = stringPreferencesKey("backup_retention")
+        val SidecarNaming = stringPreferencesKey("sidecar_naming")
     }
 }
 

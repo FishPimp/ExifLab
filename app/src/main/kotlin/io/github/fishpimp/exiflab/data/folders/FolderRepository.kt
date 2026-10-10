@@ -125,6 +125,7 @@ class FolderRepository(
                         documentUri = { DocumentsContract.buildDocumentUriUsingTree(tree, it).toString() },
                         canWrite = canWrite,
                         isLoading = isLoading,
+                        parentDocumentUri = documentUri,
                     ),
                 )
                 delay(REQUERY_THROTTLE_MS)
