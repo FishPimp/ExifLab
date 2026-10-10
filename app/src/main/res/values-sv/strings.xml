@@ -153,7 +153,7 @@
     <string name="photo_search_hint">Sök bland taggar och värden</string>
     <string name="photo_search_clear">Rensa sökningen</string>
     <string name="photo_mode_readable">Läsbart</string>
-    <string name="photo_mode_raw">Rått</string>
+    <string name="photo_mode_raw">Råvärden</string>
     <string name="photo_expand_all">Fäll ut alla</string>
     <string name="photo_collapse_all">Fäll ihop alla</string>
     <string name="photo_section_expand">Fäll ut</string>
