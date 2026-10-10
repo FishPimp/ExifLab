@@ -367,7 +367,8 @@ internal class PlanSteps(private val state: WorkingMetadata) {
     }
 
     private fun removeLocation(includePlaceNames: Boolean) {
-        if (state.hasIfd(ExifIfd.Gps) || state.originalExif.keys.any { it.ifd == ExifIfd.Gps }) state.dropIfd(ExifIfd.Gps)
+        // A report with parse problems may not show a GPS IFD that is there, so it is dropped regardless.
+        if (state.hasIfd(ExifIfd.Gps) || state.originalExif.keys.any { it.ifd == ExifIfd.Gps } || state.uncertain) state.dropIfd(ExifIfd.Gps)
         state.xmp.keys.filter { it.namespace == XmpNs.EXIF && it.name.startsWith("GPS") }.forEach(state::removeXmp)
         if (includePlaceNames) {
             PLACE_XMP.forEach(state::removeXmp)

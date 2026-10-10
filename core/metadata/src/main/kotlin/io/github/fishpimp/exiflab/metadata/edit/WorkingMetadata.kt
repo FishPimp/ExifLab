@@ -204,7 +204,6 @@ internal class WorkingMetadata(val report: MetadataReport) {
             is ExifChange.Remove -> removeExif(change.ifd, change.tag)
         }
         for (change in changes.xmp) {
-            val name = (change as? XmpChange.Remove)?.let { XmpName(it.namespace, it.name.substringAfter(':')) }
             when (change) {
                 is XmpChange.SetProperty -> setXmpChange(XmpName(change.namespace, change.name.substringAfter(':')), XmpShape.Simple, listOf(change.value), onlyExisting)
                 is XmpChange.SetArray -> {
@@ -217,7 +216,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
                 }
                 is XmpChange.SetLocalizedText ->
                     setXmpChange(XmpName(change.namespace, change.name.substringAfter(':')), XmpShape.LangAlt, listOf(change.value), onlyExisting)
-                is XmpChange.Remove -> removeXmp(name!!)
+                is XmpChange.Remove -> removeXmp(XmpName(change.namespace, change.name.substringAfter(':')))
                 is XmpChange.RemoveNamespace -> removeNamespace(change.namespace)
             }
         }
@@ -249,7 +248,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
         val exifChanges = mutableListOf<ExifChange>()
         if (MetadataBlock.Exif !in removedBlocks) {
             for (ifd in droppedIfds) {
-                val hadIfd = originalExif.keys.any { it.ifd == ifd } || (uncertain && ifd == ExifIfd.Gps)
+                val hadIfd = originalExif.keys.any { it.ifd == ifd } || uncertain
                 if (!hadIfd || (ifd == ExifIfd.Interoperability && ExifIfd.Exif in droppedIfds)) continue
                 exifChanges += when (ifd) {
                     ExifIfd.Gps -> ExifChange.Remove(ExifIfd.Primary, ExifTags.GPS_IFD_POINTER)
