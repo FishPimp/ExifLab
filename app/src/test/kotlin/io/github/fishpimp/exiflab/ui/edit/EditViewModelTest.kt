@@ -53,6 +53,7 @@ class EditViewModelTest {
     private val notices = SavedEditNotices()
     private val saving = FakeSaving()
     private val planner = FakePlanner()
+    private val changedPhotos = mutableListOf<PhotoRef>()
     private val copyRef = PhotoRef("content://docs/copy.jpg", "PXL_edited.jpg", "image/jpeg", 1L, null, PhotoOrigin.Document, writable = true)
 
     @Before fun setUp() = Dispatchers.setMain(dispatcher)
@@ -79,6 +80,7 @@ class EditViewModelTest {
         readOtherPhoto = readOther,
         searchPlaces = search,
         computeDispatcher = compute,
+        onPhotoChanged = { changedPhotos += it },
     )
 
     private val places = listOf(Place("Gamla stan", "Stockholm", null, "Sweden", LatLng(59.3251, 18.0711), PlaceKind.District))
@@ -301,6 +303,9 @@ class EditViewModelTest {
         val notice = notices.forPhoto(FakeReports.phoneRef.uri).first()!!
         assertThat(notice.mode).isEqualTo(EditMode.InPlace)
         assertThat(notice.canUndo).isTrue()
+        // The rewritten file's old size is dropped wherever the photo is remembered.
+        assertThat(changedPhotos.single().uri).isEqualTo(FakeReports.phoneRef.uri)
+        assertThat(changedPhotos.single().size).isNull()
     }
 
     @Test

@@ -71,6 +71,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowSizeClass
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.data.history.EditMode
+import io.github.fishpimp.exiflab.data.save.SavedEditNotice
 import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
@@ -135,10 +136,7 @@ fun PhotoScreen(
     }
 
     // A save from the editor: the report was read again; say so, with Undo where History can restore.
-    val savedNotice = state.savedNotice
-    LaunchedEffect(savedNotice) {
-        val notice = savedNotice ?: return@LaunchedEffect
-        viewModel.onSavedNoticeShown(notice)
+    suspend fun showSavedNotice(notice: SavedEditNotice) {
         val message = if (notice.skipped > 0) {
             resources.getQuantityString(R.plurals.photo_saved_skipped, notice.skipped, notice.skipped)
         } else {
@@ -156,6 +154,14 @@ fun PhotoScreen(
             duration = if (notice.canUndo) SnackbarDuration.Long else SnackbarDuration.Short,
         )
         if (result == SnackbarResult.ActionPerformed) viewModel.undoEdit(notice.recordId)
+    }
+
+    val savedNotice = state.savedNotice
+    LaunchedEffect(savedNotice) {
+        val notice = savedNotice ?: return@LaunchedEffect
+        // Marking it shown clears it from the state, which restarts this effect: show it from the screen's scope.
+        viewModel.onSavedNoticeShown(notice)
+        scope.launch { showSavedNotice(notice) }
     }
 
     fun launchPicker(launch: () -> Unit) {
@@ -185,7 +191,7 @@ fun PhotoScreen(
                     launchPicker { createCopy.launch(suggestedName) }
                 },
                 onOpenOriginal = { launchPicker { openOriginal.launch(PhotoFormats.documentPickerMimeTypes) } },
-                onEdit = { onEdit(ref) },
+                onEdit = { onEdit(viewModel.currentRef) },
             )
         },
         snackbarHostState = snackbarHostState,

@@ -72,6 +72,8 @@ import java.time.ZoneOffset
  * @param resolveCopy turns a saved copy's document URI into a [PhotoRef] to open.
  * @param readOtherPhoto reads another photo (by content URI) for "Copy location from another photo".
  * @param searchPlaces search-as-you-type for the location picker.
+ * @param onPhotoChanged told about a photo whose file was just written (the edited photo or the
+ *   new copy), with its now unknown size, e.g. to refresh the recent photos.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class EditViewModel(
@@ -85,6 +87,7 @@ class EditViewModel(
     private val readOtherPhoto: suspend (String) -> MetadataReport,
     searchPlaces: (Flow<String>) -> Flow<PlaceSearchState>,
     private val computeDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val onPhotoChanged: suspend (PhotoRef) -> Unit = {},
 ) : ViewModel() {
     private val load = MutableStateFlow<EditLoad>(EditLoad.Loading)
     private val edits = MutableStateFlow<List<PendingEdit>>(emptyList())
@@ -395,6 +398,8 @@ class EditViewModel(
                 } else {
                     null
                 }
+                // The written file has a new size; whoever kept the old one must not trust it.
+                if (outcome.mode == EditMode.InPlace) runCatching { onPhotoChanged(ref.copy(size = null, lastModified = null)) }
                 notices.post(
                     SavedEditNotice(
                         recordId = outcome.recordId,
@@ -561,6 +566,7 @@ class EditViewModel(
                         withContext(Dispatchers.IO) { reader.read(photos.imageSource(other)) }
                     },
                     searchPlaces = { queries -> graph.placeSearchRepository.searchAsYouType(queries) },
+                    onPhotoChanged = graph.recentPhotosRepository::record,
                 )
             }
         }

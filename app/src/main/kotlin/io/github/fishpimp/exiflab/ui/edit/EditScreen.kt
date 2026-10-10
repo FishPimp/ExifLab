@@ -167,8 +167,10 @@ fun EditScreen(
     BackHandler(enabled = !state.isSaving && state.page != EditorPage.Overview) { viewModel.closePage() }
     BackHandler(enabled = !state.isSaving && state.page == EditorPage.Overview && state.hasEdits) { confirmDiscard = true }
 
-    val requestBack = {
-        if (state.hasEdits) confirmDiscard = true else onBack()
+    val hasEdits by rememberUpdatedState(state.hasEdits)
+    val currentOnBack by rememberUpdatedState(onBack)
+    val requestBack: () -> Unit = remember {
+        { if (hasEdits) confirmDiscard = true else currentOnBack() }
     }
 
     EditContent(
@@ -297,7 +299,8 @@ fun EditContent(
                 onClose = actions.onClosePage,
             )
             else -> {
-                val time = report.captureTimeAfter(state.edits)
+                // A new time zone fix replaces a queued one, so it starts from the time without it.
+                val time = report.captureTimeAfter(state.edits.filterNot { it.slot == EditSlot.TimeZone })
                 TimeZoneWizard(
                     recorded = time.local,
                     recordedOffset = time.offset,

@@ -168,6 +168,15 @@ class PhotoViewModel(
     private val notice = MutableStateFlow<SavedEditNotice?>(null)
     private var loadJob: Job? = null
 
+    /** False once the file was rewritten here: its size in [ref] no longer applies. */
+    @Volatile private var sizeKnown = true
+
+    /**
+     * [ref] as it is now. After an edit or undo the file's size changed, so the size is dropped
+     * and readers measure the file instead of trusting the stale value.
+     */
+    val currentRef: PhotoRef get() = if (sizeKnown) ref else ref.copy(size = null, lastModified = null)
+
     /** Search text, bound to the search field. */
     var query: String by mutableStateOf(queryFlow.value)
         private set
@@ -207,6 +216,7 @@ class PhotoViewModel(
             savedEdits.filterNotNull().collect { saved ->
                 // The file changed under the viewer: read it again, then announce the save.
                 if (saved != notice.value) {
+                    sizeKnown = false
                     notice.value = saved
                     reload()
                 }
@@ -225,6 +235,7 @@ class PhotoViewModel(
         if (working.value) return
         working.value = true
         viewModelScope.launch {
+            sizeKnown = false
             val event = try {
                 if (restoreOriginal(recordId) is SaveOutcome.Saved) PhotoEvent.Undone else PhotoEvent.UndoFailed
             } catch (e: CancellationException) {
@@ -245,7 +256,7 @@ class PhotoViewModel(
         loadJob = viewModelScope.launch {
             load.value = PhotoLoad.Loading
             load.value = try {
-                val report = readReport(ref)
+                val report = readReport(currentRef)
                 if (savedState.get<ArrayList<String>>(KEY_COLLAPSED) == null) {
                     savedState[KEY_COLLAPSED] = ArrayList(TagBrowserBuilder.defaultCollapsed(report))
                 }
@@ -299,7 +310,7 @@ class PhotoViewModel(
     fun saveCopy(destination: Uri) = runWork(
         onError = { PhotoEvent.CopyFailed(it) },
         fallback = PhotoAccessError.WriteFailed,
-    ) { saveCopy(ref, destination) }
+    ) { saveCopy(currentRef, destination) }
 
     /** Opens a document the user picked, typically the original of a photo that was shared without its location. */
     fun openOriginal(document: Uri) = runWork(

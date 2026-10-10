@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import com.google.common.truth.Truth.assertThat
 import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.SaveError
+import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.save.SaveOutcome
 import io.github.fishpimp.exiflab.data.save.SavedEditNotice
 import io.github.fishpimp.exiflab.data.save.SavedEditNotices
@@ -31,6 +32,7 @@ class PhotoSavedEditTest {
     private val ref = FakeReports.phoneRef
     private val notices = SavedEditNotices()
     private var reads = 0
+    private var lastRead: PhotoRef? = null
     private val restored = mutableListOf<String>()
     private var restoreOutcome: SaveOutcome = SaveOutcome.Saved("restore", EditMode.InPlace, ref.uri)
 
@@ -41,8 +43,9 @@ class PhotoSavedEditTest {
     private fun viewModel() = PhotoViewModel(
         ref = ref,
         savedState = SavedStateHandle(),
-        readReport = {
+        readReport = { photo ->
             reads++
+            lastRead = photo
             FakeReports.phoneJpeg
         },
         saveCopy = { photo, _ -> photo },
@@ -73,12 +76,18 @@ class PhotoSavedEditTest {
         val state = observe(vm)
         assertThat(reads).isEqualTo(1)
         assertThat(state().savedNotice).isNull()
+        assertThat(lastRead!!.size).isEqualTo(ref.size)
 
         val saved = SavedEditNotice("record-1", ref.uri, EditMode.InPlace)
         notices.post(saved)
         assertThat(reads).isEqualTo(2)
         assertThat(state().savedNotice).isEqualTo(saved)
         assertThat(state().load).isInstanceOf(PhotoLoad.Loaded::class.java)
+
+        // The file was rewritten, so its old size must not be trusted by readers or by later edits.
+        assertThat(lastRead!!.size).isNull()
+        assertThat(vm.currentRef.size).isNull()
+        assertThat(vm.currentRef.uri).isEqualTo(ref.uri)
 
         vm.onSavedNoticeShown(saved)
         assertThat(state().savedNotice).isNull()
