@@ -163,9 +163,9 @@ class EditSamplesTest {
                     problems += unexpectedChanges(before, after, plan).map { "$label: $it" }
                     if (scenario.repeatable) {
                         val again = Editing.planner.plan(after, scenario.operations)
-                        // A report with parse warnings may hide blocks, so block removals are always kept for it.
-                        val changes = if (after.warnings.isEmpty()) again.changes else again.changes.copy(removeBlocks = emptySet())
-                        if (!changes.isEmpty) problems += "$label: not stable, planning again gives ${again.diff.map { "${it.label}: ${it.before} -> ${it.after}" }}"
+                        // A report with parse warnings may hide blocks, so removals are always planned for it; only the diff must be empty.
+                        val stable = if (after.warnings.isEmpty()) again.changes.isEmpty else again.diff.isEmpty()
+                        if (!stable) problems += "$label: not stable, planning again gives ${again.diff.map { "${it.label}: ${it.before} -> ${it.after}" }}"
                     }
                     outcomes += "${scenario.name}=${plan.diff.size}${if (plan.warnings.isEmpty()) "" else "!"}"
                     edits++
