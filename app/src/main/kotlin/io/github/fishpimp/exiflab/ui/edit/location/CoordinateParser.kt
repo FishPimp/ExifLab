@@ -173,21 +173,20 @@ object CoordinateParser {
         var suffix: Token.Hemisphere? = null
         val numbers = mutableListOf<Token.Number>()
         val hemisphere: Token.Hemisphere? get() = prefix ?: suffix
-        val hasUnits: Boolean get() = numbers.any { it.unit != null }
     }
 
     private fun parseCoordinates(text: String): CoordinateParse {
         val tokens = tokenize(text) ?: return CoordinateParse.Failure(CoordinateError.Unrecognized)
-        val axes = group(tokens)
-        val split = when {
-            axes.size == 2 -> axes
-            // "59.3293 18.0686", "59 19.758 18 4.117", "59 19 45 18 4 7": no markers, so split in half.
-            axes.size == 1 && axes[0].hemisphere == null && !axes[0].hasUnits && axes[0].numbers.size % 2 == 0 -> {
-                val all = axes[0].numbers
-                val half = all.size / 2
-                listOf(AxisValue().apply { numbers += all.take(half) }, AxisValue().apply { numbers += all.drop(half) })
-            }
-            else -> return CoordinateParse.Failure(CoordinateError.Unrecognized)
+        val numbers = tokens.filterIsInstance<Token.Number>()
+        val half = numbers.size / 2
+        // "59.3293 18.0686", "59 19.758 18 4.117", "59 19 45 18 4 7": no markers, so the halves are the axes.
+        val unmarked = numbers.size == tokens.size && numbers.size in setOf(2, 4, 6) &&
+            numbers.none { it.unit != null } &&
+            numbers.withIndex().none { (index, number) -> number.negative && index != 0 && index != half }
+        val split = if (unmarked) {
+            listOf(AxisValue().apply { this.numbers += numbers.take(half) }, AxisValue().apply { this.numbers += numbers.drop(half) })
+        } else {
+            group(tokens).takeIf { it.size == 2 } ?: return CoordinateParse.Failure(CoordinateError.Unrecognized)
         }
         val values = split.map { axis -> toDegrees(axis) ?: return CoordinateParse.Failure(CoordinateError.OutOfRange) }
         val kinds = split.map { it.hemisphere?.axis }
