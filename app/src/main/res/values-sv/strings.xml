@@ -11,6 +11,7 @@
     <string name="action_close">Stäng</string>
     <string name="action_cancel">Avbryt</string>
     <string name="action_remove">Ta bort</string>
+    <string name="action_delete">Radera</string>
 
     <!-- Home -->
     <string name="home_tagline">Se vad dina bilder berättar, och bestäm vad de får behålla.</string>
@@ -208,6 +209,124 @@
     <!-- History -->
     <string name="history_empty_title">Inget redigerat än</string>
     <string name="history_empty_body">Varje ändring du sparar listas här, och originalet sparas så att du kan återställa det.</string>
+    <string name="history_today">I dag</string>
+    <string name="history_yesterday">I går</string>
+    <string name="history_mode_in_place">På plats</string>
+    <string name="history_mode_copy">Kopia</string>
+    <string name="history_mode_sidecar">Sidofil</string>
+    <string name="history_state_saving">Sparar</string>
+    <string name="history_state_saved">Sparad</string>
+    <string name="history_state_restored">Återställd</string>
+    <string name="history_state_rolled_back">Tillbakarullad</string>
+    <string name="history_state_failed">Misslyckades</string>
+    <string name="history_summary_metadata">Metadata ändrad</string>
+    <string name="history_summary_restore">Originalet återställt</string>
+    <string name="history_summary_restore_of">Återställning av: %1$s</string>
+    <plurals name="history_batch_saved">
+        <item quantity="one">%d sparad</item>
+        <item quantity="other">%d sparade</item>
+    </plurals>
+    <plurals name="history_batch_failed">
+        <item quantity="one">%d misslyckades</item>
+        <item quantity="other">%d misslyckades</item>
+    </plurals>
+    <plurals name="history_batch_cancelled">
+        <item quantity="one">%d avbruten</item>
+        <item quantity="other">%d avbrutna</item>
+    </plurals>
+    <string name="history_batch_restore_of">Återställt: %1$s</string>
+    <string name="history_batch_show">Visa bilder</string>
+    <string name="history_batch_hide">Dölj bilder</string>
+    <string name="history_batch_expanded">Utfälld</string>
+    <string name="history_batch_collapsed">Hopfälld</string>
+    <string name="history_action_restore_all">Återställ alla</string>
+    <string name="history_batch_restore_title">Återställa alla original?</string>
+    <plurals name="history_batch_restore_body">
+        <item quantity="one">%d bild återställs exakt som den var före den här omgången. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</item>
+        <item quantity="other">%d bilder återställs exakt som de var före den här omgången. De nuvarande versionerna säkerhetskopieras först, så att du kan ångra.</item>
+    </plurals>
+    <plurals name="history_batch_restored">
+        <item quantity="one">%d bild återställd</item>
+        <item quantity="other">%d bilder återställda</item>
+    </plurals>
+    <plurals name="history_batch_restored_partial">
+        <item quantity="one">%1$d av %2$d bild återställd</item>
+        <item quantity="other">%1$d av %2$d bilder återställda</item>
+    </plurals>
+    <string name="history_detail_title">Redigering</string>
+    <string name="history_detail_changes">Ändringar</string>
+    <plurals name="history_change_count">
+        <item quantity="one">%d ändring</item>
+        <item quantity="other">%d ändringar</item>
+    </plurals>
+    <string name="history_detail_no_changes">Inga fältändringar sparades för den här redigeringen.</string>
+    <string name="history_detail_saved_to">Sparad i %1$s</string>
+    <string name="history_detail_backup">Säkerhetskopia</string>
+    <string name="history_detail_missing_title">Redigeringen hittades inte</string>
+    <string name="history_detail_missing_body">Den finns inte längre i historiken.</string>
+    <string name="history_diff_added">Tillagd</string>
+    <string name="history_diff_changed">Ändrad</string>
+    <string name="history_diff_removed">Borttagen</string>
+    <string name="history_diff_before">Före</string>
+    <string name="history_diff_after">Efter</string>
+    <string name="history_diff_empty_value">(tomt)</string>
+    <string name="history_group_container">Behållare</string>
+    <string name="history_group_file">Fil</string>
+    <string name="history_group_other">Övrigt</string>
+    <string name="history_outcome_pending_title">Sparas fortfarande</string>
+    <string name="history_outcome_pending_body">Om ExifLab stängdes under sparningen kontrolleras och åtgärdas filen nästa gång appen startar.</string>
+    <string name="history_outcome_restore_title">Det här återställde en tidigare redigering</string>
+    <string name="history_outcome_restore_body">Filen blev som den var före den redigeringen. Du kan ångra återställningen.</string>
+    <string name="history_outcome_restored_title">Originalet återställt</string>
+    <string name="history_outcome_restored_body">Den här redigeringen har ångrats. Filen är som den var före den.</string>
+    <string name="history_outcome_not_saved_title">Inte sparad</string>
+    <string name="history_outcome_rolled_back_body">%1$s Filen återställdes exakt som den var.</string>
+    <string name="history_outcome_unchanged_body">%1$s Inget ändrades.</string>
+    <string name="history_outcome_damaged_title">Filen kan vara skadad</string>
+    <string name="history_error_read">Filen kunde inte läsas.</string>
+    <string name="history_error_source_changed">Filen ändrades medan den sparades.</string>
+    <string name="history_error_backup">Säkerhetskopian kunde inte skapas. Enheten kan vara full.</string>
+    <string name="history_error_backup_damaged">Säkerhetskopian är skadad och kan inte användas.</string>
+    <string name="history_error_image_data">Ändringen skulle ha påverkat själva bilden, så den stoppades.</string>
+    <string name="history_error_unsupported">Filen är uppbyggd på ett sätt som ExifLab inte kan redigera säkert.</string>
+    <string name="history_error_check">Den redigerade filen klarade inte säkerhetskontrollen.</string>
+    <string name="history_error_write">Filen kunde inte skrivas.</string>
+    <string name="history_error_verification">Det som skrevs stämde inte när det lästes tillbaka.</string>
+    <string name="history_error_rollback">Skrivningen misslyckades och originalet kunde inte läggas tillbaka. Återställ det från säkerhetskopian.</string>
+    <string name="history_error_interrupted">ExifLab stängdes medan filen sparades.</string>
+    <string name="history_error_recovery">ExifLab stängdes medan filen sparades och kunde inte rätta till den. Återställ den från säkerhetskopian.</string>
+    <string name="history_error_unknown">Något gick fel.</string>
+    <string name="history_action_restore">Återställ originalet</string>
+    <string name="history_action_undo_restore">Ångra återställningen</string>
+    <string name="history_action_open_photo">Öppna bilden</string>
+    <string name="history_action_delete_backup">Radera säkerhetskopian</string>
+    <string name="history_action_view_edit">Visa den redigeringen</string>
+    <string name="history_restore_title">Återställa originalet?</string>
+    <string name="history_restore_body">%1$s återställs exakt som den var före den här redigeringen. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</string>
+    <string name="history_undo_restore_title">Ångra återställningen?</string>
+    <string name="history_undo_restore_body">%1$s blir som den var före återställningen. Den nuvarande versionen säkerhetskopieras först.</string>
+    <string name="history_delete_backup_title">Radera säkerhetskopian?</string>
+    <string name="history_delete_backup_body_size">Det frigör %1$s. Originalet för den här redigeringen kan inte längre återställas.</string>
+    <string name="history_delete_backup_body">Originalet för den här redigeringen kan inte längre återställas.</string>
+    <string name="history_backup_kept">Säkerhetskopia sparad</string>
+    <string name="history_backup_kept_until">%1$s, sparas till %2$s</string>
+    <string name="history_backup_kept_forever">%1$s, sparas tills du raderar den</string>
+    <string name="history_backup_only_copy">%1$s. Det här är den enda intakta kopian av filen, så den sparas tills du raderar den.</string>
+    <string name="history_backup_pending">%1$s, behålls tills sparningen är klar</string>
+    <string name="history_backup_not_needed">Ingen säkerhetskopia behövs</string>
+    <string name="history_backup_copy_body">Originalet ändrades inte. Ändringen sparades som en kopia.</string>
+    <string name="history_backup_new_sidecar_body">Det fanns ingen sidofil tidigare. Om du återställer originalet tas den bort.</string>
+    <string name="history_backup_none">Ingen säkerhetskopia sparad</string>
+    <string name="history_backup_none_body">Inget ändrades, så det finns inget att återställa.</string>
+    <string name="history_backup_removed">Säkerhetskopian borttagen</string>
+    <string name="history_backup_removed_body">Originalet för den här redigeringen kan inte längre återställas.</string>
+    <string name="history_restored">Originalet återställt</string>
+    <string name="history_restore_failed">Kunde inte återställa. %1$s</string>
+    <string name="history_backup_deleted">Säkerhetskopian raderad</string>
+    <string name="history_backup_delete_failed">Säkerhetskopian kunde inte raderas.</string>
+    <string name="history_photo_unavailable">Bilden är inte längre tillgänglig.</string>
+    <string name="history_select_title">Välj en redigering</string>
+    <string name="history_select_body">Dess ändringar, säkerhetskopia och återställning visas här.</string>
 
     <!-- Settings -->
     <string name="settings_section_appearance">Utseende</string>
@@ -233,6 +352,26 @@
     <string name="settings_offline_mode">Offlineläge</string>
     <string name="settings_offline_mode_body">Stänger av kartan och platssökningen, så att ExifLab aldrig ansluter till internet. Allt annat fungerar som vanligt.</string>
     <string name="settings_version">Version</string>
+    <string name="settings_section_editing">Redigering</string>
+    <string name="settings_sidecar_naming">Namn på sidofil</string>
+    <string name="settings_sidecar_naming_body">RAW-filer ändras aldrig. Ändringar sparas i en XMP-sidofil bredvid dem, med ett namn som det här.</string>
+    <string name="settings_section_backups">Säkerhetskopior</string>
+    <string name="settings_backup_storage">Använt utrymme</string>
+    <string name="settings_backup_storage_value">%1$s av %2$s</string>
+    <string name="settings_backup_storage_measuring">Mäter</string>
+    <string name="settings_backup_retention">Spara säkerhetskopior i</string>
+    <string name="settings_backup_retention_body">ExifLab säkerhetskopierar varje bild innan den ändras, så att du kan återställa originalet. Äldre säkerhetskopior raderas automatiskt, de äldsta först när de tar mer än %1$s. Den senaste säkerhetskopian av varje bild sparas hela perioden.</string>
+    <plurals name="settings_backup_days">
+        <item quantity="one">%d dag</item>
+        <item quantity="other">%d dagar</item>
+    </plurals>
+    <string name="settings_backup_forever">För alltid</string>
+    <string name="settings_backup_delete_all">Radera alla säkerhetskopior</string>
+    <string name="settings_backup_delete_all_body">Frigör %1$s</string>
+    <string name="settings_backup_delete_all_none">Det finns inga säkerhetskopior just nu</string>
+    <string name="settings_backup_delete_all_title">Radera alla säkerhetskopior?</string>
+    <string name="settings_backup_delete_all_confirm">Det frigör %1$s. Du kan inte längre återställa originalen till bilder som du redan har redigerat. Säkerhetskopior för pågående sparningar behålls.</string>
+    <string name="settings_backup_delete_all_action">Radera alla</string>
 
     <string name="palette_lagoon">Lagun</string>
     <string name="palette_citrus">Citrus</string>

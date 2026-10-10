@@ -8,6 +8,7 @@ import io.github.fishpimp.exiflab.designsystem.theme.ThemeMode
 import io.github.fishpimp.exiflab.ui.ExifLabApp
 import io.github.fishpimp.exiflab.ui.privacy.LicensesScreen
 import io.github.fishpimp.exiflab.ui.privacy.PrivacyScreen
+import io.github.fishpimp.exiflab.ui.settings.BackupUsage
 import io.github.fishpimp.exiflab.ui.settings.SettingsContent
 import org.junit.Rule
 import org.junit.Test
@@ -60,7 +61,9 @@ class ShellScreenshotTest {
     private fun SettingsUnderTest(offlineMode: Boolean = false) = SettingsContent(
         settings = AppSettings(dynamicColor = false, offlineMode = offlineMode),
         language = AppLanguage.System,
+        backups = BackupUsage(usedBytes = 184_320_000),
         onThemeMode = {}, onDynamicColor = {}, onPalette = {}, onContrast = {}, onLanguage = {}, onOfflineMode = {},
+        onBackupRetention = {}, onSidecarNaming = {}, onDeleteAllBackups = {},
         onOpenPrivacy = {}, onOpenLicenses = {},
     )
 }

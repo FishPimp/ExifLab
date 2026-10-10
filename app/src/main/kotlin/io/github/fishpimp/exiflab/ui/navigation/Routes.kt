@@ -46,6 +46,9 @@ sealed interface Route : NavKey {
      *
      * @property title shown in the top bar and as the label in other map apps, e.g. the photo name.
      */
+    /** One edit from History: its changes, backup and restore actions. */
+    @Serializable data class HistoryDetail(val recordId: String) : Route
+
     @Serializable data class MapView(val latitude: Double, val longitude: Double, val title: String? = null) : Route
 }
 

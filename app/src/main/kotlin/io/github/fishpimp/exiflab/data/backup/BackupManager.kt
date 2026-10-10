@@ -37,6 +37,11 @@ class BackupManager(
 
     suspend fun refreshUsage(): Long = withContext(ioDispatcher) { store.refreshUsage() }
 
+    /** Size of the backup at [path], or null when it is gone. */
+    suspend fun backupSize(path: String): Long? = withContext(ioDispatcher) {
+        runCatching { store.file(path).takeIf { it.isFile }?.length() }.getOrNull()
+    }
+
     /** Applies the retention and size cap, and removes leftovers no record refers to. */
     suspend fun prune(): PruneResult = mutex.withLock {
         withContext(ioDispatcher) {

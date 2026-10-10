@@ -25,6 +25,7 @@ import androidx.navigation3.ui.NavDisplay
 import io.github.fishpimp.exiflab.appGraph
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.ui.folder.FolderScreen
+import io.github.fishpimp.exiflab.ui.history.HistoryDetailScreen
 import io.github.fishpimp.exiflab.ui.history.HistoryScreen
 import io.github.fishpimp.exiflab.ui.home.HomeScreen
 import io.github.fishpimp.exiflab.ui.library.LibraryScreen
@@ -109,7 +110,17 @@ fun ExifLabApp(
             )
         }
         entry<Route.Library> { LibraryScreen(onOpenFolder = ::navigate) }
-        entry<Route.History> { HistoryScreen() }
+        entry<Route.History> {
+            HistoryScreen(onOpenRecord = { navigate(Route.HistoryDetail(it)) }, onOpenPhoto = ::openPhoto)
+        }
+        entry<Route.HistoryDetail> { route ->
+            HistoryDetailScreen(
+                recordId = route.recordId,
+                onBack = ::back,
+                onOpenPhoto = ::openPhoto,
+                onOpenRecord = { navigate(Route.HistoryDetail(it)) },
+            )
+        }
         entry<Route.Settings> {
             SettingsScreen(
                 onOpenPrivacy = { navigate(Route.Privacy) },
