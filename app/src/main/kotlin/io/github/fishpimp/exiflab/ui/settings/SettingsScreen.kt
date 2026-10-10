@@ -9,21 +9,25 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
 import androidx.compose.material.icons.rounded.BrightnessAuto
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.CloudOff
 import androidx.compose.material.icons.rounded.DarkMode
 import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.Info
@@ -42,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -83,6 +88,7 @@ fun SettingsScreen(
         onPalette = viewModel::setPalette,
         onContrast = viewModel::setContrast,
         onLanguage = viewModel::setLanguage,
+        onOfflineMode = viewModel::setOfflineMode,
         onOpenPrivacy = onOpenPrivacy,
         onOpenLicenses = onOpenLicenses,
         modifier = modifier,
@@ -98,6 +104,7 @@ fun SettingsContent(
     onPalette: (BrandPalette) -> Unit,
     onContrast: (ContrastPreference) -> Unit,
     onLanguage: (AppLanguage) -> Unit,
+    onOfflineMode: (Boolean) -> Unit,
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
@@ -125,15 +132,12 @@ fun SettingsContent(
                             )
                         }
                         if (dynamicSupported) {
-                            ListRow(
+                            SwitchRow(
                                 title = stringResource(R.string.settings_dynamic_color),
                                 supporting = stringResource(R.string.settings_dynamic_color_body),
                                 icon = Icons.Rounded.Palette,
-                                onClick = { onDynamicColor(!settings.dynamicColor) },
-                                trailing = {
-                                    Switch(checked = settings.dynamicColor, onCheckedChange = null)
-                                },
-                                modifier = Modifier.semantics(mergeDescendants = true) {},
+                                checked = settings.dynamicColor,
+                                onCheckedChange = onDynamicColor,
                             )
                         }
                         AnimatedVisibility(visible = !dynamicSupported || !settings.dynamicColor) {
@@ -174,9 +178,16 @@ fun SettingsContent(
                         }
                     }
                 }
-                item { SectionHeader(stringResource(R.string.settings_section_about)) }
+                item { SectionHeader(stringResource(R.string.settings_section_privacy)) }
                 item {
                     GroupSurface {
+                        SwitchRow(
+                            title = stringResource(R.string.settings_offline_mode),
+                            supporting = stringResource(R.string.settings_offline_mode_body),
+                            icon = Icons.Rounded.CloudOff,
+                            checked = settings.offlineMode,
+                            onCheckedChange = onOfflineMode,
+                        )
                         ListRow(
                             title = stringResource(R.string.privacy_title),
                             supporting = stringResource(R.string.settings_privacy_body),
@@ -184,6 +195,11 @@ fun SettingsContent(
                             onClick = onOpenPrivacy,
                             trailing = { Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null) },
                         )
+                    }
+                }
+                item { SectionHeader(stringResource(R.string.settings_section_about)) }
+                item {
+                    GroupSurface {
                         ListRow(
                             title = stringResource(R.string.licenses_title),
                             icon = Icons.Rounded.Description,
@@ -199,6 +215,39 @@ fun SettingsContent(
                 }
             }
         }
+    }
+}
+
+/** A settings row with a switch. The whole row toggles, and TalkBack reads it as one switch. */
+@Composable
+private fun SwitchRow(
+    title: String,
+    supporting: String?,
+    icon: ImageVector,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .heightIn(min = 56.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge)
+            if (supporting != null) {
+                Text(
+                    supporting,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Switch(checked = checked, onCheckedChange = null)
     }
 }
 

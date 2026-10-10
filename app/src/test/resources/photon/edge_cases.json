@@ -1,0 +1,32 @@
+{
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"osm_key": "place", "osm_value": "city", "name": "No geometry", "type": "city"}
+    },
+    {
+      "geometry": {"coordinates": [200.0, 95.0], "type": "Point"},
+      "type": "Feature",
+      "properties": {"osm_key": "place", "osm_value": "city", "name": "Out of range", "type": "city"}
+    },
+    {
+      "geometry": {"coordinates": [12.5], "type": "Point"},
+      "type": "Feature",
+      "properties": {"osm_key": "place", "osm_value": "city", "name": "Half a point", "type": "city"}
+    },
+    {
+      "geometry": {"coordinates": [11.9746, 57.7089], "type": "Point"},
+      "type": "Feature",
+      "properties": {"osm_key": "landuse", "osm_value": "industrial", "type": "other", "country": "Sverige"}
+    },
+    {
+      "geometry": {"coordinates": [11.9746, 57.7089], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_key": "natural", "osm_value": "peak", "name": "  Ramberget  ", "type": "other",
+        "city": "Göteborg", "state": "Västra Götalands län", "country": "Sverige", "extra": {"nested": [1, 2]}
+      }
+    }
+  ],
+  "type": "FeatureCollection"
+}

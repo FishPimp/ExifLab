@@ -80,6 +80,7 @@
     <!-- Settings -->
     <string name="settings_section_appearance">Utseende</string>
     <string name="settings_section_language">Språk</string>
+    <string name="settings_section_privacy">Integritet och nätverk</string>
     <string name="settings_section_about">Om</string>
     <string name="settings_theme">Tema</string>
     <string name="settings_theme_system">System</string>
@@ -97,6 +98,8 @@
     <string name="settings_language">Appens språk</string>
     <string name="settings_language_system">System</string>
     <string name="settings_privacy_body">Vad ExifLab gör, och inte gör, med dina data</string>
+    <string name="settings_offline_mode">Offlineläge</string>
+    <string name="settings_offline_mode_body">Stänger av kartan och platssökningen, så att ExifLab aldrig ansluter till internet. Allt annat fungerar som vanligt.</string>
     <string name="settings_version">Version</string>
 
     <string name="palette_lagoon">Lagun</string>
@@ -114,14 +117,43 @@
     <string name="privacy_tracking_title">Inga annonser, ingen analys eller spårning</string>
     <string name="privacy_tracking_body">Det finns inga annonser, ingen analys, ingen kraschrapportering och inga konton. ExifLab samlar inte in något om dig eller hur du använder appen.</string>
     <string name="privacy_network_title">Det här använder internet</string>
-    <string name="privacy_network_body">Bara två funktioner går ut på nätet, och bara medan du använder dem: kartbilder från OpenFreeMap (OpenStreetMap-data) när en karta visas, och platssökning från Photon (Komoot) när du söker efter en plats. Förfrågningarna innehåller ett kartområde eller din söktext, aldrig dina bilder. Offlineläget stänger av båda.</string>
+    <string name="privacy_network_body">Bara två funktioner går ut på nätet, och bara medan du använder dem. Det här är de enda servrar som ExifLab någonsin kontaktar, och förfrågningarna innehåller ett kartområde eller din söktext, aldrig dina bilder eller deras metadata.</string>
+    <string name="privacy_network_tiles">Kartbilder från OpenFreeMap, med data från OpenStreetMap, när en karta visas</string>
+    <string name="privacy_network_search">Platssökning från Photon (Komoot), när du söker efter en plats</string>
+    <string name="privacy_network_offline">Offlineläget i Inställningar stänger av båda.</string>
     <string name="privacy_files_title">Bara filerna du väljer</string>
     <string name="privacy_files_body">ExifLab kan bara öppna bilder som du väljer, bilder som delas till appen och mappar som du ger åtkomst till. Du kan ta bort mappåtkomsten när som helst.</string>
     <string name="privacy_backups_title">Säkerhetskopior stannar på enheten</string>
     <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen.</string>
     <string name="privacy_permissions_title">Behörigheter</string>
-    <string name="privacy_permissions_body">Bilder och mappar öppnas via systemets bildväljare och mappåtkomst. Aviseringar visar förloppet för batchredigeringar. Internet används bara för kartor och platssökning.</string>
+    <string name="privacy_permissions_body">Bilder och mappar öppnas via systemets bildväljare och mappåtkomst. Aviseringar visar förloppet för batchredigeringar. Internet används bara för kartor och platssökning, och nätverksstatus bara för att se om du är ansluten. ExifLab ber aldrig om din plats.</string>
 
     <!-- Licenses -->
     <string name="licenses_title">Licenser för öppen källkod</string>
+    <string name="licenses_section_libraries">Bibliotek och typsnitt</string>
+    <string name="licenses_section_map">Kartdata och kartstilar</string>
+
+    <!-- Map -->
+    <string name="map_title">Karta</string>
+    <string name="map_description">Karta som visar %1$s</string>
+    <string name="map_description_no_location">Karta utan plats</string>
+    <string name="map_action_open">Öppna kartan</string>
+    <string name="map_action_zoom_in">Zooma in</string>
+    <string name="map_action_zoom_out">Zooma ut</string>
+    <string name="map_action_pin_center">Sätt nålen mitt på kartan</string>
+    <string name="map_note_offline">Kartan är avstängd i offlineläge</string>
+    <string name="map_note_no_connection">Ingen internetanslutning</string>
+    <string name="map_note_unavailable">Kartan kan inte visas på den här enheten</string>
+    <string name="map_attribution">OpenFreeMap © OpenMapTiles © OpenStreetMap-bidragsgivare</string>
+    <string name="map_credits_action">Visa kartans källor</string>
+    <string name="map_credits_title">Kartdata</string>
+    <string name="map_credit_openfreemap_role">Kartbilder och kartstilar</string>
+    <string name="map_credit_openmaptiles_role">Schema för vektorkartor och kartdesign</string>
+    <string name="map_credit_openstreetmap">© OpenStreetMap-bidragsgivare</string>
+    <string name="map_credit_openstreetmap_role">Kartdata, tillgänglig under Open Database License</string>
+    <string name="map_coordinates">Koordinater</string>
+    <string name="map_copy_coordinates">Kopiera koordinater</string>
+    <string name="map_coordinates_copied">Koordinaterna har kopierats</string>
+    <string name="map_open_in_other_app">Öppna i en annan app</string>
+    <string name="map_no_app">Det finns ingen app på enheten som kan visa platsen.</string>
 </resources>

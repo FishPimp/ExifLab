@@ -1,0 +1,34 @@
+{
+  "features": [
+    {
+      "geometry": {"coordinates": [2.2944990543196795, 48.858260200000004], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "W", "osm_id": 5013364, "extent": [2.2933084, 48.8590465, 2.2956897, 48.8574753],
+        "country": "France", "city": "Paris", "countrycode": "FR", "postcode": "75007",
+        "locality": "Quartier du Gros-Caillou", "county": "Paris", "type": "house", "osm_key": "man_made",
+        "housenumber": "5", "street": "Avenue Anatole France", "district": "Paris 7e Arrondissement",
+        "osm_value": "tower", "name": "Eiffel Tower", "state": "Ile-de-France"
+      }
+    },
+    {
+      "geometry": {"coordinates": [2.3483915, 48.8534951], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R", "osm_id": 7444, "extent": [2.224122, 48.902156, 2.4697602, 48.8155755],
+        "country": "France", "osm_key": "place", "countrycode": "FR", "osm_value": "city",
+        "name": "Paris", "county": "Paris", "state": "Ile-de-France", "type": "city"
+      }
+    },
+    {
+      "geometry": {"coordinates": [1.8883335, 46.603354], "type": "Point"},
+      "type": "Feature",
+      "properties": {
+        "osm_type": "R", "osm_id": 2202162, "extent": [-5.4534286, 51.2683256, 9.8678344, 41.2632185],
+        "country": "France", "osm_key": "place", "countrycode": "FR", "osm_value": "country",
+        "name": "France", "type": "country"
+      }
+    }
+  ],
+  "type": "FeatureCollection"
+}

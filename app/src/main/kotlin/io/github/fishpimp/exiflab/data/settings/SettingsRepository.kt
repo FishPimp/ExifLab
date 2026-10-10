@@ -11,6 +11,7 @@ import io.github.fishpimp.exiflab.designsystem.theme.BrandPalette
 import io.github.fishpimp.exiflab.designsystem.theme.ContrastPreference
 import io.github.fishpimp.exiflab.designsystem.theme.ThemeMode
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 data class AppSettings(
@@ -18,6 +19,8 @@ data class AppSettings(
     val dynamicColor: Boolean = true,
     val palette: BrandPalette = BrandPalette.Lagoon,
     val contrast: ContrastPreference = ContrastPreference.System,
+    /** When on, ExifLab makes no network requests at all: no map tiles, no place search. */
+    val offlineMode: Boolean = false,
 )
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -32,8 +35,12 @@ class SettingsRepository(context: Context) {
             dynamicColor = prefs[Keys.DynamicColor] ?: true,
             palette = prefs[Keys.Palette].toEnum(BrandPalette.Lagoon),
             contrast = prefs[Keys.Contrast].toEnum(ContrastPreference.System),
+            offlineMode = prefs[Keys.OfflineMode] ?: false,
         )
     }
+
+    /** Just the offline-mode flag, re-emitted only when it changes. */
+    val offlineMode: Flow<Boolean> = settings.map { it.offlineMode }.distinctUntilChanged()
 
     suspend fun setThemeMode(mode: ThemeMode) = dataStore.edit { it[Keys.ThemeMode] = mode.name }
 
@@ -43,11 +50,14 @@ class SettingsRepository(context: Context) {
 
     suspend fun setContrast(contrast: ContrastPreference) = dataStore.edit { it[Keys.Contrast] = contrast.name }
 
+    suspend fun setOfflineMode(enabled: Boolean) = dataStore.edit { it[Keys.OfflineMode] = enabled }
+
     private object Keys {
         val ThemeMode = stringPreferencesKey("theme_mode")
         val DynamicColor = booleanPreferencesKey("dynamic_color")
         val Palette = stringPreferencesKey("palette")
         val Contrast = stringPreferencesKey("contrast")
+        val OfflineMode = booleanPreferencesKey("offline_mode")
     }
 }
 

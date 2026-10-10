@@ -28,6 +28,7 @@ import io.github.fishpimp.exiflab.ui.folder.FolderScreen
 import io.github.fishpimp.exiflab.ui.history.HistoryScreen
 import io.github.fishpimp.exiflab.ui.home.HomeScreen
 import io.github.fishpimp.exiflab.ui.library.LibraryScreen
+import io.github.fishpimp.exiflab.ui.map.MapViewScreen
 import io.github.fishpimp.exiflab.ui.navigation.ExternalOpen
 import io.github.fishpimp.exiflab.ui.navigation.Route
 import io.github.fishpimp.exiflab.ui.navigation.TopLevelDestination
@@ -123,6 +124,7 @@ fun ExifLabApp(
         entry<Route.Selection> { route ->
             SelectionScreen(refs = route.refs, onBack = ::back, onOpenPhoto = ::openPhoto)
         }
+        entry<Route.MapView> { route -> MapViewScreen(route = route, onBack = ::back) }
         entry<Route.Photo> { route ->
             RecordRecentPhoto(route.ref)
             PhotoScreen(ref = route.ref, onBack = ::back)
