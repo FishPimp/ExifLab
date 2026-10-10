@@ -127,7 +127,7 @@ fun ExifLabApp(
         entry<Route.MapView> { route -> MapViewScreen(route = route, onBack = ::back) }
         entry<Route.Photo> { route ->
             RecordRecentPhoto(route.ref)
-            PhotoScreen(ref = route.ref, onBack = ::back)
+            PhotoScreen(ref = route.ref, onBack = ::back, onOpenPhoto = ::openPhoto)
         }
     }
 

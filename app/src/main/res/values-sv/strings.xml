@@ -42,6 +42,138 @@
         <item quantity="other">%d bilder</item>
     </plurals>
 
+    <!-- Photo viewer -->
+    <string name="photo_more_options">Fler alternativ</string>
+    <string name="photo_copy_all">Kopiera allt som text</string>
+    <string name="photo_copy_all_header">Grupp\tTagg\tID\tVärde\tRått värde</string>
+    <plurals name="photo_copied_all">
+        <item quantity="one">%d tagg kopierad</item>
+        <item quantity="other">%d taggar kopierade</item>
+    </plurals>
+    <string name="photo_save_copy">Spara som kopia</string>
+    <string name="photo_open_original">Öppna originalfilen</string>
+    <string name="photo_loading">Läser metadata</string>
+    <string name="photo_working">Vänta lite</string>
+    <string name="photo_retry">Försök igen</string>
+    <string name="photo_load_unsupported_title">Bilden stöds inte</string>
+    <string name="photo_load_unsupported_body">ExifLab kan inte läsa metadata från den här typen av fil.</string>
+    <string name="photo_load_damaged_title">Filen verkar vara skadad</string>
+    <string name="photo_load_damaged_body">Ingen metadata kunde läsas. Filen kan vara ofullständig eller skadad.</string>
+    <string name="photo_load_access_title">Åtkomsten till bilden har förlorats</string>
+    <string name="photo_load_access_body">ExifLab kan inte längre öppna filen. Öppna den igen där du hittade den.</string>
+    <string name="photo_load_missing_title">Bilden hittades inte</string>
+    <string name="photo_load_missing_body">Den kan ha flyttats, bytt namn eller raderats.</string>
+    <string name="photo_load_failed_title">Bilden kunde inte läsas</string>
+    <string name="photo_load_failed_body">Något gick fel när den lästes. Försök igen.</string>
+
+    <string name="photo_view_full_screen">Visa i helskärm</string>
+    <string name="photo_no_camera_title">Inga kamerauppgifter</string>
+    <string name="photo_no_camera_body">Filen anger inte vilken kamera som tog den. Skärmbilder, redigerade exporter och bilder från webben har ofta lite metadata.</string>
+    <string name="photo_lens_description">Objektiv: %1$s</string>
+    <string name="photo_spec_aperture">Bländare</string>
+    <string name="photo_spec_shutter">Slutartid</string>
+    <string name="photo_spec_iso">Känslighet</string>
+    <string name="photo_spec_focal_length">Brännvidd</string>
+    <string name="photo_spec_exposure_bias">Exponering</string>
+    <string name="photo_spec_resolution">Upplösning</string>
+    <string name="photo_value_aperture">f/%1$s</string>
+    <string name="photo_value_shutter">%1$s s</string>
+    <string name="photo_value_iso">ISO %1$s</string>
+    <string name="photo_value_focal_length">%1$s mm</string>
+    <string name="photo_value_focal_length_equivalent">motsv. %1$s mm</string>
+    <string name="photo_value_exposure_bias">%1$s EV</string>
+    <string name="photo_value_megapixels">%1$s MP</string>
+    <string name="photo_value_dimensions">%1$d × %2$d</string>
+    <string name="photo_captured">Tagen</string>
+    <string name="photo_value_utc_offset">UTC%1$s</string>
+    <string name="photo_offset_from_exif">Tidszon från Exif</string>
+    <string name="photo_offset_from_xmp">Tidszon från XMP</string>
+    <string name="photo_offset_from_gps">Tidszon uppskattad från GPS-tid</string>
+    <string name="photo_offset_from_makernote">Tidszon från kamerans inställningar</string>
+    <string name="photo_time_zone_unknown">Okänd tidszon</string>
+    <string name="photo_file">Fil</string>
+    <string name="photo_read_only_picker">Bilder från bildväljaren är skrivskyddade. Ändringar sparas som en kopia.</string>
+    <string name="photo_read_only_share">Delade bilder är skrivskyddade. Ändringar sparas som en kopia.</string>
+    <string name="photo_read_only_file">ExifLab kan inte ändra filen där den ligger. Ändringar sparas som en kopia.</string>
+
+    <string name="photo_privacy_title">Integritet</string>
+    <string name="photo_privacy_found">Bilden innehåller uppgifter som kan identifiera personer, platser eller enheter. Tryck på en kategori för att se dess taggar.</string>
+    <string name="photo_privacy_clean">Ingen plats, inga namn, serienummer eller andra identifierande uppgifter hittades.</string>
+    <string name="privacy_category_location">Plats</string>
+    <string name="privacy_category_serial_number">Serienummer</string>
+    <string name="privacy_category_person_name">Personnamn</string>
+    <string name="privacy_category_device_id">Enhets-id</string>
+    <string name="privacy_category_people">Personer</string>
+    <plurals name="photo_tag_count">
+        <item quantity="one">%d tagg</item>
+        <item quantity="other">%d taggar</item>
+    </plurals>
+
+    <string name="photo_location_title">Plats</string>
+    <string name="photo_location_altitude">Höjd</string>
+    <string name="photo_location_direction">Riktning</string>
+    <string name="photo_value_altitude">%1$d m ö.h.</string>
+    <string name="photo_value_altitude_below">%1$d m under havsytan</string>
+    <string name="photo_value_direction">%1$d° %2$s</string>
+    <string name="compass_n">N</string>
+    <string name="compass_ne">NO</string>
+    <string name="compass_e">Ö</string>
+    <string name="compass_se">SO</string>
+    <string name="compass_s">S</string>
+    <string name="compass_sw">SV</string>
+    <string name="compass_w">V</string>
+    <string name="compass_nw">NV</string>
+    <string name="photo_copy_coordinates">Kopiera koordinater</string>
+    <string name="photo_copied_coordinates">Koordinaterna har kopierats</string>
+    <string name="photo_location_removed_title">Platsen har tagits bort</string>
+    <string name="photo_location_none_title">Ingen plats</string>
+    <string name="photo_location_shared_redacted">Platsfälten i filen är tomma. Androids bildväljare och många appar, även Google Foto, tar bort platsen när en bild delas. En kamera utan GPS-position kan också lämna dem tomma.</string>
+    <string name="photo_location_shared_absent">Filen har ingen plats. Androids bildväljare och många appar, även Google Foto, tar bort platsen när en bild delas, så originalet kan fortfarande ha den.</string>
+    <string name="photo_location_shared_hint">Öppna originalfilen för att se allt den innehåller, eller spara en kopia som du kan redigera.</string>
+    <string name="photo_location_redacted">Platsfälten finns men är tomma. Kameran kan ha saknat GPS-position, eller så har en app tagit bort platsen.</string>
+    <string name="photo_location_absent">Bilden har ingen platsinformation.</string>
+
+    <string name="photo_tags_title">Metadata</string>
+    <plurals name="photo_group_count">
+        <item quantity="one">%d grupp</item>
+        <item quantity="other">%d grupper</item>
+    </plurals>
+    <plurals name="photo_tags_matching">
+        <item quantity="one">%1$d av %2$d tagg</item>
+        <item quantity="other">%1$d av %2$d taggar</item>
+    </plurals>
+    <plurals name="photo_match_count">
+        <item quantity="one">%d träff</item>
+        <item quantity="other">%d träffar</item>
+    </plurals>
+    <plurals name="photo_warning_count">
+        <item quantity="one">%d varning</item>
+        <item quantity="other">%d varningar</item>
+    </plurals>
+    <string name="photo_search_hint">Sök bland taggar och värden</string>
+    <string name="photo_search_clear">Rensa sökningen</string>
+    <string name="photo_mode_readable">Läsbart</string>
+    <string name="photo_mode_raw">Rått</string>
+    <string name="photo_expand_all">Fäll ut alla</string>
+    <string name="photo_collapse_all">Fäll ihop alla</string>
+    <string name="photo_section_expand">Fäll ut</string>
+    <string name="photo_section_collapse">Fäll ihop</string>
+    <string name="photo_section_expanded">Utfälld</string>
+    <string name="photo_section_collapsed">Hopfälld</string>
+    <string name="photo_warnings_title">Varningar</string>
+    <string name="photo_filter_clear">Visa alla taggar</string>
+    <string name="photo_no_matches_title">Inga matchande taggar</string>
+    <string name="photo_no_matches_body">Inget matchar ”%1$s”. Prova ett annat ord, eller ett tagg-id som 0x829A.</string>
+    <string name="photo_show_more">Visa mer</string>
+    <string name="photo_show_less">Visa mindre</string>
+    <string name="photo_tag_details">Visa detaljer</string>
+    <string name="photo_copy_value">Kopiera värdet</string>
+    <string name="photo_copy_name_value">Kopiera namn och värde</string>
+    <string name="photo_copied_value">%1$s har kopierats</string>
+    <string name="photo_tag_sensitive">Känsligt: %1$s</string>
+    <string name="photo_value_readable">Läsbart värde</string>
+    <string name="photo_value_raw">Rått värde</string>
+
     <!-- Library -->
     <string name="library_empty_title">Inga mappar än</string>
     <string name="library_empty_body">Mappar som du ger ExifLab åtkomst till visas här, redo att bläddra i och redigera.</string>
