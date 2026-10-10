@@ -58,8 +58,10 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
+import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.model.LocationStatus
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
@@ -149,8 +151,8 @@ fun DateTimeCard(
                 TimeValue(before)
             } else {
                 BeforeAfter(
-                    before = { m -> LabeledBlock(stringResource(R.string.edit_before), m) { TimeValue(before) } },
-                    after = { m -> LabeledBlock(stringResource(R.string.edit_after), m, highlighted = true) { TimeValue(after) } },
+                    before = { m -> DiffValueBox(stringResource(R.string.edit_before), null, m) { TimeValue(before, compact = true) } },
+                    after = { m -> DiffValueBox(stringResource(R.string.edit_after), FieldDiff.Kind.Changed, m) { TimeValue(after, compact = true) } },
                 )
             }
         }
@@ -176,7 +178,7 @@ fun DateTimeCard(
 }
 
 @Composable
-private fun TimeValue(state: CaptureTimeState) {
+private fun TimeValue(state: CaptureTimeState, compact: Boolean = false) {
     val locale = LocalLocale.current.platformLocale
     val local = state.local
     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -184,7 +186,12 @@ private fun TimeValue(state: CaptureTimeState) {
             Text(stringResource(R.string.edit_time_none), style = MaterialTheme.typography.bodyLarge)
             return@Column
         }
-        Text(CaptureTimeFormat.time(local, locale), style = ExifLabTheme.extendedTypography.numeral)
+        val numeral = ExifLabTheme.extendedTypography.numeral
+        Text(
+            CaptureTimeFormat.time(local, locale),
+            // Side by side, the time has half the width; a smaller numeral keeps it on one line.
+            style = if (compact) numeral.copy(fontSize = 20.sp, lineHeight = 26.sp) else numeral,
+        )
         Text(CaptureTimeFormat.date(local, locale), style = MaterialTheme.typography.bodyMedium)
         Text(
             state.offset?.let { utcText(it) } ?: stringResource(R.string.edit_time_offset_unknown),
@@ -207,22 +214,6 @@ fun BeforeAfter(before: @Composable (Modifier) -> Unit, after: @Composable (Modi
             before(Modifier.weight(1f))
             Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
             after(Modifier.weight(1f))
-        }
-    }
-}
-
-@Composable
-private fun LabeledBlock(label: String, modifier: Modifier, highlighted: Boolean = false, content: @Composable () -> Unit) {
-    val colors = ExifLabTheme.extendedColors
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = if (highlighted) colors.changedContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
-        contentColor = if (highlighted) colors.onChangedContainer else MaterialTheme.colorScheme.onSurface,
-        modifier = modifier.semantics(mergeDescendants = true) {},
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            content()
         }
     }
 }
@@ -260,7 +251,12 @@ fun LocationCard(
         if (location != null) {
             val latLng = LatLng(location.latitude, location.longitude)
             Column(Modifier.padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                LocationMap(marker = latLng, onClick = onChangeLocation, modifier = Modifier.fillMaxWidth().height(180.dp))
+                // Taller at large text sizes, so the coordinates on the drawn map still fit.
+                LocationMap(
+                    marker = latLng,
+                    onClick = onChangeLocation,
+                    modifier = Modifier.fillMaxWidth().height(if (isLargeFontScale()) 240.dp else 180.dp),
+                )
                 Text(latLng.formatted(), style = ExifLabTheme.extendedTypography.monoMedium)
                 Text(
                     LocationFormat.degreesMinutesSeconds(location.latitude, location.longitude),

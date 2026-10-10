@@ -53,6 +53,8 @@ import io.github.fishpimp.exiflab.designsystem.component.ChoiceRow
 import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
 import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
 import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
+import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
+import io.github.fishpimp.exiflab.ui.edit.DiffValueBox
 import io.github.fishpimp.exiflab.ui.edit.durationText
 import io.github.fishpimp.exiflab.ui.edit.utcText
 import io.github.fishpimp.exiflab.ui.format.CaptureTimeFormat
@@ -242,19 +244,10 @@ private fun ShiftPreview(shift: TimeShift, capturedAt: LocalDateTime?, offset: Z
 @Composable
 internal fun PreviewTime(label: String, time: LocalDateTime, offset: ZoneOffset?, emphasized: Boolean, modifier: Modifier = Modifier) {
     val locale = LocalLocale.current.platformLocale
-    val colors = MaterialTheme.colorScheme
-    Surface(
-        shape = MaterialTheme.shapes.medium,
-        color = if (emphasized) ExifLabTheme.extendedColors.changedContainer else colors.surfaceContainerHighest,
-        contentColor = if (emphasized) ExifLabTheme.extendedColors.onChangedContainer else colors.onSurface,
-        modifier = modifier,
-    ) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.labelLarge)
-            Text(CaptureTimeFormat.time(time, locale), style = ExifLabTheme.extendedTypography.monoLarge)
-            Text(CaptureTimeFormat.date(time, locale), style = MaterialTheme.typography.bodySmall)
-            if (offset != null) Text(utcText(offset), style = ExifLabTheme.extendedTypography.monoSmall)
-        }
+    DiffValueBox(label, if (emphasized) FieldDiff.Kind.Changed else null, modifier) {
+        Text(CaptureTimeFormat.time(time, locale), style = ExifLabTheme.extendedTypography.monoLarge)
+        Text(CaptureTimeFormat.date(time, locale), style = MaterialTheme.typography.bodySmall)
+        if (offset != null) Text(utcText(offset), style = ExifLabTheme.extendedTypography.monoSmall)
     }
 }
 

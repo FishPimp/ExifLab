@@ -49,7 +49,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -169,6 +168,9 @@ fun ReviewContent(
                         if (planState.plan.warnings.isNotEmpty()) {
                             item(key = "warnings") { WarningsBanner(planState.plan.warnings) }
                         }
+                        if (options != null && saved == null) {
+                            item(key = "destination") { DestinationCard(options, ref, report) }
+                        }
                         val groups = planState.plan.diff.groupBy { it.group }.toList().sortedBy { groupOrder.indexOf(it.first).let { i -> if (i < 0) Int.MAX_VALUE else i } }
                         if (groups.isEmpty()) {
                             item(key = "no-diff") { EditorBanner(Icons.Rounded.Info, stringResource(R.string.edit_review_no_visible_changes)) }
@@ -177,9 +179,6 @@ fun ReviewContent(
                             item(key = "group-${group.name}") { DiffGroup(group, changes) }
                         }
                     }
-                }
-                if (options != null && saved == null) {
-                    item(key = "destination") { DestinationCard(options, ref, report) }
                 }
             }
             if (state.save is SaveState.Saving) SavingOverlay(state.save.mode)
@@ -282,12 +281,6 @@ private fun DiffGroup(group: DirectoryGroup, changes: List<FieldDiff>) {
 
 @Composable
 private fun DiffRow(change: FieldDiff) {
-    val colors = ExifLabTheme.extendedColors
-    val (container, content) = when (change.kind) {
-        FieldDiff.Kind.Added -> colors.addedContainer to colors.onAddedContainer
-        FieldDiff.Kind.Changed -> colors.changedContainer to colors.onChangedContainer
-        FieldDiff.Kind.Removed -> colors.removedContainer to colors.onRemovedContainer
-    }
     Column(
         Modifier
             .fillMaxWidth()
@@ -299,39 +292,24 @@ private fun DiffRow(change: FieldDiff) {
             Text(change.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
             DiffKindChip(change.kind)
         }
-        val before = change.before
-        val after = change.after
         when (change.kind) {
-            FieldDiff.Kind.Added -> ValueBox(stringResource(R.string.edit_after), after.orEmpty(), container, content, Modifier.fillMaxWidth())
-            FieldDiff.Kind.Removed -> ValueBox(stringResource(R.string.edit_before), before.orEmpty(), container, content, Modifier.fillMaxWidth(), struck = true)
+            FieldDiff.Kind.Added -> ValueBox(stringResource(R.string.edit_after), change.after, change.kind, Modifier.fillMaxWidth())
+            FieldDiff.Kind.Removed -> ValueBox(stringResource(R.string.edit_before), change.before, change.kind, Modifier.fillMaxWidth(), struck = true)
             FieldDiff.Kind.Changed -> BeforeAfter(
-                before = { m ->
-                    ValueBox(
-                        stringResource(R.string.edit_before),
-                        before.orEmpty(),
-                        MaterialTheme.colorScheme.surfaceContainerHighest,
-                        MaterialTheme.colorScheme.onSurfaceVariant,
-                        m,
-                    )
-                },
-                after = { m -> ValueBox(stringResource(R.string.edit_after), after.orEmpty(), container, content, m) },
+                before = { m -> ValueBox(stringResource(R.string.edit_before), change.before, null, m) },
+                after = { m -> ValueBox(stringResource(R.string.edit_after), change.after, change.kind, m) },
             )
         }
     }
 }
 
 @Composable
-private fun ValueBox(label: String, value: String, container: Color, content: Color, modifier: Modifier, struck: Boolean = false) {
-    Surface(shape = MaterialTheme.shapes.small, color = container, contentColor = content, modifier = modifier) {
-        Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label, style = MaterialTheme.typography.labelMedium)
-            Text(
-                value.ifEmpty { stringResource(R.string.history_diff_empty_value) },
-                style = ExifLabTheme.extendedTypography.monoMedium.let {
-                    if (struck) it.copy(textDecoration = TextDecoration.LineThrough) else it
-                },
-            )
-        }
+private fun ValueBox(label: String, value: String?, kind: FieldDiff.Kind?, modifier: Modifier, struck: Boolean = false) {
+    DiffValueBox(label, kind, modifier) {
+        Text(
+            value.orEmpty().ifEmpty { stringResource(R.string.history_diff_empty_value) },
+            style = ExifLabTheme.extendedTypography.monoMedium.let { if (struck) it.copy(textDecoration = TextDecoration.LineThrough) else it },
+        )
     }
 }
 
@@ -353,8 +331,8 @@ private fun DestinationCard(options: SaveOptions, ref: PhotoRef, report: Metadat
         icon = icon,
         title = title,
         text = body,
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
     ) {
         if (options.suggestOpenOriginal) {
             Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

@@ -595,7 +595,7 @@
     <string name="edit_location_search_clear">Rensa sökningen</string>
     <string name="edit_location_searching">Söker</string>
     <string name="edit_location_search_none">Inga platser hittades för \"%1$s\".</string>
-    <string name="edit_location_search_offline">Platssökning är avstängd i offlineläge. Tryck på kartan eller ange koordinater nedan.</string>
+    <string name="edit_location_search_offline">Platssökning och kartan är avstängda i offlineläge. Ange koordinater eller klistra in en kartlänk nedan.</string>
     <string name="edit_location_search_network">Platssökning kräver internetanslutning. Du kan fortfarande ange koordinater.</string>
     <string name="edit_location_search_server">Platssökningstjänsten svarade inte. Försök igen om en stund.</string>
     <string name="edit_location_coordinates_label">Koordinater eller kartlänk</string>

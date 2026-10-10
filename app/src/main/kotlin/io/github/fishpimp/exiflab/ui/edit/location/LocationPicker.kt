@@ -169,9 +169,8 @@ fun LocationPickerContent(
     ) { padding ->
         BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
             val wide = maxWidth >= 840.dp
-            val searchPanel: @Composable (Modifier) -> Unit = { m ->
-                SearchPanel(query, search, onQueryChange, onPlacePicked, m)
-            }
+            val searchField: @Composable (Modifier) -> Unit = { m -> SearchField(query, onQueryChange, m) }
+            val results: @Composable (Modifier) -> Unit = { m -> SearchResults(query, search, onPlacePicked, m) }
             val entryPanel: @Composable (Modifier) -> Unit = { m ->
                 EntryPanel(draft, coordinateError, altitudeInvalid, onCoordinatesChange, onAltitudeChange, onConfirm, m)
             }
@@ -179,18 +178,21 @@ fun LocationPickerContent(
                 Row(Modifier.fillMaxSize()) {
                     Column(
                         Modifier.width(420.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        searchPanel(Modifier)
-                        entryPanel(Modifier)
+                        searchField(Modifier)
+                        results(Modifier)
+                        entryPanel(Modifier.padding(top = 4.dp))
                     }
                     PickerMap(draft.pin, onMapPick, Modifier.weight(1f).fillMaxSize())
                 }
             } else {
                 Column(Modifier.fillMaxSize()) {
+                    searchField(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
+                    // Results float over the map, so the map keeps its size while typing.
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         PickerMap(draft.pin, onMapPick, Modifier.fillMaxSize())
-                        searchPanel(Modifier.padding(12.dp))
+                        results(Modifier.padding(12.dp))
                     }
                     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
                         entryPanel(Modifier.navigationBarsPadding().padding(16.dp))
@@ -206,77 +208,77 @@ private fun PickerMap(pin: LatLng?, onPick: (LatLng) -> Unit, modifier: Modifier
     LocationMap(marker = pin, interactive = true, onPick = onPick, shape = RectangleShape, modifier = modifier)
 }
 
-/** The search field with its results (or why there are none) in a card under it. */
 @Composable
-private fun SearchPanel(
-    query: String,
-    search: PlaceSearchState,
-    onQueryChange: (String) -> Unit,
-    onPlacePicked: (Place) -> Unit,
-    modifier: Modifier,
-) {
+private fun SearchField(query: String, onQueryChange: (String) -> Unit, modifier: Modifier) {
     val focus = LocalFocusManager.current
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerHigh, shadowElevation = 3.dp) {
-            OutlinedTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                placeholder = { Text(stringResource(R.string.edit_location_search_hint)) },
-                leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                trailingIcon = {
-                    if (query.isNotEmpty()) {
-                        IconButton(onClick = { onQueryChange("") }) {
-                            Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.edit_location_search_clear))
-                        }
-                    }
-                },
-                singleLine = true,
-                shape = MaterialTheme.shapes.extraLarge,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        val showPanel = query.trim().length >= 2 && search !is PlaceSearchState.Idle
-        if (showPanel) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                shadowElevation = 3.dp,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                when (search) {
-                    is PlaceSearchState.Searching -> Row(
-                        Modifier.padding(16.dp).semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        LoadingIndicator(Modifier.size(32.dp))
-                        Text(stringResource(R.string.edit_location_searching), style = MaterialTheme.typography.bodyMedium)
-                    }
-                    is PlaceSearchState.Failed -> SearchMessage(
-                        icon = if (search.error == PlaceSearchError.Offline) Icons.Rounded.CloudOff else if (search.error == PlaceSearchError.Network) Icons.Rounded.SignalWifiOff else Icons.Rounded.ErrorOutline,
-                        text = stringResource(
-                            when (search.error) {
-                                PlaceSearchError.Offline -> R.string.edit_location_search_offline
-                                PlaceSearchError.Network -> R.string.edit_location_search_network
-                                PlaceSearchError.Server -> R.string.edit_location_search_server
-                            },
-                        ),
-                    )
-                    is PlaceSearchState.Results -> if (search.places.isEmpty()) {
-                        SearchMessage(Icons.Rounded.Search, stringResource(R.string.edit_location_search_none, search.query))
-                    } else {
-                        Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
-                            search.places.forEachIndexed { index, place ->
-                                if (index > 0) HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
-                                PlaceRow(place) { onPlacePicked(place); focus.clearFocus() }
-                            }
-                        }
-                    }
-                    PlaceSearchState.Idle -> Unit
+    OutlinedTextField(
+        value = query,
+        onValueChange = onQueryChange,
+        placeholder = { Text(stringResource(R.string.edit_location_search_hint)) },
+        leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
+        trailingIcon = {
+            if (query.isNotEmpty()) {
+                IconButton(onClick = { onQueryChange("") }) {
+                    Icon(Icons.Rounded.Clear, contentDescription = stringResource(R.string.edit_location_search_clear))
                 }
             }
+        },
+        singleLine = true,
+        shape = MaterialTheme.shapes.extraLarge,
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+        keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** Place results, or why there are none, in a card; nothing while the query is too short. */
+@Composable
+private fun SearchResults(query: String, search: PlaceSearchState, onPlacePicked: (Place) -> Unit, modifier: Modifier) {
+    val focus = LocalFocusManager.current
+    if (query.trim().length < 2 || search is PlaceSearchState.Idle) return
+    Surface(
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shadowElevation = 3.dp,
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        when (search) {
+            is PlaceSearchState.Searching -> Row(
+                Modifier.padding(16.dp).semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                LoadingIndicator(Modifier.size(32.dp))
+                Text(stringResource(R.string.edit_location_searching), style = MaterialTheme.typography.bodyMedium)
+            }
+            is PlaceSearchState.Failed -> SearchMessage(
+                icon = when (search.error) {
+                    PlaceSearchError.Offline -> Icons.Rounded.CloudOff
+                    PlaceSearchError.Network -> Icons.Rounded.SignalWifiOff
+                    PlaceSearchError.Server -> Icons.Rounded.ErrorOutline
+                },
+                text = stringResource(
+                    when (search.error) {
+                        PlaceSearchError.Offline -> R.string.edit_location_search_offline
+                        PlaceSearchError.Network -> R.string.edit_location_search_network
+                        PlaceSearchError.Server -> R.string.edit_location_search_server
+                    },
+                ),
+            )
+            is PlaceSearchState.Results -> if (search.places.isEmpty()) {
+                SearchMessage(Icons.Rounded.Search, stringResource(R.string.edit_location_search_none, search.query))
+            } else {
+                Column(Modifier.heightIn(max = 360.dp).verticalScroll(rememberScrollState())) {
+                    search.places.forEachIndexed { index, place ->
+                        if (index > 0) HorizontalDivider(Modifier.padding(start = 56.dp), color = MaterialTheme.colorScheme.outlineVariant)
+                        PlaceRow(place) {
+                            onPlacePicked(place)
+                            focus.clearFocus()
+                        }
+                    }
+                }
+            }
+            PlaceSearchState.Idle -> Unit
         }
     }
 }

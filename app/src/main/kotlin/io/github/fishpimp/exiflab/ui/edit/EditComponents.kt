@@ -19,7 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -29,6 +32,8 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.RoundedPolygon
 import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
+import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
+import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 
 /**
  * One section of the editor: an expressive shape icon, a title announced as a heading, an
@@ -148,4 +153,44 @@ fun EditorBanner(
     }
 }
 
+/**
+ * A labelled value in a before/after comparison. A [kind] tints the box with its diff color and
+ * marks it with an accent bar at the start; the text stays in the normal content color, so it reads
+ * well in both themes. The meaning is also in [label] (and the chip next to it), never color alone.
+ */
+@Composable
+fun DiffValueBox(
+    label: String,
+    kind: FieldDiff.Kind?,
+    modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val accent = when (kind) {
+        FieldDiff.Kind.Added -> ExifLabTheme.extendedColors.addedContainer
+        FieldDiff.Kind.Changed -> ExifLabTheme.extendedColors.changedContainer
+        FieldDiff.Kind.Removed -> ExifLabTheme.extendedColors.removedContainer
+        null -> null
+    }
+    val background = if (accent != null) lerp(colors.surfaceContainerHighest, accent, TINT_FRACTION) else colors.surfaceContainerHighest
+    Surface(
+        shape = MaterialTheme.shapes.medium,
+        color = background,
+        contentColor = if (accent != null) colors.onSurface else colors.onSurfaceVariant,
+        modifier = modifier.semantics(mergeDescendants = true) {},
+    ) {
+        Column(
+            Modifier
+                .drawBehind { if (accent != null) drawRect(accent, size = Size(ACCENT_WIDTH.toPx(), size.height)) }
+                .padding(start = 16.dp, end = 12.dp, top = 10.dp, bottom = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(label, style = MaterialTheme.typography.labelLarge)
+            content()
+        }
+    }
+}
+
 private const val DISABLED_ALPHA = 0.38f
+private const val TINT_FRACTION = 0.3f
+private val ACCENT_WIDTH = 5.dp

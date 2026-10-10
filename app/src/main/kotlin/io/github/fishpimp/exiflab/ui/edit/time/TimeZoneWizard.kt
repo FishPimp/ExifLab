@@ -92,7 +92,8 @@ fun TimeZoneWizard(
     val suggested = remember(zones, recordedOffset, deviceZone) { ZoneCatalog.suggestFor(recordedOffset, reference, deviceZone, zones) }
     var step by rememberSaveable { mutableStateOf(WizardStep.CameraZone) }
     var camera by rememberSaveable { mutableStateOf(deviceZone.id) }
-    var actual by rememberSaveable { mutableStateOf(suggested?.id) }
+    // A suggestion equal to the camera's zone would change nothing, so it is not preselected.
+    var actual by rememberSaveable { mutableStateOf(suggested?.takeIf { it != deviceZone }?.id) }
     var query by rememberSaveable { mutableStateOf("") }
     TimeZoneWizardContent(
         state = TimeZoneWizardState(step, ZoneId.of(camera), actual?.let(ZoneId::of), query),
@@ -127,7 +128,7 @@ fun TimeZoneWizardContent(
     val locale = LocalLocale.current.platformLocale
     val cameraStep = state.step == WizardStep.CameraZone
     val selected = if (cameraStep) state.cameraZone else state.actualZone
-    val pinnedZone = if (cameraStep) deviceZone else suggestedZone
+    val pinnedZone = if (cameraStep) deviceZone else suggestedZone?.takeIf { it != state.cameraZone }
     val reference = recorded ?: LocalDateTime.now()
     val filtered = remember(zones, state.query) { ZoneCatalog.search(zones, state.query) }
     val pinned = remember(pinnedZone, reference, locale, state.query) {

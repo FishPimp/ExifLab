@@ -609,7 +609,7 @@
     <string name="edit_location_search_clear">Clear search</string>
     <string name="edit_location_searching">Searching</string>
     <string name="edit_location_search_none">No places found for \"%1$s\".</string>
-    <string name="edit_location_search_offline">Place search is off in offline mode. Tap the map, or enter coordinates below.</string>
+    <string name="edit_location_search_offline">Place search and the map are off in offline mode. Enter coordinates or paste a map link below.</string>
     <string name="edit_location_search_network">Place search needs an internet connection. You can still enter coordinates.</string>
     <string name="edit_location_search_server">The place search service did not answer. Try again in a moment.</string>
     <string name="edit_location_coordinates_label">Coordinates or map link</string>
