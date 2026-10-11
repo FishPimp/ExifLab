@@ -96,19 +96,19 @@ data class BatchDraft(
 }
 
 /** Loading the draft's photos. */
-sealed interface BatchPhotos {
-    data object Loading : BatchPhotos
+sealed interface DraftPhotos {
+    data object Loading : DraftPhotos
 
     /** The draft is gone (already started, or cleaned up). */
-    data object Missing : BatchPhotos
+    data object Missing : DraftPhotos
 
-    data class Loaded(val photos: List<PhotoRef>) : BatchPhotos
+    data class Loaded(val photos: List<PhotoRef>) : DraftPhotos
 }
 
 @Immutable
 data class BatchEditUiState(
     val kind: BatchKind,
-    val photos: BatchPhotos = BatchPhotos.Loading,
+    val photos: DraftPhotos = DraftPhotos.Loading,
     /** The first photo's metadata: starting point for the time previews and the map. */
     val sample: MetadataReport? = null,
     val page: BatchEditorPage = BatchEditorPage.Setup,
@@ -119,7 +119,7 @@ data class BatchEditUiState(
     val placeSearch: PlaceSearchState = PlaceSearchState.Idle,
     val readingOtherPhoto: Boolean = false,
 ) {
-    val count: Int get() = (photos as? BatchPhotos.Loaded)?.photos?.size ?: 0
+    val count: Int get() = (photos as? DraftPhotos.Loaded)?.photos?.size ?: 0
 }
 
 /** One-off results for the screen. */
@@ -177,11 +177,11 @@ class BatchEditViewModel(
         viewModelScope.launch {
             val job = jobs.job(jobId)
             if (job == null || job.state != BatchJobState.Draft) {
-                local.update { it.copy(photos = BatchPhotos.Missing) }
+                local.update { it.copy(photos = DraftPhotos.Missing) }
                 return@launch
             }
             val photos = jobs.items(jobId).map { it.photoRef() }
-            local.update { it.copy(photos = BatchPhotos.Loaded(photos)) }
+            local.update { it.copy(photos = DraftPhotos.Loaded(photos)) }
             val sample = photos.firstOrNull()?.let { first -> runCatching { readReport(first) }.getOrNull() }
             local.update { it.copy(sample = sample) }
         }
@@ -236,7 +236,7 @@ class BatchEditViewModel(
     /** Shows the preview, (re)checking the photos when the operation changed since the last check. */
     fun openPreview() {
         val operation = operation() ?: return
-        val photos = (local.value.photos as? BatchPhotos.Loaded)?.photos ?: return
+        val photos = (local.value.photos as? DraftPhotos.Loaded)?.photos ?: return
         local.update { it.copy(page = BatchEditorPage.Preview) }
         if (operation == previewedOperation && previewJob != null) return
         previewedOperation = operation

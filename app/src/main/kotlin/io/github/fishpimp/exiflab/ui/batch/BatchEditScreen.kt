@@ -208,9 +208,9 @@ fun BatchEditContent(
     val kind = state.kind
     val photos = state.photos
     when {
-        photos !is BatchPhotos.Loaded -> ScreenScaffold(title = stringResource(kind.labelRes), onBack = actions.onBack, modifier = modifier) { padding ->
+        photos !is DraftPhotos.Loaded -> ScreenScaffold(title = stringResource(kind.labelRes), onBack = actions.onBack, modifier = modifier) { padding ->
             Box(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), contentAlignment = Alignment.Center) {
-                if (photos is BatchPhotos.Missing) {
+                if (photos is DraftPhotos.Missing) {
                     EmptyState(
                         icon = Icons.Rounded.SearchOff,
                         shape = MaterialShapes.Cookie6Sided,
@@ -357,7 +357,7 @@ private fun ShiftSetup(state: BatchEditUiState, actions: BatchEditActions) {
             )
         }
     }
-    val name = (state.photos as? BatchPhotos.Loaded)?.photos?.firstOrNull()?.displayName
+    val name = (state.photos as? DraftPhotos.Loaded)?.photos?.firstOrNull()?.displayName
     if (name != null) {
         Text(
             stringResource(R.string.batch_shift_sample, name),

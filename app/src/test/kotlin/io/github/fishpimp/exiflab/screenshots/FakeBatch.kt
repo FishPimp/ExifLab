@@ -16,7 +16,7 @@ import io.github.fishpimp.exiflab.metadata.model.GeoLocation
 import io.github.fishpimp.exiflab.ui.batch.BatchDraft
 import io.github.fishpimp.exiflab.ui.batch.BatchEditUiState
 import io.github.fishpimp.exiflab.ui.batch.BatchEditorPage
-import io.github.fishpimp.exiflab.ui.batch.BatchPhotos
+import io.github.fishpimp.exiflab.ui.batch.DraftPhotos
 import io.github.fishpimp.exiflab.ui.batch.BatchPreview
 import io.github.fishpimp.exiflab.ui.batch.BatchRunUiState
 import io.github.fishpimp.exiflab.ui.batch.SamplePlan
@@ -39,7 +39,7 @@ internal object FakeBatch {
 
     val strip = BatchEditUiState(
         kind = BatchKind.Strip,
-        photos = BatchPhotos.Loaded(photos),
+        photos = DraftPhotos.Loaded(photos),
         draft = BatchDraft(strip = setOf(StripCategory.Location, StripCategory.DeviceIdentifiers, StripCategory.MakerNotes)),
     )
 
@@ -47,7 +47,7 @@ internal object FakeBatch {
 
     val preview = BatchEditUiState(
         kind = BatchKind.Location,
-        photos = BatchPhotos.Loaded(List(48) { index -> photos[index % photos.size].copy(uri = "content://fake/$index") }),
+        photos = DraftPhotos.Loaded(List(48) { index -> photos[index % photos.size].copy(uri = "content://fake/$index") }),
         page = BatchEditorPage.Preview,
         draft = BatchDraft(location = stockholm),
         preview = BatchPreview(
