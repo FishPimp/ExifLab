@@ -37,12 +37,7 @@ class BatchNotifications(private val context: Context) {
 
     /** The foreground notification for the worker, typed as data sync. */
     fun foregroundInfo(job: BatchJob, progress: BatchProgress): ForegroundInfo {
-        val notification = progressNotification(job, progress)
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(progressId(job.id), notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
-        } else {
-            ForegroundInfo(progressId(job.id), notification)
-        }
+        return ForegroundInfo(progressId(job.id), progressNotification(job, progress), ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
     }
 
     fun showProgress(job: BatchJob, progress: BatchProgress, cancelling: Boolean) {
