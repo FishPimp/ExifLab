@@ -86,15 +86,20 @@ private val HEIF_FORMATS = setOf(ImageFormat.Heif, ImageFormat.Avif)
  */
 class DefaultImageDataDigest : ImageDataDigest {
     override fun digest(source: ImageSource): String = try {
-        val format = source.open().use { ImageFormat.sniff(it.readNBytes(ImageFormat.SNIFF_LENGTH), source.fileName) }
-        val sink = if (format in HEIF_FORMATS) {
-            HeifDigestSink(SeekableSource(source).use { HeifStructure.read(it).digestPlan() })
-        } else {
-            ImageDigestSink.forFormat(format)
-                ?: throw UnsupportedEditException("No image data digest for ${if (format == ImageFormat.Unknown) "this file type" else format.displayName}")
+        source.open().use { input ->
+            val header = input.readNBytes(ImageFormat.SNIFF_LENGTH)
+            val format = ImageFormat.sniff(header, source.fileName)
+            val sink = if (format in HEIF_FORMATS) {
+                // Where the image items are comes from the meta box, which may follow the image data.
+                HeifDigestSink(SeekableSource(source).use { HeifStructure.read(it).digestPlan() })
+            } else {
+                ImageDigestSink.forFormat(format)
+                    ?: throw UnsupportedEditException("No image data digest for ${if (format == ImageFormat.Unknown) "this file type" else format.displayName}")
+            }
+            sink.write(header)
+            input.copyTo(sink, COPY_BUFFER)
+            sink.hex()
         }
-        source.open().use { input -> input.copyTo(sink, COPY_BUFFER) }
-        sink.hex()
     } catch (e: SourceAccessException) {
         throw e.failure
     }

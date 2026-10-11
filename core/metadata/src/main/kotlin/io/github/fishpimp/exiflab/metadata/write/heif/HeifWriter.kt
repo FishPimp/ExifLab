@@ -23,17 +23,20 @@ import java.io.OutputStream
  * TIFF) and XMP (item type `mime`, content type `application/rdf+xml`) are edited with the same
  * TIFF and XMP code as JPEG. A changed payload is written over the old one when it fits (Exif is
  * zero-padded to the old size, XMP gets XMP padding), otherwise it goes to a new `mdat` at the end
- * of the file and the old bytes are zeroed (or the old `mdat` is dropped when nothing else lives
- * in it). New items get the next free id, an `infe`, an `iloc` entry and a `cdsc` reference to
- * the primary item; small new items go into `idat` when the file has one. Removed items leave no
- * `iinf`, `iloc`, `iref` or `ipma` entry behind.
+ * of the file (with some slack for later edits) and the old bytes are zeroed, or the old `mdat`
+ * is dropped when nothing else lives in it. Items stored in `idat` stay there. New items get the
+ * next free id, an `infe`, an `iloc` entry and a `cdsc` reference to the primary item; small new
+ * items go into `idat` when the file has one. Removed items leave no `iinf`, `iloc`, `iref` or
+ * `ipma` entry behind. Edits go to the Exif/XMP item that describes the primary image; a block
+ * removal drops every item of its kind.
  *
  * Only the `meta` box changes size. A `free` box right after it absorbs the difference when it
- * can; otherwise every file-offset `iloc` extent (and `stco`/`co64` chunk offset of image
- * sequences) behind it is moved, widening offset fields to 64 bits when needed. Image items,
- * their properties (`ispe`, `hvcC`, `av1C`, `colr`, `pixi`, `irot`, `imir`, ...), derived items
- * (grids, overlays) and unknown boxes are copied byte for byte. Structures that cannot be
- * rewritten safely are refused with [UnsupportedEditException]. HEIF has no place for IPTC-IIM.
+ * can (a shrinking `meta` gets one); otherwise every file-offset `iloc` extent (and `stco`/`co64`
+ * chunk offset of image sequences) behind it is moved, widening offset fields to 64 bits when
+ * needed. Image items, their properties (`ispe`, `hvcC`, `av1C`, `colr`, `pixi`, `irot`, `imir`,
+ * ...), derived items (grids, overlays) and unknown boxes are copied byte for byte. Structures
+ * that cannot be rewritten safely are refused with [UnsupportedEditException]. HEIF has no place
+ * for IPTC-IIM, and its color profile (`colr`) is image description, so neither is written.
  */
 internal class HeifWriter {
     /** A planned output file: the [segments] to write and the digest plan of the result. */
