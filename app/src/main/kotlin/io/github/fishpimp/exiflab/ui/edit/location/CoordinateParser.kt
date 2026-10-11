@@ -152,7 +152,7 @@ object CoordinateParser {
     }
 
     private fun decode(text: String): String =
-        runCatching { URLDecoder.decode(text.replace("+", "%2B"), Charsets.UTF_8) }.getOrDefault(text)
+        runCatching { URLDecoder.decode(text.replace("+", "%2B"), "UTF-8") }.getOrDefault(text)
             // A '+' that was a space in a query ("59.3,+18.0") reads as a sign otherwise.
             .replace(",+", ",")
 

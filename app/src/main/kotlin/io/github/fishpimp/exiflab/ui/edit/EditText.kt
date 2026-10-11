@@ -3,12 +3,16 @@ package io.github.fishpimp.exiflab.ui.edit
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.EditableField
 import io.github.fishpimp.exiflab.metadata.edit.FieldKind
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
+import io.github.fishpimp.exiflab.ui.edit.time.hoursPart
+import io.github.fishpimp.exiflab.ui.edit.time.minutesPart
+import io.github.fishpimp.exiflab.ui.edit.time.secondsPart
 import io.github.fishpimp.exiflab.ui.format.CaptureTimeFormat
 import io.github.fishpimp.exiflab.ui.format.ExposureFormat
 import io.github.fishpimp.exiflab.ui.map.LatLng
@@ -80,9 +84,9 @@ fun durationText(duration: Duration): String {
     val total = duration.abs()
     val parts = buildList {
         if (total.toDays() > 0) add(stringResource(R.string.edit_unit_days_short, total.toDays()))
-        if (total.toHoursPart() > 0) add(stringResource(R.string.edit_unit_hours_short, total.toHoursPart()))
-        if (total.toMinutesPart() > 0) add(stringResource(R.string.edit_unit_minutes_short, total.toMinutesPart()))
-        if (total.toSecondsPart() > 0 || isEmpty()) add(stringResource(R.string.edit_unit_seconds_short, total.toSecondsPart()))
+        if (total.hoursPart() > 0) add(stringResource(R.string.edit_unit_hours_short, total.hoursPart()))
+        if (total.minutesPart() > 0) add(stringResource(R.string.edit_unit_minutes_short, total.minutesPart()))
+        if (total.secondsPart() > 0 || isEmpty()) add(stringResource(R.string.edit_unit_seconds_short, total.secondsPart()))
     }
     return sign + parts.joinToString(" ")
 }
@@ -105,7 +109,7 @@ fun validationMessage(error: ValidationError, field: EditableField?): String = w
         }
         else -> stringResource(R.string.edit_error_out_of_range)
     }
-    ValidationError.TooLong -> (field?.kind as? FieldKind.Text)?.maxLength?.let { stringResource(R.string.edit_error_too_long_max, it) }
+    ValidationError.TooLong -> (field?.kind as? FieldKind.Text)?.maxLength?.let { pluralStringResource(R.plurals.edit_error_too_long_max, it, it) }
         ?: stringResource(R.string.edit_error_too_long)
     ValidationError.NotAscii -> stringResource(R.string.edit_error_not_ascii)
     ValidationError.InvalidDate -> stringResource(R.string.edit_error_invalid_date, DATE_TIME_EXAMPLE)

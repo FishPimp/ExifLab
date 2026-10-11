@@ -236,7 +236,8 @@ class EditViewModelTest {
         val added = state().fields as FieldsState.Ready
         assertThat(added.sections.flatMap { it.rows }.map { it.field.label }).contains("City")
         assertThat(added.absent.map { it.label }).doesNotContain("City")
-        assertThat(state().fieldEditor).isEqualTo(FieldEditor("iptc:2:90", ""))
+        assertThat(state().fieldEditor).isEqualTo(FieldEditor("iptc:2:90"))
+        assertThat(vm.fieldDraft).isEmpty()
     }
 
     @Test
@@ -244,7 +245,8 @@ class EditViewModelTest {
         val vm = viewModel()
         val state = observe(vm)
         vm.editField("exif:exif:0x829D")
-        assertThat(state().fieldEditor).isEqualTo(FieldEditor("exif:exif:0x829D", "168/100"))
+        assertThat(state().fieldEditor).isEqualTo(FieldEditor("exif:exif:0x829D"))
+        assertThat(vm.fieldDraft).isEqualTo("168/100")
 
         vm.onFieldDraftChange("f/2.8")
         assertThat(state().fieldEditor!!.error).isEqualTo(ValidationError.NotANumber)
@@ -270,7 +272,7 @@ class EditViewModelTest {
 
         // Editing again starts from the queued value; removing replaces it; reverting drops it.
         vm.editField("exif:exif:0x829D")
-        assertThat(state().fieldEditor!!.draft).isEqualTo("2.8")
+        assertThat(vm.fieldDraft).isEqualTo("2.8")
         vm.removeField("exif:exif:0x829D")
         assertThat(state().edits.single().fieldValue).isNull()
         assertThat(state().fieldEditor).isNull()

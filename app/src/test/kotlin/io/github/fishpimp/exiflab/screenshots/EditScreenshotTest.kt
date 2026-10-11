@@ -260,6 +260,7 @@ class EditScreenshotTest {
             ref = vm.ref,
             state = override(state),
             fieldQuery = vm.fieldQuery,
+            fieldDraft = vm.fieldDraft,
             placeQuery = vm.placeQuery,
             actions = EditActions(),
             listState = rememberLazyListState(initialFirstVisibleItemIndex = firstItem),

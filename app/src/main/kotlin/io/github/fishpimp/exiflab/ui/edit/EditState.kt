@@ -84,9 +84,12 @@ data class FieldRow(val field: EditableField, val current: String?, val pending:
 @Immutable
 data class PendingFieldValue(val value: String?)
 
-/** The field being edited inline, with its draft text and the validation result to show. */
+/**
+ * The field being edited inline and the validation result to show. Its text lives in
+ * [EditViewModel.fieldDraft], so the text field updates synchronously.
+ */
 @Immutable
-data class FieldEditor(val fieldId: String, val draft: String, val error: ValidationError? = null)
+data class FieldEditor(val fieldId: String, val error: ValidationError? = null)
 
 /** Saving, and what happened. */
 @Immutable

@@ -643,7 +643,10 @@
     <string name="edit_error_out_of_range">Värdet ligger utanför intervallet</string>
     <string name="edit_error_out_of_range_between">Från %1$s till %2$s</string>
     <string name="edit_error_too_long">Texten är för lång</string>
-    <string name="edit_error_too_long_max">För lång: högst %1$d tecken</string>
+    <plurals name="edit_error_too_long_max">
+        <item quantity="one">För lång: högst %d tecken</item>
+        <item quantity="other">För lång: högst %d tecken</item>
+    </plurals>
     <string name="edit_error_not_ascii">Fältet tar bara grundläggande latinska bokstäver, siffror och skiljetecken (inte å, ä, ö eller emoji)</string>
     <string name="edit_error_invalid_date">Ange datum och tid som %1$s</string>
     <string name="edit_error_invalid_choice">Välj ett av alternativen</string>
@@ -669,7 +672,7 @@
     <string name="edit_dest_in_place_body">Bara metadata skrivs om; bilddatan förblir byte för byte densamma. Originalet säkerhetskopieras först, så du kan ångra eller återställa det från Historik.</string>
     <string name="edit_dest_copy_title">Sparas som en ny kopia</string>
     <string name="edit_dest_copy_body">ExifLab kan inte ändra originalet härifrån; en ny kopia sparas med dina ändringar.</string>
-    <string name="edit_dest_open_original_hint">Fotot kom utan sin plats. För att redigera själva originalfilen, gå tillbaka och använd Öppna originalfil.</string>
+    <string name="edit_dest_open_original_hint">Foton som kommer den här vägen tappar ofta sin plats på vägen. För att redigera själva originalfilen, gå tillbaka och använd Öppna originalfil.</string>
     <string name="edit_dest_sidecar_title">Sparas i en XMP-sidofil</string>
     <string name="edit_dest_raw_body">RAW-filer ändras aldrig. Dina ändringar hamnar i en XMP-fil bredvid fotot, som Lightroom, darktable och andra program läser.</string>
     <string name="edit_dest_unsupported_body">ExifLab kan inte skriva %1$s-filer än, så dina ändringar hamnar i en XMP-fil bredvid fotot.</string>

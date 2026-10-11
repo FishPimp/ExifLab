@@ -47,9 +47,9 @@ data class TimeShift(
             val total = duration.abs()
             return TimeShift(
                 days = total.toDays().toInt().coerceAtMost(ShiftUnit.Days.max),
-                hours = total.toHoursPart(),
-                minutes = total.toMinutesPart(),
-                seconds = total.toSecondsPart(),
+                hours = total.hoursPart(),
+                minutes = total.minutesPart(),
+                seconds = total.secondsPart(),
                 later = later,
             )
         }
@@ -63,3 +63,19 @@ enum class ShiftUnit(val max: Int) {
     Minutes(59),
     Seconds(59),
 }
+
+// Duration's toHoursPart() and friends need API 31; the minimum is 29. These take a non-negative duration.
+
+/** Hours past the whole days, 0..23. */
+fun Duration.hoursPart(): Int = ((seconds / SECONDS_PER_HOUR) % HOURS_PER_DAY).toInt()
+
+/** Minutes past the whole hours, 0..59. */
+fun Duration.minutesPart(): Int = ((seconds / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR).toInt()
+
+/** Seconds past the whole minutes, 0..59. */
+fun Duration.secondsPart(): Int = (seconds % SECONDS_PER_MINUTE).toInt()
+
+private const val SECONDS_PER_MINUTE = 60L
+private const val MINUTES_PER_HOUR = 60L
+private const val SECONDS_PER_HOUR = 3_600L
+private const val HOURS_PER_DAY = 24L

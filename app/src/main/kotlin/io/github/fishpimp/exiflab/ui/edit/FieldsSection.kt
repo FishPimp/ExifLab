@@ -96,6 +96,7 @@ data class FieldCallbacks(
 fun LazyListScope.allFieldsItems(
     fields: FieldsState,
     editor: FieldEditor?,
+    draft: String,
     query: String,
     callbacks: FieldCallbacks,
     gutter: Dp,
@@ -146,7 +147,7 @@ fun LazyListScope.allFieldsItems(
                     val open = editor?.fieldId == row.field.id
                     Column(Modifier.padding(horizontal = gutter - 8.dp)) {
                         if (open) {
-                            FieldEditorCard(row, editor!!, callbacks)
+                            FieldEditorCard(row, editor!!, draft, callbacks)
                         } else {
                             FieldListRow(row, onClick = { callbacks.onEdit(row.field.id) })
                         }
@@ -249,7 +250,7 @@ private fun FieldListRow(row: FieldRow, onClick: () -> Unit) {
 
 /** The inline editor of one field: a type-aware input, its validation message and the actions. */
 @Composable
-private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, callbacks: FieldCallbacks) {
+private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, draft: String, callbacks: FieldCallbacks) {
     val field = row.field
     val error = editor.error?.let { validationMessage(it, field) }
     Surface(
@@ -266,7 +267,7 @@ private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, callbacks: Field
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            FieldInput(field, editor.draft, error, callbacks)
+            FieldInput(field, draft, error, callbacks)
             FlowRow(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),

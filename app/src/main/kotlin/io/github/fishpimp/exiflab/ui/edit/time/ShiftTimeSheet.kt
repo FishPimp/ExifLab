@@ -31,6 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -70,10 +71,10 @@ fun ShiftTimeSheet(
     onApply: (Duration) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var days by rememberSaveable { mutableStateOf(0) }
-    var hours by rememberSaveable { mutableStateOf(0) }
-    var minutes by rememberSaveable { mutableStateOf(0) }
-    var seconds by rememberSaveable { mutableStateOf(0) }
+    var days by rememberSaveable { mutableIntStateOf(0) }
+    var hours by rememberSaveable { mutableIntStateOf(0) }
+    var minutes by rememberSaveable { mutableIntStateOf(0) }
+    var seconds by rememberSaveable { mutableIntStateOf(0) }
     var later by rememberSaveable { mutableStateOf(true) }
     val shift = TimeShift(days, hours, minutes, seconds, later)
     ModalBottomSheet(onDismissRequest = onDismiss, sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)) {

@@ -177,6 +177,7 @@ fun EditScreen(
         ref = ref,
         state = state,
         fieldQuery = viewModel.fieldQuery,
+        fieldDraft = viewModel.fieldDraft,
         placeQuery = viewModel.placeQuery,
         actions = remember(viewModel, requestBack) {
             EditActions(
@@ -269,6 +270,7 @@ fun EditContent(
     placeQuery: String,
     actions: EditActions,
     modifier: Modifier = Modifier,
+    fieldDraft: String = "",
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     listState: LazyListState = rememberLazyListState(),
 ) {
@@ -280,7 +282,7 @@ fun EditContent(
         modifier = modifier,
     ) { page ->
         when {
-            report == null || page == EditorPage.Overview -> EditOverview(ref, state, fieldQuery, actions, snackbarHostState, listState)
+            report == null || page == EditorPage.Overview -> EditOverview(ref, state, fieldQuery, fieldDraft, actions, snackbarHostState, listState)
             page == EditorPage.Review -> ReviewContent(
                 ref = ref,
                 report = report,
@@ -317,6 +319,7 @@ private fun EditOverview(
     ref: PhotoRef,
     state: EditUiState,
     fieldQuery: String,
+    fieldDraft: String,
     actions: EditActions,
     snackbarHostState: SnackbarHostState,
     listState: LazyListState,
@@ -356,7 +359,7 @@ private fun EditOverview(
                         onAction = if (load.error.canRetry) actions.onRetry else null,
                     )
                 }
-                is EditLoad.Loaded -> EditorSections(load.report, state, fieldQuery, actions, listState)
+                is EditLoad.Loaded -> EditorSections(load.report, state, fieldQuery, fieldDraft, actions, listState)
             }
         }
     }
@@ -368,6 +371,7 @@ private fun EditorSections(
     report: MetadataReport,
     state: EditUiState,
     fieldQuery: String,
+    fieldDraft: String,
     actions: EditActions,
     listState: LazyListState,
 ) {
@@ -394,7 +398,7 @@ private fun EditorSections(
             if (includeTools) {
                 item(key = "tools", contentType = "tools") { tools(Modifier.padding(horizontal = gutter).padding(top = 8.dp, bottom = 24.dp)) }
             }
-            allFieldsItems(state.fields, state.fieldEditor, fieldQuery, actions.fields, gutter)
+            allFieldsItems(state.fields, state.fieldEditor, fieldDraft, fieldQuery, actions.fields, gutter)
         }
     }
 

@@ -32,6 +32,7 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -63,8 +64,8 @@ fun SetDateTimeDialog(
 ) {
     val locale = LocalLocale.current.platformLocale
     var date by rememberSaveable { mutableStateOf(initial.toLocalDate()) }
-    var hour by rememberSaveable { mutableStateOf(initial.hour) }
-    var minute by rememberSaveable { mutableStateOf(initial.minute) }
+    var hour by rememberSaveable { mutableIntStateOf(initial.hour) }
+    var minute by rememberSaveable { mutableIntStateOf(initial.minute) }
     var offset by rememberSaveable { mutableStateOf(initialOffset) }
     var alsoModify by rememberSaveable { mutableStateOf(false) }
     var picking by rememberSaveable { mutableStateOf(Picking.None) }

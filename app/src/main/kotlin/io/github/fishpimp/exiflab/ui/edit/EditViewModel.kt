@@ -44,6 +44,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
@@ -104,6 +105,10 @@ class EditViewModel(
     var fieldQuery: String by mutableStateOf("")
         private set
 
+    /** Text of the field being edited inline, bound to its input. */
+    var fieldDraft: String by mutableStateOf("")
+        private set
+
     /** Search text of the location picker. */
     var placeQuery: String by mutableStateOf("")
         private set
@@ -122,7 +127,12 @@ class EditViewModel(
             }
         }
 
-    private val fields: Flow<FieldsState> = combine(load, edits, fieldQueryFlow, local.map { it.addedFields }) { load, edits, query, added ->
+    private val fields: Flow<FieldsState> = combine(
+        load,
+        edits,
+        fieldQueryFlow,
+        local.map { it.addedFields }.distinctUntilChanged(),
+    ) { load, edits, query, added ->
         val report = (load as? EditLoad.Loaded)?.report ?: return@combine FieldsState.Loading
         val catalog = resolvedCatalog ?: return@combine FieldsState.Unavailable
         buildFields(catalog, report, edits, query, added)
@@ -273,7 +283,8 @@ class EditViewModel(
         val report = (load.value as? EditLoad.Loaded)?.report ?: return
         val pending = edits.value.lastOrNull { it.slot == EditSlot.Field(fieldId) }
         val start = if (pending != null) pending.fieldValue.orEmpty() else currentValue(catalog, field, report).orEmpty()
-        local.update { it.copy(fieldEditor = FieldEditor(fieldId, start)) }
+        fieldDraft = start
+        local.update { it.copy(fieldEditor = FieldEditor(fieldId)) }
     }
 
     fun closeFieldEditor() = local.update { it.copy(fieldEditor = null) }
@@ -282,8 +293,9 @@ class EditViewModel(
     fun onFieldDraftChange(text: String) {
         val editor = local.value.fieldEditor ?: return
         val field = resolvedCatalog?.field(editor.fieldId) ?: return
+        fieldDraft = text
         val error = validate(field, text)?.takeUnless { it == ValidationError.Empty }
-        local.update { it.copy(fieldEditor = editor.copy(draft = text, error = error)) }
+        local.update { it.copy(fieldEditor = editor.copy(error = error)) }
     }
 
     /** Validates the draft and queues it, or shows why it cannot be used. */
@@ -291,7 +303,7 @@ class EditViewModel(
         val editor = local.value.fieldEditor ?: return false
         val catalog = resolvedCatalog ?: return false
         val field = catalog.field(editor.fieldId) ?: return false
-        return when (val result = safeValidate(catalog, field, editor.draft)) {
+        return when (val result = safeValidate(catalog, field, fieldDraft)) {
             is Validation.Valid -> {
                 val operation = runCatching { catalog.operationFor(field, result.normalized) }.getOrNull() ?: return false
                 queue(operation, EditSlot.Field(field.id), field.label, result.normalized)

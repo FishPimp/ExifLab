@@ -657,7 +657,10 @@
     <string name="edit_error_out_of_range">This value is out of range</string>
     <string name="edit_error_out_of_range_between">From %1$s to %2$s</string>
     <string name="edit_error_too_long">This text is too long</string>
-    <string name="edit_error_too_long_max">Too long: at most %1$d characters</string>
+    <plurals name="edit_error_too_long_max">
+        <item quantity="one">Too long: at most %d character</item>
+        <item quantity="other">Too long: at most %d characters</item>
+    </plurals>
     <string name="edit_error_not_ascii">This field only takes basic Latin letters, digits and punctuation (no å, ä, ö or emoji)</string>
     <string name="edit_error_invalid_date">Enter a date and time like %1$s</string>
     <string name="edit_error_invalid_choice">Choose one of the options</string>
@@ -683,7 +686,7 @@
     <string name="edit_dest_in_place_body">Only the metadata is rewritten; the image data stays byte for byte the same. The original is backed up first, so you can undo or restore it from History.</string>
     <string name="edit_dest_copy_title">Saved as a new copy</string>
     <string name="edit_dest_copy_body">ExifLab can\'t change the original from here; a new copy will be saved with your changes.</string>
-    <string name="edit_dest_open_original_hint">This photo arrived without its location. To edit the original file itself, go back and use Open original file.</string>
+    <string name="edit_dest_open_original_hint">Photos that arrive this way often lose their location on the way. To edit the original file itself, go back and use Open original file.</string>
     <string name="edit_dest_sidecar_title">Saved to an XMP sidecar</string>
     <string name="edit_dest_raw_body">RAW files are never changed. Your edits go to an XMP file next to the photo, which Lightroom, darktable and other editors read.</string>
     <string name="edit_dest_unsupported_body">ExifLab can\'t write %1$s files yet, so your edits go to an XMP file next to the photo.</string>
