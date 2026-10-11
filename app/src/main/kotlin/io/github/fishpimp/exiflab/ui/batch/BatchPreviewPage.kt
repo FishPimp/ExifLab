@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Block
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -37,6 +38,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +50,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowSizeClass
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.data.batch.BatchItemReason
 import io.github.fishpimp.exiflab.data.batch.BatchOperation
@@ -90,27 +93,49 @@ internal fun BatchPreviewPage(
         modifier = modifier,
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
-                LazyColumn(
-                    modifier = Modifier.widthIn(max = BatchColumnMaxWidth).fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    item(key = "operation") { OperationCard(state, operation) }
-                    if (preview != null) {
-                        if (!preview.isComplete) item(key = "checking") { CheckingRow(preview) }
-                        item(key = "routes") { RoutesCard(preview, hasFolder) }
-                        if (preview.needsFolder > 0) {
-                            item(key = "folder") { FolderCard(preview.needsFolder, state.copyFolder, actions) }
+            val overview: LazyListScope.() -> Unit = {
+                item(key = "operation") { OperationCard(state, operation) }
+                if (preview != null) {
+                    if (!preview.isComplete) item(key = "checking") { CheckingRow(preview) }
+                    item(key = "routes") { RoutesCard(preview, hasFolder) }
+                    if (preview.needsFolder > 0) {
+                        item(key = "folder") { FolderCard(preview.needsFolder, state.copyFolder, actions) }
+                    }
+                    if (preview.warnings.isNotEmpty() || preview.unreadable > 0) item(key = "warnings") { WarningsCard(preview) }
+                }
+            }
+            val example: LazyListScope.() -> Unit = {
+                if (preview != null) {
+                    item(key = "sample-title") { SampleTitle(preview) }
+                    preview.sample?.let { sample ->
+                        groupedDiff(sample.diff).forEach { (group, changes) ->
+                            item(key = "sample-${group.name}") { DiffGroup(group, changes) }
                         }
-                        val warnings = preview.warnings.isNotEmpty() || preview.unreadable > 0
-                        if (warnings) item(key = "warnings") { WarningsCard(preview) }
-                        item(key = "sample-title") { SampleTitle(preview) }
-                        preview.sample?.let { sample ->
-                            groupedDiff(sample.diff).forEach { (group, changes) ->
-                                item(key = "sample-${group.name}") { DiffGroup(group, changes) }
-                            }
-                        }
+                    }
+                }
+            }
+            val listPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp)
+            val spacing = Arrangement.spacedBy(16.dp)
+            val twoPane = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
+            if (twoPane) {
+                // Large screens: the plan on the left, the example photo's changes beside it.
+                Row(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.Center) {
+                    LazyColumn(Modifier.weight(1f).widthIn(max = BatchColumnMaxWidth).fillMaxSize(), contentPadding = listPadding, verticalArrangement = spacing) {
+                        overview()
+                    }
+                    LazyColumn(Modifier.weight(1f).widthIn(max = BatchColumnMaxWidth).fillMaxSize(), contentPadding = listPadding, verticalArrangement = spacing) {
+                        example()
+                    }
+                }
+            } else {
+                Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
+                    LazyColumn(
+                        modifier = Modifier.widthIn(max = BatchColumnMaxWidth).fillMaxSize(),
+                        contentPadding = listPadding,
+                        verticalArrangement = spacing,
+                    ) {
+                        overview()
+                        example()
                     }
                 }
             }
