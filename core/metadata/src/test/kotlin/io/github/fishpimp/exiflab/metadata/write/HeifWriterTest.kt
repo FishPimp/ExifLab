@@ -448,6 +448,18 @@ class HeifWriterTest {
         refuses(HeifFixtures.box("ftyp", "heic".toByteArray() + HeifFixtures.be32(0) + "mif1".toByteArray()) + HeifFixtures.box("mdat", ByteArray(32)))
     }
 
+    @Test fun compressedXmpIsOnlyReplacedAsAWhole() {
+        val base = gridPhoto(xmp = xmpPacket("xmp:Rating" to "1"))
+        // content_type followed by content_encoding "deflate".
+        val spec = base.copy(items = base.items.map { if (it.id == 7) Item(7, "mime", ByteArray(64) { 1 }, contentType = "application/rdf+xml\u0000deflate") else it })
+        val source = heif(spec)
+        assertThrows(UnsupportedEditException::class.java) { MetadataWriting.writer.write(ByteArrayImageSource(source, "x.heic"), rating, ByteArrayOutputStream()) }
+        val written = edit(source, rating + MetadataChanges(removeBlocks = setOf(MetadataBlock.Xmp)))
+        val parsed = Parsed(written.bytes)
+        assertThat(parsed.xmpIds).containsExactly(8L)
+        assertThat(Photos.read(written.bytes).tag("xmp", "xmp:Rating").rawValue).isEqualTo("4")
+    }
+
     @Test fun reportsTruncatedFilesAsCorrupt() {
         val source = heif(gridPhoto())
         assertThrows(CorruptImageException::class.java) {

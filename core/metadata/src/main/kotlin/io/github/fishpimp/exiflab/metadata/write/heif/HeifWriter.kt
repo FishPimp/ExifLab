@@ -13,6 +13,7 @@ import io.github.fishpimp.exiflab.metadata.write.tiff.ExifEditor
 import io.github.fishpimp.exiflab.metadata.write.tiff.TiffParser
 import io.github.fishpimp.exiflab.metadata.write.tiff.TiffSerializer
 import io.github.fishpimp.exiflab.metadata.write.xmp.XmpPackets
+import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 
 /**
@@ -187,8 +188,12 @@ internal class HeifWriter {
         }
         if (XmpPackets.affects(changes)) {
             val items = meta.infos.filter { it.isXmp }
-            val target = preferred(meta, items)
             val removeAll = MetadataBlock.Xmp in changes.removeBlocks
+            // A compressed packet is only ever removed; a replacement is stored uncompressed in a new item.
+            val target = preferred(meta, items)?.takeUnless { it.contentEncoding.isNotEmpty() && removeAll }
+            if (target != null && target.contentEncoding.isNotEmpty()) {
+                throw UnsupportedEditException("The HEIF XMP item is compressed (${target.contentEncoding}) and cannot be edited")
+            }
             val original = if (target != null && !removeAll) XmpPackets.parse(itemData(source, file, meta, target)) else null
             val payload = XmpPackets.edit(original, changes)?.let { xmp ->
                 // XMPCore pads to 2 KB unless told otherwise; slack is added only where the packet is placed.
@@ -352,6 +357,8 @@ internal class HeifWriter {
             when {
                 box === file.metaBox -> {
                     metaIndex = segments.size
+                    // An unchanged meta box still maps, for the rare item located by file offset inside it.
+                    if (metaBytes.contentEquals(file.metaBytes)) copies += CopyMap(box.start, box.end, out)
                     data(metaBytes)
                     if (following == null && delta <= -8 && padShrinking) data(freeBox(-delta))
                 }
@@ -414,7 +421,7 @@ internal class HeifWriter {
         var size = data.size
         val liveEnd = live.maxOfOrNull { it[0] + it[1] }?.toInt() ?: 0
         while (size > liveEnd && data[size - 1].toInt() == 0) size--
-        val result = java.io.ByteArrayOutputStream()
+        val result = ByteArrayOutputStream()
         result.write(data, 0, size)
         for (placement in placements) {
             placement.offset = result.size().toLong()
@@ -454,7 +461,7 @@ internal class HeifWriter {
         val location = meta.locations[item.id] ?: throw UnsupportedEditException("The HEIF metadata item ${item.id} has no data")
         val total = location.extents.sumOf { it.length }
         if (total > MAX_PAYLOAD) throw UnsupportedEditException("The HEIF metadata item ${item.id} is too large to edit")
-        val out = java.io.ByteArrayOutputStream(total.toInt())
+        val out = ByteArrayOutputStream(total.toInt())
         for (extent in location.extents) {
             val start = location.baseOffset + extent.offset
             when (location.constructionMethod) {

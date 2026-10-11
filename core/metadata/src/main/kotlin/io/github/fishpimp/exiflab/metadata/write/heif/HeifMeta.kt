@@ -9,7 +9,8 @@ internal class ItemInfo(
     val contentType: String,
     val protectionIndex: Int,
     private val raw: ByteArray?,
-    private val hidden: Boolean = true,
+    /** `content_encoding` of MIME items, e.g. "deflate" for compressed XMP; empty when stored as is. */
+    val contentEncoding: String = "",
 ) {
     val isExif: Boolean get() = type == EXIF_TYPE
     val isXmp: Boolean get() = type == MIME_TYPE && contentType.substringBefore(';').trim().equals(XMP_CONTENT_TYPE, ignoreCase = true)
@@ -25,7 +26,7 @@ internal class ItemInfo(
         writer.fourCc(type)
         writer.cString("")
         if (type == MIME_TYPE) writer.cString(contentType)
-        BoxBytes.fullBox("infe", if (id > 0xFFFF) 3 else 2, if (hidden) 1 else 0, writer.toByteArray())
+        BoxBytes.fullBox("infe", if (id > 0xFFFF) 3 else 2, 1, writer.toByteArray())
     }
 
     companion object {
@@ -45,7 +46,8 @@ internal class ItemInfo(
                     val protection = reader.u16()
                     reader.cString()
                     val contentType = if (reader.remaining > 0) reader.cString() else ""
-                    ItemInfo(id, MIME_TYPE, contentType, protection, data.copyOfRange(box.start, box.end))
+                    val encoding = if (reader.remaining > 0) reader.cString() else ""
+                    ItemInfo(id, MIME_TYPE, contentType, protection, data.copyOfRange(box.start, box.end), encoding)
                 }
                 2, 3 -> {
                     val id = if (version == 2) reader.u16().toLong() else reader.u32()
@@ -53,7 +55,8 @@ internal class ItemInfo(
                     val type = reader.fourCc()
                     reader.cString()
                     val contentType = if (type == MIME_TYPE && reader.remaining > 0) reader.cString() else ""
-                    ItemInfo(id, type, contentType, protection, data.copyOfRange(box.start, box.end))
+                    val encoding = if (type == MIME_TYPE && reader.remaining > 0) reader.cString() else ""
+                    ItemInfo(id, type, contentType, protection, data.copyOfRange(box.start, box.end), encoding)
                 }
                 else -> BoxBytes.damaged("infe")
             }
@@ -290,9 +293,7 @@ internal class HeifMeta private constructor(
         addAll(groupIds)
     }
 
-    fun isGrouped(id: Long): Boolean = id in groupIds
-
-    /** The item that [id] describes through `cdsc`, or null. */
+    /** The items that [id] describes through `cdsc`. */
     fun describes(id: Long): List<Long> = references?.references.orEmpty().filter { it.type == "cdsc" && it.from == id }.flatMap { it.to }
 
     /** Drops [id] from `iinf`, `iloc`, `iref` and `ipma`, leaving no reference to it behind. */
