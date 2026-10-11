@@ -23,6 +23,8 @@ object HeifFixtures {
         val constructionMethod: Int? = null,
         /** Points this item's single extent at the data of another item (AVIF tiles may share data). */
         val sameDataAs: Int? = null,
+        /** Stores the data after the last box, outside any box. */
+        val inTail: Boolean = false,
     )
 
     class Ref(val type: String, val from: Int, val to: List<Int>)
@@ -133,7 +135,7 @@ object HeifFixtures {
         val ftyp = box("ftyp", spec.brand.toByteArray() + be32(0) + "mif1".toByteArray() + spec.brand.toByteArray())
         val idatItems = spec.items.filter { it.inIdat }
         val idat = idatItems.fold(ByteArray(0)) { acc, item -> acc + item.data }
-        val mdatItems = (spec.dataOrder?.map { id -> spec.items.single { it.id == id } } ?: spec.items.filterNot { it.inIdat }).filter { it.sameDataAs == null }
+        val mdatItems = (spec.dataOrder?.map { id -> spec.items.single { it.id == id } } ?: spec.items.filterNot { it.inIdat }).filter { it.sameDataAs == null && !it.inTail }
         val trackChunks = spec.track?.let { track -> track.samples.chunked(track.samplesPerChunk) }.orEmpty()
 
         fun layout(metaSize: Int): ByteArray {
@@ -164,9 +166,17 @@ object HeifFixtures {
             }
             for (item in spec.items) item.sameDataAs?.let { positions[item.id] = positions.getValue(it) }
             val moov = spec.track?.let { moov(it, trackChunks, chunkOffsets) }
+            val free = if (spec.freeAfterMeta > 0 && !spec.metaAfterMdat) box("free", ByteArray(spec.freeAfterMeta - 8)) else ByteArray(0)
+            val tail = ByteArrayOutputStream()
+            var tailPosition = ftyp.size.toLong() + metaSize + free.size + mdats.sumOf { it.size } + (moov?.size ?: 0) + spec.topLevelExtra.sumOf { it.size }
+            for (item in spec.items.filter { it.inTail }) {
+                positions[item.id] = split(item, tailPosition)
+                tail.write(item.data)
+                tailPosition += item.data.size
+            }
+            tail.write(spec.tail)
             val meta = meta(spec, positions, idatItems, idat, mdatPayloadStart)
             check(meta.size == metaSize)
-            val free = if (spec.freeAfterMeta > 0) box("free", ByteArray(spec.freeAfterMeta - 8)) else ByteArray(0)
             val out = ByteArrayOutputStream()
             out.write(ftyp)
             if (!spec.metaAfterMdat) {
@@ -177,7 +187,7 @@ object HeifFixtures {
             if (spec.metaAfterMdat) out.write(meta)
             moov?.let(out::write)
             spec.topLevelExtra.forEach(out::write)
-            out.write(spec.tail)
+            out.write(tail.toByteArray())
             return out.toByteArray()
         }
         // Field sizes are fixed, so the meta box measured with placeholder offsets has its final size.
@@ -427,7 +437,8 @@ object HeifFixtures {
                 size = (end - p).toLong()
             }
             val type = String(bytes, p + 4, 4, Charsets.ISO_8859_1)
-            check(size >= header && p + size <= end) { "box $type at $p overruns" }
+            // Bytes that do not form a box end the list (data after the last box).
+            if (size < header || p + size > end || type.any { it.code !in 0x20..0x7E }) break
             result += Box(type, p, header, (p + size).toInt())
             p += size.toInt()
         }

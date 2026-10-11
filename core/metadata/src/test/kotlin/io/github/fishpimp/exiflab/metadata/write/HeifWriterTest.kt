@@ -276,6 +276,22 @@ class HeifWriterTest {
         assertThat(parsed.fileRanges(4).single()).isEqualTo(parsed.fileRanges(3).single())
     }
 
+    @Test fun exifAfterTheLastBoxIsRemappedWhenNewDataIsInserted() {
+        // Exif stored after the last box, outside any box; new item data goes in a new mdat before it.
+        val base = gridPhoto()
+        val spec = base.copy(items = base.items.map { if (it.type == "Exif") Item(it.id, "Exif", it.data, inTail = true) else it })
+        val source = heif(spec)
+        val tailStart = Parsed(source).topLevel.last().end
+        assertThat(tailStart).isLessThan(source.size)
+        val written = write(source, rating + MetadataChanges(xmp = listOf(XmpChange.SetProperty(XMP_NS, "xmp", "Label", "y".repeat(5000)))))
+        assertImageDataIntact(source, written.bytes)
+        val parsed = Parsed(written.bytes)
+        assertThat(parsed.topLevel.last().type).isEqualTo("mdat")
+        assertThat(parsed.fileRanges(6).single()[0]).isAtLeast(parsed.topLevel.last().end.toLong())
+        assertThat(parsed.data(6)).isEqualTo(Parsed(source).data(6))
+        assertThat(Photos.read(written.bytes).tag("exif-ifd0", "Model").rawValue).isEqualTo("Pixel 8")
+    }
+
     @Test fun avifItemsAreEditedLikeHeif() {
         val source = heif(simplePhoto(avif = true, imageExtents = 2))
         val written = edit(source, artist + rating, name = "photo.avif")
