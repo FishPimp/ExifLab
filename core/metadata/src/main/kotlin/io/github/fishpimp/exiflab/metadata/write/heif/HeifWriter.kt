@@ -191,7 +191,8 @@ internal class HeifWriter {
             val removeAll = MetadataBlock.Xmp in changes.removeBlocks
             val original = if (target != null && !removeAll) XmpPackets.parse(itemData(source, file, meta, target)) else null
             val payload = XmpPackets.edit(original, changes)?.let { xmp ->
-                val compact = XmpPackets.serialize(xmp)
+                // XMPCore pads to 2 KB unless told otherwise; slack is added only where the packet is placed.
+                val compact = XmpPackets.serialize(xmp, padding = 1)
                 Payload(compact) { capacity -> XmpPackets.serializeExact(xmp, capacity) ?: compact.takeIf { it.size <= capacity } }
             }
             plan(target, items, removeAll, payload, ItemInfo.MIME_TYPE)
@@ -250,6 +251,8 @@ internal class HeifWriter {
         for (placement in placements) {
             if (placement.place == Place.InPlace) continue
             if (placement.place == Place.Mdat) {
+                // Some slack (zeros after Exif, XMP padding) lets later edits rewrite the item in place.
+                placement.bytes = placement.payload.fit(roundUp(placement.bytes.size + MDAT_SLACK, MDAT_SLACK)) ?: placement.bytes
                 placement.offset = mdatSize
                 mdatSize += placement.bytes.size
             }
@@ -341,7 +344,9 @@ internal class HeifWriter {
             box.type in FREE_BOXES && !box.toEnd && box !in dropped && liveRanges.none { overlaps(it, box.start, box.size) } &&
                 (box.size - delta).let { it == 0L || it >= 8 }
         }
-        val hasDataAfterMeta = file.boxes.drop(metaPosition + 1).any { it !in dropped } || file.tailStart < file.length
+        // Padding only helps when the box right after `meta` stays; a dropped box moves everything behind it anyway.
+        val next = file.boxes.getOrNull(metaPosition + 1)
+        val padShrinking = if (next == null) file.tailStart < file.length else next !in dropped
         var metaIndex = -1
         var movieIndex: Int? = null
         for (box in file.boxes) {
@@ -349,7 +354,7 @@ internal class HeifWriter {
                 box === file.metaBox -> {
                     metaIndex = segments.size
                     data(metaBytes)
-                    if (following == null && delta <= -8 && hasDataAfterMeta) data(freeBox(-delta))
+                    if (following == null && delta <= -8 && padShrinking) data(freeBox(-delta))
                 }
                 box === following && delta != 0L -> if (box.size - delta >= 8) data(freeBox(box.size - delta))
                 box in dropped -> Unit
@@ -520,6 +525,9 @@ internal class HeifWriter {
         const val MAX_PREFIX = 64
         const val IDAT_LIMIT = 4096
         const val MAX_PASSES = 8
+        const val MDAT_SLACK = 512
+
+        fun roundUp(value: Int, step: Int): Int = (value + step - 1) / step * step
 
         fun overlaps(range: LongArray, start: Long, length: Long): Boolean = range[0] < start + length && start < range[0] + range[1]
 
