@@ -97,6 +97,17 @@ internal object XmpPackets {
         throw UnsupportedEditException("Cannot write the XMP metadata: ${e.message}")
     }
 
+    /**
+     * Serializes [meta] into a packet of exactly [length] bytes, filling the rest with XMP padding
+     * (so a packet can be rewritten in the space of the old one), or returns null when it does not fit.
+     */
+    fun serializeExact(meta: XMPMeta, length: Int): ByteArray? = try {
+        val options = SerializeOptions().setUseCompactFormat(true).setExactPacketLength(true).setPadding(length)
+        XMPMetaFactory.serializeToBuffer(meta, options).takeIf { it.size == length }
+    } catch (_: XMPException) {
+        null
+    }
+
     /** Serializes a sidecar: no packet wrapper, readable indentation (as Lightroom and darktable write them). */
     fun serializeSidecar(meta: XMPMeta): ByteArray = try {
         XMPMetaFactory.serializeToBuffer(meta, SerializeOptions().setOmitPacketWrapper(true))
