@@ -21,6 +21,8 @@ object HeifFixtures {
         /** Number of extents the data is split into. */
         val extents: Int = 1,
         val constructionMethod: Int? = null,
+        /** Points this item's single extent at the data of another item (AVIF tiles may share data). */
+        val sameDataAs: Int? = null,
     )
 
     class Ref(val type: String, val from: Int, val to: List<Int>)
@@ -75,7 +77,14 @@ object HeifFixtures {
     fun av1C() = box("av1C", byteArrayOf(0x81.toByte(), 0x08, 0x0C, 0x00))
     fun ispe(width: Int, height: Int) = fullBox("ispe", 0, 0, be32(width) + be32(height))
     fun colrNclx() = box("colr", "nclx".toByteArray() + be16(1) + be16(13) + be16(6) + byteArrayOf(0x80.toByte()))
-    fun colrIcc() = box("colr", "prof".toByteArray() + Random(9).nextBytes(64))
+    /** A `colr` property with a minimal ICC profile: a 128-byte header (size, 'acsp' signature) and an empty tag table. */
+    fun colrIcc(): ByteArray {
+        val profile = ByteArray(132)
+        be32(profile.size).copyInto(profile, 0)
+        "mntrRGB XYZ ".toByteArray().copyInto(profile, 12)
+        "acsp".toByteArray().copyInto(profile, 36)
+        return box("colr", "prof".toByteArray() + profile)
+    }
     fun pixi() = fullBox("pixi", 0, 0, byteArrayOf(3, 8, 8, 8))
     fun irot(angle: Int) = box("irot", byteArrayOf(angle.toByte()))
 
@@ -124,7 +133,7 @@ object HeifFixtures {
         val ftyp = box("ftyp", spec.brand.toByteArray() + be32(0) + "mif1".toByteArray() + spec.brand.toByteArray())
         val idatItems = spec.items.filter { it.inIdat }
         val idat = idatItems.fold(ByteArray(0)) { acc, item -> acc + item.data }
-        val mdatItems = spec.dataOrder?.map { id -> spec.items.single { it.id == id } } ?: spec.items.filterNot { it.inIdat }
+        val mdatItems = (spec.dataOrder?.map { id -> spec.items.single { it.id == id } } ?: spec.items.filterNot { it.inIdat }).filter { it.sameDataAs == null }
         val trackChunks = spec.track?.let { track -> track.samples.chunked(track.samplesPerChunk) }.orEmpty()
 
         fun layout(metaSize: Int): ByteArray {
@@ -153,6 +162,7 @@ object HeifFixtures {
                 mdats += box("mdat", payload.toByteArray())
                 position += 8 + payload.size()
             }
+            for (item in spec.items) item.sameDataAs?.let { positions[item.id] = positions.getValue(it) }
             val moov = spec.track?.let { moov(it, trackChunks, chunkOffsets) }
             val meta = meta(spec, positions, idatItems, idat, mdatPayloadStart)
             check(meta.size == metaSize)
@@ -226,7 +236,7 @@ object HeifFixtures {
         val ipco = box("ipco", *spec.properties.toTypedArray())
         val ipma = fullBox(
             "ipma", 0, 0,
-            be32(spec.associations.size) + spec.associations.entries.fold(ByteArray(0)) { acc, (id, indexes) ->
+            be32(spec.associations.size) + spec.associations.entries.sortedBy { it.key }.fold(ByteArray(0)) { acc, (id, indexes) ->
                 acc + be16(id) + byteArrayOf(indexes.size.toByte()) + indexes.map { if (it < 0) (0x80 or -it).toByte() else it.toByte() }.toByteArray()
             },
         )

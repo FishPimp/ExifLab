@@ -277,8 +277,11 @@ internal class HeifWriter {
 
         val toEndHeaders = file.boxes.filter { it.toEnd }.associateWith { source.bytesAt(it.start, it.headerSize) }
         var metaBytes = meta.bytes()
+        // Item positions depend on the size of meta, which depends on the iloc field sizes the positions need;
+        // sizes only ever widen, so a few passes settle it.
         var layout: Layout? = null
-        for (pass in 0 until MAX_PASSES) {
+        var passes = 0
+        while (layout == null && passes++ < MAX_PASSES) {
             val candidate = arrange(file, metaBytes, dropped, overlays, liveRanges, newData, toEndHeaders)
             for (entry in meta.locations.entries) {
                 val placement = mdatPlacements[entry.id]
@@ -291,19 +294,15 @@ internal class HeifWriter {
                 if (relocate(entry, extents, originalBases.getValue(entry.id), originalOffsets.getValue(entry.id), candidate)) meta.markDirty()
             }
             val again = meta.bytes()
-            val settled = again.size == metaBytes.size
+            if (again.size == metaBytes.size) layout = candidate
             metaBytes = again
-            if (settled) {
-                layout = candidate
-                break
-            }
         }
-        if (layout == null) throw UnsupportedEditException("The HEIF layout could not be settled")
-        val segments = layout.segments
-        segments[layout.metaIndex] = Segment.Data(metaBytes)
-        val movieBytes = layout.movieIndex?.let { index ->
+        val settled = layout ?: throw UnsupportedEditException("The HEIF layout could not be settled")
+        val segments = settled.segments
+        segments[settled.metaIndex] = Segment.Data(metaBytes)
+        val movieBytes = settled.movieIndex?.let { index ->
             if (file.movieBox!!.toEnd && newData != null) throw UnsupportedEditException("This HEIF sequence layout cannot be extended")
-            movie!!.moved { offset, size -> layout.map(offset, size) }.also { segments[index] = Segment.Data(it) }
+            movie!!.moved { offset, size -> settled.map(offset, size) }.also { segments[index] = Segment.Data(it) }
         }
         val length = segments.sumOf { it.size }
         val digestPlan = HeifDigest.plan(HeifMeta.parse(metaBytes), movieBytes?.let(Movie::parse), length)

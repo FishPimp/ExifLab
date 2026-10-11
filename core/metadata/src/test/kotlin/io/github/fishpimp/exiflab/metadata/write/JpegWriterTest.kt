@@ -398,9 +398,9 @@ class JpegWriterTest {
         assertThat(JpegStructure.segments(written.bytes).first().payload).isEqualTo(JpegStructure.segments(damaged).first().payload)
     }
 
-    @Test fun onlyJpegPngAndWebpAreWritable() {
+    @Test fun onlyJpegPngWebpHeifAndAvifAreWritable() {
         val writer = MetadataWriting.writer
-        assertThat(ImageFormat.entries.filter(writer::canWrite)).containsExactly(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP)
+        assertThat(ImageFormat.entries.filter(writer::canWrite)).containsExactly(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP, ImageFormat.Heif, ImageFormat.Avif)
         val tiff = TiffBuilder.tiff { ascii(Photos.MAKE, "X") }
         assertThrows(UnsupportedEditException::class.java) {
             writer.write(ByteArrayImageSource(tiff, "a.tif"), MetadataChanges(), ByteArrayOutputStream())

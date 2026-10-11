@@ -6,6 +6,7 @@ import io.github.fishpimp.exiflab.metadata.model.Rational
 import io.github.fishpimp.exiflab.metadata.write.ExifChange
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
 import io.github.fishpimp.exiflab.metadata.write.ExifValue
+import io.github.fishpimp.exiflab.metadata.write.HeifFixtures
 import io.github.fishpimp.exiflab.metadata.write.IptcChange
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
@@ -66,7 +67,9 @@ class RealWorldSamplesTest {
     /**
      * Applies a representative edit (EXIF tags in IFD0, the Exif IFD and GPS, XMP and IPTC) and a
      * full strip to every writable sample. Each write must keep the image data digest, show the
-     * new values, and leave every other tag (MakerNotes included) exactly as it was.
+     * new values, and leave every other tag (MakerNotes included) exactly as it was. HEIF and AVIF
+     * results are also parsed box by box: every image item must keep its bytes, properties and
+     * references, and no item id may be left dangling.
      */
     @Test fun writesEveryWritableSample() {
         val directory = System.getenv("EXIFLAB_SAMPLES_DIR")?.let(::File)
@@ -89,7 +92,14 @@ class RealWorldSamplesTest {
                 outDir?.let { File(it, "edited__" + file.name).writeBytes(edited) }
                 val after = Metadata.reader.read(ByteArrayImageSource(edited, file.name))
                 problems += editProblems(file.name, format, before, after)
+                if (format == ImageFormat.Heif || format == ImageFormat.Avif) {
+                    val original = file.readBytes()
+                    val makerNotes = { report: MetadataReport -> report.directories.map { it.id }.filter { it.startsWith("makernote") } }
+                    if (makerNotes(after) != makerNotes(before)) problems += "${file.name}: MakerNotes ${makerNotes(before)} became ${makerNotes(after)}"
+                    problems += heifProblems("${file.name} (edited)", original, edited)
+                }
                 val (stripped, _) = writeTo(source, STRIP)
+                if (format == ImageFormat.Heif || format == ImageFormat.Avif) problems += heifProblems("${file.name} (stripped)", file.readBytes(), stripped)
                 outDir?.let { File(it, "stripped__" + file.name).writeBytes(stripped) }
                 val strippedReport = Metadata.reader.read(ByteArrayImageSource(stripped, file.name))
                 val left = strippedReport.directories.map { it.id }
@@ -107,6 +117,15 @@ class RealWorldSamplesTest {
         }
         println("Wrote $written samples")
         assertThat(problems).isEmpty()
+    }
+
+    /** Structural checks of a written HEIF/AVIF file against its source, see [HeifFixtures]. */
+    private fun heifProblems(label: String, source: ByteArray, written: ByteArray): List<String> = try {
+        HeifFixtures.assertImageDataIntact(source, written)
+        HeifFixtures.assertConsistent(written)
+        emptyList()
+    } catch (e: AssertionError) {
+        listOf("$label: ${e.message}")
     }
 
     private fun writeTo(source: ImageSource, changes: MetadataChanges): Pair<ByteArray, List<String>> {

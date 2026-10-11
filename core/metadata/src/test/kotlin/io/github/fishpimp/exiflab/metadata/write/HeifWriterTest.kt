@@ -48,6 +48,8 @@ class HeifWriterTest {
 
     private fun ByteArray.indexOf(needle: ByteArray): Int = (0..size - needle.size).firstOrNull { start -> needle.indices.all { this[start + it] == needle[it] } } ?: -1
 
+    private fun ByteArray.lastIndexOf(needle: ByteArray): Int = (0..size - needle.size).lastOrNull { start -> needle.indices.all { this[start + it] == needle[it] } } ?: -1
+
     @Test fun canWriteHeifAndAvif() {
         assertThat(MetadataWriting.writer.canWrite(ImageFormat.Heif)).isTrue()
         assertThat(MetadataWriting.writer.canWrite(ImageFormat.Avif)).isTrue()
@@ -227,6 +229,51 @@ class HeifWriterTest {
         val after = Photos.read(grown.bytes)
         assertThat(after.tag("exif-ifd0", "Image Description").rawValue).startsWith("A long")
         assertUntouched(before, after, setOf("exif-ifd0:270"))
+    }
+
+    @Test fun rewritesXmpInPlaceWithXmpPaddingAndMovesItWhenItOutgrowsTheSpace() {
+        val padded = String(xmpPacket("xmp:Rating" to "1")).replace("<?xpacket end", " ".repeat(2048) + "\n<?xpacket end").toByteArray()
+        val source = heif(gridPhoto(xmp = padded))
+        val old = Parsed(source)
+        val written = edit(source, rating)
+        val new = Parsed(written.bytes)
+        assertThat(written.bytes.size).isEqualTo(source.size)
+        assertThat(new.fileRanges(7).single()).isEqualTo(old.fileRanges(7).single())
+        assertThat(String(new.data(7))).endsWith("<?xpacket end=\"w\"?>")
+        assertThat(Photos.read(written.bytes).tag("xmp", "xmp:Rating").rawValue).isEqualTo("4")
+
+        val label = MetadataChanges(xmp = listOf(XmpChange.SetProperty(XMP_NS, "xmp", "Label", "x".repeat(5000))))
+        val grown = edit(source, label)
+        val moved = Parsed(grown.bytes)
+        assertThat(moved.locations.getValue(7).method).isEqualTo(0)
+        assertThat(moved.fileRanges(7).single()[0]).isAtLeast(moved.topLevel.last().start.toLong())
+        assertThat(Photos.read(grown.bytes).tag("xmp", "xmp:Label").rawValue).startsWith("xxxx")
+        assertThat(String(moved.data(7))).contains("x".repeat(5000))
+    }
+
+    @Test fun exifStoredInIdatStaysThere() {
+        val base = gridPhoto()
+        val spec = base.copy(items = base.items.map { if (it.type == "Exif") Item(it.id, "Exif", it.data, inIdat = true) else it })
+        val source = heif(spec)
+        val written = edit(source, longDescription + artist)
+        val parsed = Parsed(written.bytes)
+        assertThat(parsed.locations.getValue(6).method).isEqualTo(1)
+        assertThat(parsed.topLevel.count { it.type == "mdat" }).isEqualTo(1)
+        assertThat(Photos.read(written.bytes).tag("exif-ifd0", "Artist").rawValue).isEqualTo("Jane Doe")
+        // Only the new Exif block is left in idat; the old one was zeroed and trimmed.
+        val marker = "Exif\u0000\u0000".toByteArray(Charsets.ISO_8859_1)
+        assertThat(parsed.idat!!.indexOf(marker)).isEqualTo(parsed.idat!!.lastIndexOf(marker))
+    }
+
+    @Test fun sharedExtentsAreDigestedAndMovedTogether() {
+        // AVIF grids often point several tiles at the same bytes.
+        val base = gridPhoto()
+        val spec = base.copy(items = base.items.map { if (it.id == 4) Item(4, "hvc1", ByteArray(0), sameDataAs = 3) else it })
+        val source = heif(spec)
+        assertThat(Parsed(source).fileRanges(4).single()).isEqualTo(Parsed(source).fileRanges(3).single())
+        val written = edit(source, rating + longDescription)
+        val parsed = Parsed(written.bytes)
+        assertThat(parsed.fileRanges(4).single()).isEqualTo(parsed.fileRanges(3).single())
     }
 
     @Test fun avifItemsAreEditedLikeHeif() {
