@@ -55,6 +55,14 @@ interface BatchJobDao {
     @Query("UPDATE batch_jobs SET state = :state, finishedAt = :now WHERE id = :id")
     suspend fun finish(id: String, state: BatchJobState, now: Long)
 
+    /** Queued and running jobs with how many photos are done, for Home. */
+    @Query(
+        "SELECT j.id AS id, j.title AS title, j.total AS total, " +
+            "(SELECT COUNT(*) FROM batch_job_items i WHERE i.jobId = j.id AND i.status NOT IN ('Pending', 'Running')) AS done " +
+            "FROM batch_jobs j WHERE j.state IN ('Queued', 'Running') ORDER BY j.createdAt",
+    )
+    fun observeActiveProgress(): Flow<List<ActiveBatch>>
+
     @Query("SELECT cancelRequested FROM batch_jobs WHERE id = :id")
     suspend fun isCancelRequested(id: String): Boolean?
 

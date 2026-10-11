@@ -732,4 +732,161 @@
         <item quantity="one">%d failed</item>
         <item quantity="other">%d failed</item>
     </plurals>
+
+    <!-- Multi-select in photo grids -->
+    <plurals name="selection_count">
+        <item quantity="one">%d selected</item>
+        <item quantity="other">%d selected</item>
+    </plurals>
+    <string name="selection_start">Select photos</string>
+    <string name="selection_select">Select</string>
+    <string name="selection_open">Open</string>
+    <string name="selection_select_all">Select all</string>
+    <string name="selection_clear">Clear selection</string>
+    <string name="selection_exit">Stop selecting</string>
+    <string name="selection_state_selected">Selected</string>
+    <string name="selection_state_not_selected">Not selected</string>
+
+    <!-- Batch edits: actions -->
+    <string name="batch_action_location">Set location</string>
+    <string name="batch_action_location_body">Give every photo the same place</string>
+    <string name="batch_action_shift">Shift time</string>
+    <string name="batch_action_shift_body">Move every date earlier or later by the same amount</string>
+    <string name="batch_action_time_zone">Fix time zone</string>
+    <string name="batch_action_time_zone_body">For a camera clock set to the wrong time zone</string>
+    <string name="batch_action_author">Set author and copyright</string>
+    <string name="batch_action_author_body">Put your name and copyright on every photo</string>
+    <string name="batch_action_strip">Strip metadata</string>
+    <string name="batch_action_strip_body">Remove private details before sharing</string>
+
+    <!-- Batch edits: editor -->
+    <string name="batch_preview_button">Preview changes</string>
+    <string name="batch_location_none">Choose the place every photo gets</string>
+    <string name="batch_location_chosen">Every photo gets this position</string>
+    <string name="batch_shift_sample">The preview shows %1$s. Every photo moves by the same amount.</string>
+    <string name="batch_author_body">Saved to EXIF, XMP and IPTC in every photo.</string>
+    <string name="batch_author_keep">Leave empty to keep what each photo has</string>
+    <string name="batch_strip_title">What to remove</string>
+    <string name="batch_strip_body">RAW files are never changed, so they are skipped.</string>
+    <string name="batch_strip_all">Everything except orientation and color profile</string>
+    <string name="batch_strip_all_body">Removes all EXIF, XMP and IPTC metadata. Orientation and the color profile stay because they change how the photo looks.</string>
+    <string name="batch_strip_location">Location</string>
+    <string name="batch_strip_location_body">GPS position and place names</string>
+    <string name="batch_strip_device_ids">Serial numbers</string>
+    <string name="batch_strip_device_ids_body">Camera and lens serial numbers and unique image IDs, which can link photos to one camera</string>
+    <string name="batch_strip_names">Names and copyright</string>
+    <string name="batch_strip_names_body">Author, owner, copyright and contact details</string>
+    <string name="batch_strip_people">People</string>
+    <string name="batch_strip_people_body">Face regions and the names of people in the photo</string>
+    <string name="batch_strip_device_info">Camera and software</string>
+    <string name="batch_strip_device_info_body">Camera and lens make and model, and the apps that edited the photo</string>
+    <string name="batch_strip_dates">Dates and times</string>
+    <string name="batch_strip_dates_body">When the photo was taken, digitized and changed</string>
+    <string name="batch_strip_maker_notes">Maker notes</string>
+    <string name="batch_strip_maker_notes_body">The camera maker\'s private data, which often holds serial numbers</string>
+    <string name="batch_strip_thumbnail">Embedded thumbnail</string>
+    <string name="batch_strip_thumbnail_body">A small preview that can still show parts that were cropped out</string>
+    <string name="batch_strip_edit_history">Edit history</string>
+    <string name="batch_strip_edit_history_body">Editing steps and document IDs left by editing apps</string>
+    <string name="batch_missing_title">This batch is no longer available</string>
+    <string name="batch_missing_body">It was started already, or the selection expired. Select the photos again.</string>
+
+    <!-- Batch edits: preview -->
+    <string name="batch_preview_title">Preview</string>
+    <plurals name="batch_checking">
+        <item quantity="one">Checking the photo: %1$d of %2$d</item>
+        <item quantity="other">Checking the photos: %1$d of %2$d</item>
+    </plurals>
+    <string name="batch_routes_title">How the photos are saved</string>
+    <plurals name="batch_route_in_place">
+        <item quantity="one">%d photo is edited in place</item>
+        <item quantity="other">%d photos are edited in place</item>
+    </plurals>
+    <string name="batch_route_in_place_body">Only the metadata is rewritten; the image data stays byte for byte the same. Originals are backed up first.</string>
+    <plurals name="batch_route_sidecar">
+        <item quantity="one">%d photo gets an XMP sidecar</item>
+        <item quantity="other">%d photos get XMP sidecars</item>
+    </plurals>
+    <string name="batch_route_sidecar_body">RAW files and file types ExifLab can\'t rewrite are never changed. The edits go to an XMP file next to them.</string>
+    <plurals name="batch_route_copy">
+        <item quantity="one">%d read-only photo is saved as a copy</item>
+        <item quantity="other">%d read-only photos are saved as copies</item>
+    </plurals>
+    <string name="batch_route_copy_body">Copies keep the original names and go to the folder you chose. The originals stay as they are.</string>
+    <plurals name="batch_route_skipped">
+        <item quantity="one">%d photo is skipped</item>
+        <item quantity="other">%d photos are skipped</item>
+    </plurals>
+    <plurals name="batch_count_reason">
+        <item quantity="one">%1$d photo: %2$s</item>
+        <item quantity="other">%1$d photos: %2$s</item>
+    </plurals>
+    <string name="batch_folder_title">Folder for copies</string>
+    <plurals name="batch_folder_needed">
+        <item quantity="one">%d photo can\'t be changed where it is. Choose a folder for an edited copy, or skip it.</item>
+        <item quantity="other">%d photos can\'t be changed where they are. Choose a folder for edited copies, or skip them.</item>
+    </plurals>
+    <string name="batch_folder_choose">Choose folder</string>
+    <string name="batch_folder_change">Change folder</string>
+    <string name="batch_folder_skip">Skip them instead</string>
+    <string name="batch_folder_chosen">Copies go to %1$s</string>
+    <string name="batch_folder_unnamed">the chosen folder</string>
+    <string name="batch_folder_skipping">No folder chosen, so these photos are skipped.</string>
+    <string name="batch_folder_unavailable">ExifLab can\'t save copies in that folder. Choose another one.</string>
+    <plurals name="batch_warning_no_date">
+        <item quantity="one">%d photo has no capture date</item>
+        <item quantity="other">%d photos have no capture date</item>
+    </plurals>
+    <plurals name="batch_warning_unreadable">
+        <item quantity="one">%d photo can\'t be read and will fail</item>
+        <item quantity="other">%d photos can\'t be read and will fail</item>
+    </plurals>
+    <string name="batch_sample_title">Example</string>
+    <string name="batch_sample_body">The changes to %1$s</string>
+    <string name="batch_sample_waiting">Checking the first photo</string>
+    <string name="batch_sample_none">Nothing visible changes in these photos.</string>
+    <plurals name="batch_start">
+        <item quantity="one">Edit %d photo</item>
+        <item quantity="other">Edit %d photos</item>
+    </plurals>
+    <string name="batch_start_nothing">Nothing to save</string>
+    <string name="batch_start_failed">The batch could not be started.</string>
+
+    <!-- Batch edits: progress and summary -->
+    <string name="batch_run_title">Batch edit</string>
+    <string name="batch_run_waiting">Starting soon</string>
+    <string name="batch_run_current">Writing now</string>
+    <string name="batch_run_background">You can leave this screen. The edit continues in the background, and nothing is ever left half written.</string>
+    <string name="batch_run_missing_body">It may have been removed. Edits it saved are in History.</string>
+    <string name="batch_summary_title">Batch edit finished</string>
+    <string name="batch_summary_cancelled_title">Batch edit cancelled</string>
+    <plurals name="batch_summary_written">
+        <item quantity="one">%1$d of %2$d photo written</item>
+        <item quantity="other">%1$d of %2$d photos written</item>
+    </plurals>
+    <string name="batch_summary_history">Every change is in History, where single photos can be restored too.</string>
+    <string name="batch_filter_all">All (%1$d)</string>
+    <string name="batch_filter_status">%1$s (%2$d)</string>
+    <string name="batch_restore_nothing">Nothing to restore</string>
+    <string name="batch_status_pending">Waiting</string>
+    <string name="batch_status_running">Writing</string>
+    <string name="batch_status_saved">Saved</string>
+    <string name="batch_status_sidecar">Sidecar</string>
+    <string name="batch_status_copy">Copy</string>
+    <string name="batch_status_skipped">Skipped</string>
+    <string name="batch_status_failed">Failed</string>
+    <string name="batch_reason_nothing">nothing to change</string>
+    <string name="batch_reason_read_only">read-only, and no folder for copies</string>
+    <string name="batch_reason_cannot_strip">RAW and other files that only get sidecars can\'t have metadata removed</string>
+    <string name="batch_reason_unsupported">ExifLab can\'t write this file type</string>
+    <string name="batch_reason_no_sidecar_place">no folder for the XMP sidecar</string>
+    <string name="batch_reason_cancelled">cancelled before its turn</string>
+    <string name="batch_reason_unreadable">the photo couldn\'t be read</string>
+    <string name="batch_reason_plan_failed">the change couldn\'t be prepared for this photo</string>
+    <string name="batch_reason_folder_unavailable">the copy couldn\'t be created in the chosen folder</string>
+
+    <!-- Home: batch edits -->
+    <string name="home_batch_title">Edit many photos at once</string>
+    <string name="home_batch_body">Open a folder or pick several photos, then press and hold a photo to select more. Set a location, shift times, add your name or strip metadata for all of them.</string>
+    <string name="home_batch_running">Batch edit in progress</string>
 </resources>

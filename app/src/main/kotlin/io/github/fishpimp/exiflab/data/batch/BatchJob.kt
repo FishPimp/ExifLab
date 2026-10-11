@@ -186,3 +186,6 @@ data class BatchJobItem(
 
 /** How many items of a job have one status; see [BatchJobDao.observeCounts]. */
 data class BatchStatusCount(val status: BatchItemStatus, val count: Int)
+
+/** A queued or running job with its progress; see [BatchJobDao.observeActiveProgress]. */
+data class ActiveBatch(val id: String, val title: String, val total: Int, val done: Int)

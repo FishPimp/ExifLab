@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.fishpimp.exiflab.appGraph
+import io.github.fishpimp.exiflab.data.batch.ActiveBatch
+import io.github.fishpimp.exiflab.data.history.EditHistoryDatabase
 import io.github.fishpimp.exiflab.data.photos.OpenResult
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
@@ -19,6 +21,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -35,8 +40,13 @@ sealed interface HomeEvent {
 class HomeViewModel(
     private val photoRepository: PhotoRepository,
     private val recentPhotosRepository: RecentPhotosRepository,
+    activeBatches: Flow<List<ActiveBatch>> = flowOf(emptyList()),
 ) : ViewModel() {
     val recents: StateFlow<List<PhotoRef>> = recentPhotosRepository.recents
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Batch edits running in the background, so Home can lead back to them. */
+    val activeBatches: StateFlow<List<ActiveBatch>> = activeBatches
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _isOpening = MutableStateFlow(false)
@@ -73,7 +83,19 @@ class HomeViewModel(
         val Factory = viewModelFactory {
             initializer {
                 val graph = this[APPLICATION_KEY]!!.appGraph
-                HomeViewModel(graph.photoRepository, graph.recentPhotosRepository)
+                val context = this[APPLICATION_KEY]!!
+                HomeViewModel(
+                    graph.photoRepository,
+                    graph.recentPhotosRepository,
+                    // Nothing can run before the history database exists; a fresh start does not open it.
+                    activeBatches = flow {
+                        if (context.getDatabasePath(EditHistoryDatabase.NAME).exists()) {
+                            emitAll(graph.batchJobs.observeActiveProgress())
+                        } else {
+                            emit(emptyList())
+                        }
+                    },
+                )
             }
         }
     }

@@ -44,6 +44,8 @@ class BatchJobRepository(
 
     fun observeActiveJobs(): Flow<List<BatchJob>> = dao().observeActiveJobs()
 
+    fun observeActiveProgress(): Flow<List<ActiveBatch>> = dao().observeActiveProgress()
+
     /**
      * Starts draft [id] with [operation], saving copies of read-only photos to [copyFolderUri]
      * (or skipping them without one). False when the job was already started.

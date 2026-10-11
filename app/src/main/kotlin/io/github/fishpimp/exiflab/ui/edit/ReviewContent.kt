@@ -171,7 +171,7 @@ fun ReviewContent(
                         if (options != null && saved == null) {
                             item(key = "destination") { DestinationCard(options, ref, report) }
                         }
-                        val groups = planState.plan.diff.groupBy { it.group }.toList().sortedBy { groupOrder.indexOf(it.first).let { i -> if (i < 0) Int.MAX_VALUE else i } }
+                        val groups = groupedDiff(planState.plan.diff)
                         if (groups.isEmpty()) {
                             item(key = "no-diff") { EditorBanner(Icons.Rounded.Info, stringResource(R.string.edit_review_no_visible_changes)) }
                         }
@@ -260,7 +260,7 @@ private fun WarningsBanner(warnings: List<String>) {
 
 /** One metadata block's changes, each with its kind (icon, color and label) and before and after. */
 @Composable
-private fun DiffGroup(group: DirectoryGroup, changes: List<FieldDiff>) {
+internal fun DiffGroup(group: DirectoryGroup, changes: List<FieldDiff>) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             stringResource(group.labelRes),
@@ -438,6 +438,10 @@ val SaveMode.icon: ImageVector
         SaveMode.Copy -> Icons.Rounded.SaveAs
         SaveMode.Sidecar -> Icons.Rounded.Description
     }
+
+/** [diff] by metadata block, in the order the review shows them. */
+internal fun groupedDiff(diff: List<FieldDiff>): List<Pair<DirectoryGroup, List<FieldDiff>>> =
+    diff.groupBy { it.group }.toList().sortedBy { groupOrder.indexOf(it.first).let { i -> if (i < 0) Int.MAX_VALUE else i } }
 
 private val groupOrder = listOf(
     DirectoryGroup.Exif, DirectoryGroup.Gps, DirectoryGroup.Xmp, DirectoryGroup.Iptc,
