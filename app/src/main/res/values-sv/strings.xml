@@ -694,4 +694,28 @@
     <string name="edit_failure_no_destination">Ingen plats valdes för sidofilen, så inget sparades.</string>
     <string name="edit_failure_no_plan">Det finns inget färdigt att spara än.</string>
     <string name="edit_failure_dismiss">Stäng</string>
+
+    <!-- Batch edits: notifications -->
+    <string name="batch_notification_channel">Batchredigeringar</string>
+    <string name="batch_notification_channel_description">Förlopp för batchredigeringar som körs i bakgrunden</string>
+    <plurals name="batch_notification_progress">
+        <item quantity="one">%1$d av %2$d foto</item>
+        <item quantity="other">%1$d av %2$d foton</item>
+    </plurals>
+    <string name="batch_notification_cancelling">Stoppar när de pågående fotona är klara</string>
+    <string name="batch_notification_finished">Batchredigeringen är klar</string>
+    <string name="batch_notification_cancelled">Batchredigeringen avbröts</string>
+    <string name="batch_cancel">Avbryt</string>
+    <plurals name="batch_count_written">
+        <item quantity="one">%d skriven</item>
+        <item quantity="other">%d skrivna</item>
+    </plurals>
+    <plurals name="batch_count_skipped">
+        <item quantity="one">%d överhoppad</item>
+        <item quantity="other">%d överhoppade</item>
+    </plurals>
+    <plurals name="batch_count_failed">
+        <item quantity="one">%d misslyckades</item>
+        <item quantity="other">%d misslyckades</item>
+    </plurals>
 </resources>

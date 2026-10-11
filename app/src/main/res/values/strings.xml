@@ -708,4 +708,28 @@
     <string name="edit_failure_no_destination">No place was chosen for the sidecar, so nothing was saved.</string>
     <string name="edit_failure_no_plan">There is nothing ready to save yet.</string>
     <string name="edit_failure_dismiss">Dismiss</string>
+
+    <!-- Batch edits: notifications -->
+    <string name="batch_notification_channel">Batch edits</string>
+    <string name="batch_notification_channel_description">Progress of batch edits running in the background</string>
+    <plurals name="batch_notification_progress">
+        <item quantity="one">%1$d of %2$d photo</item>
+        <item quantity="other">%1$d of %2$d photos</item>
+    </plurals>
+    <string name="batch_notification_cancelling">Stopping after the photos in progress</string>
+    <string name="batch_notification_finished">Batch edit finished</string>
+    <string name="batch_notification_cancelled">Batch edit cancelled</string>
+    <string name="batch_cancel">Cancel</string>
+    <plurals name="batch_count_written">
+        <item quantity="one">%d written</item>
+        <item quantity="other">%d written</item>
+    </plurals>
+    <plurals name="batch_count_skipped">
+        <item quantity="one">%d skipped</item>
+        <item quantity="other">%d skipped</item>
+    </plurals>
+    <plurals name="batch_count_failed">
+        <item quantity="one">%d failed</item>
+        <item quantity="other">%d failed</item>
+    </plurals>
 </resources>
