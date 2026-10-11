@@ -24,6 +24,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.ContentCopy
+import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.ImageNotSupported
@@ -34,18 +35,22 @@ import androidx.compose.material.icons.rounded.SaveAs
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,6 +70,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.window.core.layout.WindowSizeClass
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.data.history.EditMode
+import io.github.fishpimp.exiflab.data.save.SavedEditNotice
 import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
@@ -89,6 +96,7 @@ private val PaneGutter = 24.dp
  * Shows one photo's metadata: preview and summary, privacy badges, location and every tag.
  *
  * @param onOpenPhoto shows another photo: a copy the user saved, or the original file they picked.
+ * @param onEdit opens the metadata editor for the photo.
  */
 @Composable
 fun PhotoScreen(
@@ -96,6 +104,7 @@ fun PhotoScreen(
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenPhoto: (PhotoRef) -> Unit = {},
+    onEdit: (PhotoRef) -> Unit = {},
     viewModel: PhotoViewModel = viewModel(key = "photo:${ref.uri}", factory = PhotoViewModel.factory(ref)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -120,8 +129,39 @@ fun PhotoScreen(
                 is PhotoEvent.OpenPhoto -> currentOnOpenPhoto(event.ref)
                 is PhotoEvent.CopyFailed -> launch { snackbarHostState.showSnackbar(resources.getString(R.string.photo_error_write)) }
                 is PhotoEvent.OpenFailed -> launch { snackbarHostState.showSnackbar(resources.getString(event.error.messageRes)) }
+                PhotoEvent.Undone -> launch { snackbarHostState.showSnackbar(resources.getString(R.string.photo_undo_done)) }
+                PhotoEvent.UndoFailed -> launch { snackbarHostState.showSnackbar(resources.getString(R.string.photo_undo_failed)) }
             }
         }
+    }
+
+    // A save from the editor: the report was read again; say so, with Undo where History can restore.
+    suspend fun showSavedNotice(notice: SavedEditNotice) {
+        val message = if (notice.skipped > 0) {
+            resources.getQuantityString(R.plurals.photo_saved_skipped, notice.skipped, notice.skipped)
+        } else {
+            resources.getString(
+                when (notice.mode) {
+                    EditMode.InPlace -> R.string.photo_saved_in_place
+                    EditMode.Copy -> R.string.photo_saved_copy
+                    EditMode.Sidecar -> R.string.photo_saved_sidecar
+                },
+            )
+        }
+        val result = snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = if (notice.canUndo) resources.getString(R.string.photo_undo) else null,
+            duration = if (notice.canUndo) SnackbarDuration.Long else SnackbarDuration.Short,
+        )
+        if (result == SnackbarResult.ActionPerformed) viewModel.undoEdit(notice.recordId)
+    }
+
+    val savedNotice = state.savedNotice
+    LaunchedEffect(savedNotice) {
+        val notice = savedNotice ?: return@LaunchedEffect
+        // Marking it shown clears it from the state, which restarts this effect: show it from the screen's scope.
+        viewModel.onSavedNoticeShown(notice)
+        scope.launch { showSavedNotice(notice) }
     }
 
     fun launchPicker(launch: () -> Unit) {
@@ -136,7 +176,7 @@ fun PhotoScreen(
         ref = ref,
         state = state,
         query = viewModel.query,
-        actions = remember(viewModel, onBack, createCopy, openOriginal, report?.fileName) {
+        actions = remember(viewModel, onBack, onEdit, createCopy, openOriginal, report?.fileName) {
             PhotoActions(
                 onBack = onBack,
                 onRetry = viewModel::reload,
@@ -151,6 +191,7 @@ fun PhotoScreen(
                     launchPicker { createCopy.launch(suggestedName) }
                 },
                 onOpenOriginal = { launchPicker { openOriginal.launch(PhotoFormats.documentPickerMimeTypes) } },
+                onEdit = { onEdit(viewModel.currentRef) },
             )
         },
         snackbarHostState = snackbarHostState,
@@ -171,6 +212,7 @@ data class PhotoActions(
     val onSetAllExpanded: (Boolean) -> Unit = {},
     val onSaveCopy: () -> Unit = {},
     val onOpenOriginal: () -> Unit = {},
+    val onEdit: () -> Unit = {},
 )
 
 /**
@@ -193,6 +235,7 @@ fun PhotoContent(
     val report = (state.load as? PhotoLoad.Loaded)?.report
     val name = ref.displayName ?: report?.fileName ?: stringResource(R.string.photo_untitled)
     val copier = rememberClipboardCopier(snackbarHostState)
+    val editLabel = stringResource(R.string.photo_edit)
     ScreenScaffold(
         title = remember(name) { breakableFileName(name) },
         subtitle = fileSubtitle(ref, report),
@@ -203,6 +246,19 @@ fun PhotoContent(
                     onCopyAll = { copier.copyAll(report) },
                     onSaveCopy = actions.onSaveCopy,
                     onOpenOriginal = actions.onOpenOriginal.takeIf { ref.origin == PhotoOrigin.Picker || ref.origin == PhotoOrigin.Share },
+                )
+            }
+        },
+        floatingActionButton = {
+            if (report != null) {
+                // Collapses to its icon once the list scrolls, so it covers less of the tags.
+                val expanded by remember(listState) { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
+                ExtendedFloatingActionButton(
+                    onClick = actions.onEdit,
+                    expanded = expanded,
+                    // Collapsed, the icon alone has to say what the button does.
+                    icon = { Icon(Icons.Rounded.Edit, contentDescription = if (expanded) null else editLabel) },
+                    text = { Text(editLabel) },
                 )
             }
         },
@@ -297,7 +353,7 @@ private fun LoadedPhoto(
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.widthIn(max = TagPaneMaxWidth).fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 32.dp),
+                        contentPadding = PaddingValues(bottom = FAB_CLEARANCE),
                     ) {
                         tagBrowser(
                             browser = state.browser,
@@ -319,7 +375,7 @@ private fun LoadedPhoto(
             LazyColumn(
                 state = listState,
                 modifier = Modifier.widthIn(max = SingleColumnMaxWidth).fillMaxSize(),
-                contentPadding = PaddingValues(bottom = 32.dp),
+                contentPadding = PaddingValues(bottom = FAB_CLEARANCE),
             ) {
                 item(key = "overview", contentType = "overview") { overview(Modifier.padding(horizontal = CompactGutter)) }
                 tagBrowser(
@@ -502,3 +558,6 @@ private fun fileSubtitle(ref: PhotoRef, report: MetadataReport?): String? {
 }
 
 private const val GENERIC_MIME_TYPE = "application/octet-stream"
+
+/** Room under the last row for the Edit button. */
+private val FAB_CLEARANCE = 104.dp

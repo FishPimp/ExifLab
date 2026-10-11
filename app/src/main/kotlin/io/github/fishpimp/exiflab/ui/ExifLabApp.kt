@@ -24,6 +24,7 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import io.github.fishpimp.exiflab.appGraph
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import io.github.fishpimp.exiflab.ui.edit.EditScreen
 import io.github.fishpimp.exiflab.ui.folder.FolderScreen
 import io.github.fishpimp.exiflab.ui.history.HistoryDetailScreen
 import io.github.fishpimp.exiflab.ui.history.HistoryScreen
@@ -138,7 +139,23 @@ fun ExifLabApp(
         entry<Route.MapView> { route -> MapViewScreen(route = route, onBack = ::back) }
         entry<Route.Photo> { route ->
             RecordRecentPhoto(route.ref)
-            PhotoScreen(ref = route.ref, onBack = ::back, onOpenPhoto = ::openPhoto)
+            PhotoScreen(
+                ref = route.ref,
+                onBack = ::back,
+                onOpenPhoto = ::openPhoto,
+                onEdit = { navigate(Route.Edit(it)) },
+            )
+        }
+        entry<Route.Edit> { route ->
+            EditScreen(
+                ref = route.ref,
+                onBack = ::back,
+                onFinished = { copy ->
+                    // Back to the photo, which reloads; a new copy opens on top of it.
+                    back()
+                    copy?.let(::openPhoto)
+                },
+            )
         }
     }
 
