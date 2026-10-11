@@ -21,8 +21,17 @@ sealed interface EditOperation {
     /** Removes one EXIF tag. */
     data class RemoveExifTag(val ifd: ExifIfd, val tag: Int) : EditOperation
 
-    /** Escape hatch for edits that are already expressed as low-level changes (XMP/IPTC fields). */
-    data class Raw(val changes: MetadataChanges, val description: String) : EditOperation
+    /**
+     * Escape hatch for edits that are already expressed as low-level changes (XMP/IPTC fields).
+     * [syncExisting] holds companion changes that only apply where the field already exists, so
+     * an edit can keep an existing copy in another block in sync (dc:title and IPTC Object Name)
+     * without creating that block. Removals in it always apply.
+     */
+    data class Raw(
+        val changes: MetadataChanges,
+        val description: String,
+        val syncExisting: MetadataChanges = MetadataChanges(),
+    ) : EditOperation
 
     /**
      * Sets the capture time. Updates DateTimeOriginal, DateTimeDigitized (CreateDate), SubSec*,
@@ -35,28 +44,46 @@ sealed interface EditOperation {
         val alsoModifyDate: Boolean = false,
     ) : EditOperation
 
-    /** Moves every capture/creation date field by [by] (positive or negative), keeping offsets. */
+    /**
+     * Moves every capture/creation/modification date field by [by] (positive or negative), keeping
+     * offsets and sub-seconds. GPS date and time stamps move too, so they stay consistent with the
+     * corrected clock. Warns when the file has no date.
+     */
     data class ShiftCaptureTime(val by: Duration) : EditOperation
 
     /**
      * Fixes a camera clock that was set to the wrong time zone: the recorded local times are read
      * as [cameraZone] wall-clock times and rewritten as [actualZone] wall-clock times for the same
      * instant (daylight saving resolved for each photo's own date). Offset tags are set to the
-     * [actualZone] offset.
+     * [actualZone] offset. A wall time inside a daylight saving gap of [cameraZone] is moved
+     * forward by the gap; an ambiguous one takes the earlier offset. GPS time stamps (UTC) stay.
      */
     data class ChangeTimeZone(val cameraZone: ZoneId, val actualZone: ZoneId) : EditOperation
 
     /** Records the UTC offset without changing the local times. */
     data class SetUtcOffset(val offset: ZoneOffset) : EditOperation
 
-    /** Sets GPS position (EXIF GPS IFD and XMP exif:GPS*), optionally altitude. */
+    /**
+     * Sets GPS position (EXIF GPS IFD and XMP exif:GPS*), optionally altitude. Without an altitude
+     * an existing one is kept only while the position stays the same. Coordinates out of range
+     * produce a warning and no change.
+     */
     data class SetLocation(val latitude: Double, val longitude: Double, val altitudeMeters: Double? = null) : EditOperation
 
     /** Removes GPS data from EXIF and XMP and, when [includePlaceNames], city/country fields too. */
     data class RemoveLocation(val includePlaceNames: Boolean = true) : EditOperation
 
-    /** Sets (or clears, with null) the author and copyright in EXIF, XMP (dc:creator, dc:rights) and IPTC. */
-    data class SetAuthorship(val artist: String?, val copyright: String?) : EditOperation
+    /**
+     * Sets (or clears, with null) the author and copyright in EXIF, XMP (dc:creator, dc:rights) and IPTC.
+     * With [changeArtist] or [changeCopyright] false that half is left as it is, so one of the two
+     * can be edited on its own.
+     */
+    data class SetAuthorship(
+        val artist: String?,
+        val copyright: String?,
+        val changeArtist: Boolean = true,
+        val changeCopyright: Boolean = true,
+    ) : EditOperation
 
     /** Removes the metadata of the given categories. */
     data class Strip(val categories: Set<StripCategory>) : EditOperation

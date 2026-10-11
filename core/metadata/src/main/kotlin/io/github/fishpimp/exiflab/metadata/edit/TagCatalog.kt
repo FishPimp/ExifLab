@@ -24,8 +24,18 @@ sealed interface FieldKind {
     /** One of [options]. */
     data class Choice(val options: List<FieldOption>) : FieldKind
 
-    /** A list of short strings, e.g. keywords. */
-    data object TextList : FieldKind
+    /**
+     * A list of short strings, e.g. keywords. Values travel as one string with the items
+     * separated by commas (semicolons and line breaks are accepted too); see [split] and [join].
+     */
+    data object TextList : FieldKind {
+        /** The items of [text]: split at commas, semicolons and line breaks, trimmed, blanks and repeats dropped. */
+        fun split(text: String): List<String> =
+            text.split(',', ';', '\n', '\r').map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+
+        /** [items] as the text form [split] reads back. */
+        fun join(items: List<String>): String = items.joinToString(", ")
+    }
 }
 
 /** A field the tag editor can set or remove. */
@@ -66,8 +76,8 @@ interface TagCatalog {
     fun operationFor(field: EditableField, input: String?): EditOperation
 }
 
-/** Entry point for the app; implementations live in this module. */
+/** Entry point for the app; implementations live in this module. Both are stateless and thread-safe. */
 object Editing {
-    val planner: ChangePlanner get() = TODO("Implemented in M4 planner")
-    val catalog: TagCatalog get() = TODO("Implemented in M4 planner")
+    val planner: ChangePlanner = DefaultChangePlanner()
+    val catalog: TagCatalog = DefaultTagCatalog()
 }
