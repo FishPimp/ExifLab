@@ -117,7 +117,8 @@ class ShareCleaner(
                 }
                 onProgress(index + 1, photos.size)
             }
-        } catch (e: CancellationException) {
+        } catch (e: Throwable) {
+            // Cancelled, or out of room: nothing of this share is handed on, so nothing is kept.
             created.forEach { it.deleteRecursively() }
             throw e
         }

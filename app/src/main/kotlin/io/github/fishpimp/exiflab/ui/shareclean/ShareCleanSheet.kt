@@ -126,9 +126,10 @@ fun ShareCleanSheetHost(
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val scope = rememberCoroutineScope()
+    val currentOnClosed by rememberUpdatedState(onClosed)
     fun close() {
         viewModel.dismiss()
-        onClosed()
+        currentOnClosed()
     }
     val actions = remember(viewModel) {
         ShareCleanActions(
@@ -237,8 +238,9 @@ private fun ChoosingBody(state: ShareCleanUiState, actions: ShareCleanActions, c
 @Composable
 private fun SummaryCard(state: ShareCleanUiState) {
     val resources = LocalResources.current
-    val categories = state.choice.categories
-    if (categories.isEmpty()) return
+    if (state.choice.categories.isEmpty()) return
+    // A single RAW file is shared as its preview, which loses everything.
+    val categories = if (state.rawCount > 0 && state.photos.size == 1) setOf(StripCategory.All) else state.choice.categories
     Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainerHigh, modifier = Modifier.fillMaxWidth()) {
         Column(
             Modifier
@@ -297,9 +299,11 @@ private fun PresetList(state: ShareCleanUiState, actions: ShareCleanActions, com
             modifier = Modifier.semantics { heading() },
         )
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
-            Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
-                ShareCleanPreset.entries.forEach { preset ->
-                    PresetRow(preset, selected = state.choice.preset == preset, compact = compact, onSelect = { actions.onSelectPreset(preset) })
+            Column(Modifier.padding(vertical = 4.dp)) {
+                Column(Modifier.selectableGroup()) {
+                    ShareCleanPreset.entries.forEach { preset ->
+                        PresetRow(preset, selected = state.choice.preset == preset, compact = compact, onSelect = { actions.onSelectPreset(preset) })
+                    }
                 }
                 AnimatedVisibility(
                     visible = state.choice.preset == ShareCleanPreset.Custom,

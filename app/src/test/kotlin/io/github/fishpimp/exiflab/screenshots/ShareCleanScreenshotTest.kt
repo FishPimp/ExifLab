@@ -82,6 +82,11 @@ class ShareCleanScreenshotTest {
         )
     }
 
+    @Test @Config(qualifiers = "w411dp-h1400dp-xxhdpi")
+    fun single_raw() = compose.snapshot("shareclean_single_raw", palette = BrandPalette.Moss) {
+        Sheet(single.copy(photos = listOf(FakeReports.rawRef), rawCount = 1))
+    }
+
     @Test @Config(qualifiers = "w411dp-h1300dp-night-xxhdpi")
     fun several_photos_dark() = compose.snapshot("shareclean_several_dark", ThemeMode.Dark, BrandPalette.Ember) { Sheet(several) }
 
