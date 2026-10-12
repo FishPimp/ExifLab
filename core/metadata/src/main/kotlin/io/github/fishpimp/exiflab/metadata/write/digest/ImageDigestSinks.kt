@@ -15,7 +15,7 @@ internal abstract class ImageDigestSink : OutputStream() {
     private val single = ByteArray(1)
 
     /** Finishes the digest and returns it as lowercase hex. */
-    fun hex(): String = sha.digest().joinToString("") { "%02x".format(it) }
+    open fun hex(): String = sha.digest().joinToString("") { "%02x".format(it) }
 
     override fun write(b: Int) {
         single[0] = b.toByte()

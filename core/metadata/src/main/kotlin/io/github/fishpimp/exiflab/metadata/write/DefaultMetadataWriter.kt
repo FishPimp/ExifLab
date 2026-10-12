@@ -5,7 +5,10 @@ import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.ImageSource
 import io.github.fishpimp.exiflab.metadata.io.SeekableSource
 import io.github.fishpimp.exiflab.metadata.io.SourceAccessException
+import io.github.fishpimp.exiflab.metadata.write.digest.HeifDigestSink
 import io.github.fishpimp.exiflab.metadata.write.digest.ImageDigestSink
+import io.github.fishpimp.exiflab.metadata.write.heif.HeifStructure
+import io.github.fishpimp.exiflab.metadata.write.heif.HeifWriter
 import io.github.fishpimp.exiflab.metadata.write.jpeg.JpegWriter
 import io.github.fishpimp.exiflab.metadata.write.png.PngWriter
 import io.github.fishpimp.exiflab.metadata.write.webp.WebpWriter
@@ -13,15 +16,17 @@ import java.io.BufferedOutputStream
 import java.io.OutputStream
 
 /**
- * Lossless metadata writer for JPEG, PNG and WebP. Each write streams the source once to digest
- * its image data and once to produce the output, digesting the output as it is written. The
- * result is only returned when both digests match.
+ * Lossless metadata writer for JPEG, PNG, WebP, HEIF and AVIF. Each write streams the source once
+ * to digest its image data and once to produce the output, digesting the output as it is written.
+ * The result is only returned when both digests match. For HEIF/AVIF the output digest follows
+ * the output's own (re-parsed) `meta` and `moov` boxes, so moved item data is verified where it
+ * actually lands.
  *
  * Within [MetadataChanges], block removals are applied before tag changes, so a change set can
  * strip a block and write a few fresh values into it in one go.
  *
- * @throws UnsupportedEditException for formats it cannot write (HEIF, AVIF, TIFF, RAW) and for
- *   metadata structures too unusual or damaged to rewrite safely.
+ * @throws UnsupportedEditException for formats it cannot write (TIFF, RAW) and for metadata or
+ *   container structures too unusual or damaged to rewrite safely.
  * @throws CorruptImageException when the file is truncated or its container structure is broken.
  * @throws ImageDataMismatchException when the output's image data would differ from the source.
  * @throws java.io.IOException (or the source's own exception) when the source or output fails.
@@ -39,14 +44,16 @@ class DefaultMetadataWriter : MetadataWriter {
                 throw UnsupportedEditException("$name cannot be edited in place")
             }
             val sourceDigest = DefaultImageDataDigest().digest(source)
-            val sink = ImageDigestSink.forFormat(format)!!
+            val skipped = mutableListOf<String>()
+            val heif = if (format in HEIF_FORMATS) HeifWriter().prepare(seekable, changes, skipped) else null
+            val sink = heif?.let { HeifDigestSink(it.digestPlan) } ?: ImageDigestSink.forFormat(format)!!
             val buffered = BufferedOutputStream(output, COPY_BUFFER)
             val tee = TeeOutputStream(buffered, sink)
-            val skipped = mutableListOf<String>()
             when (format) {
                 ImageFormat.Jpeg -> JpegWriter().write(seekable, changes, tee, skipped)
                 ImageFormat.Png -> PngWriter().write(seekable, changes, tee, skipped)
                 ImageFormat.WebP -> WebpWriter().write(seekable, changes, tee, skipped)
+                ImageFormat.Heif, ImageFormat.Avif -> heif!!.write(seekable, tee)
                 else -> error("Unreachable: $format")
             }
             tee.flush()
@@ -61,24 +68,39 @@ class DefaultMetadataWriter : MetadataWriter {
     }
 
     private companion object {
-        val WRITABLE = setOf(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP)
+        val WRITABLE = setOf(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP, ImageFormat.Heif, ImageFormat.Avif)
     }
 }
 
+private val HEIF_FORMATS = setOf(ImageFormat.Heif, ImageFormat.Avif)
+
 /**
- * SHA-256 over the image-carrying parts of JPEG, PNG and WebP files, see [ImageDataDigest] and
- * [ImageDigestSink]. Streams the source once; nothing is held in memory.
+ * SHA-256 over the image-carrying parts of JPEG, PNG, WebP, HEIF and AVIF files, see
+ * [ImageDataDigest] and [ImageDigestSink]. Streams the source once (HEIF/AVIF first read their
+ * `meta` and `moov` boxes to learn where the image items and samples are); nothing else is held
+ * in memory.
  *
- * @throws UnsupportedEditException for formats without an image-data digest yet.
+ * @throws UnsupportedEditException for formats without an image-data digest yet, and for HEIF
+ *   layouts the writer would refuse too (item data in other files, fragmented sequences).
+ * @throws CorruptImageException when a HEIF file is truncated or its boxes are broken.
  */
 class DefaultImageDataDigest : ImageDataDigest {
-    override fun digest(source: ImageSource): String = source.open().use { input ->
-        val header = input.readNBytes(ImageFormat.SNIFF_LENGTH)
-        val format = ImageFormat.sniff(header, source.fileName)
-        val sink = ImageDigestSink.forFormat(format)
-            ?: throw UnsupportedEditException("No image data digest for ${if (format == ImageFormat.Unknown) "this file type" else format.displayName}")
-        sink.write(header)
-        input.copyTo(sink, COPY_BUFFER)
-        sink.hex()
+    override fun digest(source: ImageSource): String = try {
+        source.open().use { input ->
+            val header = input.readNBytes(ImageFormat.SNIFF_LENGTH)
+            val format = ImageFormat.sniff(header, source.fileName)
+            val sink = if (format in HEIF_FORMATS) {
+                // Where the image items are comes from the meta box, which may follow the image data.
+                HeifDigestSink(SeekableSource(source).use { HeifStructure.read(it).digestPlan() })
+            } else {
+                ImageDigestSink.forFormat(format)
+                    ?: throw UnsupportedEditException("No image data digest for ${if (format == ImageFormat.Unknown) "this file type" else format.displayName}")
+            }
+            sink.write(header)
+            input.copyTo(sink, COPY_BUFFER)
+            sink.hex()
+        }
+    } catch (e: SourceAccessException) {
+        throw e.failure
     }
 }
