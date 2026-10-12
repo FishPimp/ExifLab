@@ -485,7 +485,10 @@
     <string name="share_clean_reason_unreadable">Bilden kunde inte läsas</string>
     <string name="share_clean_reason_write_failed">Den rensade kopian kunde inte göras</string>
     <string name="share_clean_reason_still_contains">Innehöll fortfarande %1$s efter rensningen, så den delas inte</string>
-    <string name="share_clean_too_many">Dela rensad tar högst %1$d bilder åt gången. Markera färre för att fortsätta.</string>
+    <plurals name="share_clean_too_many">
+        <item quantity="one">Dela rensad tar %1$d bild åt gången. Markera färre för att fortsätta.</item>
+        <item quantity="other">Dela rensad tar högst %1$d bilder åt gången. Markera färre för att fortsätta.</item>
+    </plurals>
     <plurals name="share_clean_chooser_title">
         <item quantity="one">Dela rensad bild</item>
         <item quantity="other">Dela %d rensade bilder</item>

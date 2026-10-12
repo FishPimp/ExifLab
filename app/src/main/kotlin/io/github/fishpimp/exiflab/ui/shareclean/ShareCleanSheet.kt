@@ -208,9 +208,10 @@ private fun SheetHeader(state: ShareCleanUiState, compact: Boolean, title: Strin
 @Composable
 private fun ChoosingBody(state: ShareCleanUiState, actions: ShareCleanActions, compact: Boolean) {
     if (state.tooMany) {
-        Notice(Icons.Rounded.ErrorOutline, stringResource(R.string.share_clean_too_many, MAX_SHARE_PHOTOS), error = true)
+        Notice(Icons.Rounded.ErrorOutline, pluralStringResource(R.plurals.share_clean_too_many, MAX_SHARE_PHOTOS, MAX_SHARE_PHOTOS), error = true)
     }
-    SummaryCard(state)
+    // The compact sheet leaves the per-category list to the preset descriptions for several photos.
+    if (!compact || state.summary != SummarySource.Several) SummaryCard(state)
     PresetList(state, actions, compact)
     if (state.rawCount > 0) RawNote(state, actions)
     if (!compact) {
@@ -298,7 +299,7 @@ private fun PresetList(state: ShareCleanUiState, actions: ShareCleanActions, com
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup().padding(vertical = 4.dp)) {
                 ShareCleanPreset.entries.forEach { preset ->
-                    PresetRow(preset, selected = state.choice.preset == preset, onSelect = { actions.onSelectPreset(preset) })
+                    PresetRow(preset, selected = state.choice.preset == preset, compact = compact, onSelect = { actions.onSelectPreset(preset) })
                 }
                 AnimatedVisibility(
                     visible = state.choice.preset == ShareCleanPreset.Custom,
@@ -316,13 +317,13 @@ private fun PresetList(state: ShareCleanUiState, actions: ShareCleanActions, com
 }
 
 @Composable
-private fun PresetRow(preset: ShareCleanPreset, selected: Boolean, onSelect: () -> Unit) {
+private fun PresetRow(preset: ShareCleanPreset, selected: Boolean, compact: Boolean, onSelect: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .selectable(selected = selected, role = Role.RadioButton, onClick = onSelect)
             .heightIn(min = 56.dp)
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .padding(horizontal = 16.dp, vertical = if (compact) 6.dp else 10.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
