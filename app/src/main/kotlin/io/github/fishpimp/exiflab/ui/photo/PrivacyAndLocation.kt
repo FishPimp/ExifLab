@@ -303,7 +303,7 @@ private fun MissingLocationCard(status: LocationStatus, origin: PhotoOrigin, onO
     }
 }
 
-private val CompassPoint.labelRes: Int
+internal val CompassPoint.labelRes: Int
     get() = when (this) {
         CompassPoint.N -> R.string.compass_n
         CompassPoint.NE -> R.string.compass_ne

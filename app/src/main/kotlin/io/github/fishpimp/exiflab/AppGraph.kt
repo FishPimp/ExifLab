@@ -1,5 +1,6 @@
 package io.github.fishpimp.exiflab
 
+import android.content.ContentResolver
 import android.content.Context
 import coil3.ImageLoader
 import io.github.fishpimp.exiflab.data.backup.BackupManager
@@ -11,6 +12,9 @@ import io.github.fishpimp.exiflab.data.batch.DocumentBatchDestinations
 import io.github.fishpimp.exiflab.data.batch.PhotoSaverBatchSaving
 import io.github.fishpimp.exiflab.data.batch.WorkManagerBatchScheduler
 import io.github.fishpimp.exiflab.data.backup.BackupStore
+import io.github.fishpimp.exiflab.data.export.MetadataExporter
+import io.github.fishpimp.exiflab.data.export.ReportReader
+import io.github.fishpimp.exiflab.data.export.pdf.PdfReportWriter
 import io.github.fishpimp.exiflab.data.folders.FolderRepository
 import io.github.fishpimp.exiflab.data.folders.GrantedFolder
 import io.github.fishpimp.exiflab.data.network.NetworkMonitor
@@ -39,7 +43,10 @@ import io.github.fishpimp.exiflab.metadata.edit.Editing
 import io.github.fishpimp.exiflab.thumbnails.photoImageLoader
 import io.github.fishpimp.exiflab.ui.edit.EditSaving
 import io.github.fishpimp.exiflab.ui.edit.PhotoSaverEditSaving
+import io.github.fishpimp.exiflab.ui.export.SnapshotPdfMaps
+import io.github.fishpimp.exiflab.ui.export.exportThumbnail
 import io.github.fishpimp.exiflab.ui.map.MapRuntime
+import io.github.fishpimp.exiflab.ui.map.MapSnapshots
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -165,6 +172,26 @@ class AppGraph(context: Context) {
             },
             readReport = { ref -> withContext(Dispatchers.IO) { metadataReader.read(photoRepository.imageSource(ref)) } },
             planner = { Editing.planner },
+        )
+    }
+
+    val contentResolver: ContentResolver get() = appContext.contentResolver
+
+    /** Still map images for exported reports, through the same allowlisted client as every map. */
+    val mapSnapshots: MapSnapshots by lazy { MapSnapshots(appContext, mapRuntime, offlineMode, networkMonitor) }
+
+    /** CSV, JSON and PDF exports of photo metadata. */
+    val metadataExporter: MetadataExporter by lazy {
+        val readReport: ReportReader = { ref -> withContext(Dispatchers.IO) { metadataReader.read(photoRepository.imageSource(ref)) } }
+        MetadataExporter(
+            readReport = readReport,
+            pdf = PdfReportWriter(
+                context = appContext,
+                readReport = readReport,
+                thumbnails = { ref, maxPixels -> exportThumbnail(appContext, imageLoader, ref, maxPixels) },
+                maps = SnapshotPdfMaps(mapSnapshots),
+            ),
+            appVersion = BuildConfig.VERSION_NAME,
         )
     }
 

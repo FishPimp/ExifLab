@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.BrokenImage
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.FileOpen
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material.icons.rounded.ImageNotSupported
@@ -82,6 +83,8 @@ import io.github.fishpimp.exiflab.metadata.model.SensitiveFinding
 import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.messageRes
+import io.github.fishpimp.exiflab.ui.export.ExportHost
+import io.github.fishpimp.exiflab.ui.export.ExportViewModel
 import kotlinx.coroutines.launch
 
 /** Width from which the overview puts the preview next to the camera summary. */
@@ -106,6 +109,7 @@ fun PhotoScreen(
     onOpenPhoto: (PhotoRef) -> Unit = {},
     onEdit: (PhotoRef) -> Unit = {},
     viewModel: PhotoViewModel = viewModel(key = "photo:${ref.uri}", factory = PhotoViewModel.factory(ref)),
+    exportViewModel: ExportViewModel = viewModel(key = "export:${ref.uri}", factory = ExportViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -164,6 +168,8 @@ fun PhotoScreen(
         scope.launch { showSavedNotice(notice) }
     }
 
+    ExportHost(snackbarHostState, exportViewModel)
+
     fun launchPicker(launch: () -> Unit) {
         try {
             launch()
@@ -176,7 +182,7 @@ fun PhotoScreen(
         ref = ref,
         state = state,
         query = viewModel.query,
-        actions = remember(viewModel, onBack, onEdit, createCopy, openOriginal, report?.fileName) {
+        actions = remember(viewModel, exportViewModel, onBack, onEdit, createCopy, openOriginal, report?.fileName) {
             PhotoActions(
                 onBack = onBack,
                 onRetry = viewModel::reload,
@@ -192,6 +198,7 @@ fun PhotoScreen(
                 },
                 onOpenOriginal = { launchPicker { openOriginal.launch(PhotoFormats.documentPickerMimeTypes) } },
                 onEdit = { onEdit(viewModel.currentRef) },
+                onExport = { exportViewModel.open(listOf(viewModel.currentRef)) },
             )
         },
         snackbarHostState = snackbarHostState,
@@ -213,6 +220,7 @@ data class PhotoActions(
     val onSaveCopy: () -> Unit = {},
     val onOpenOriginal: () -> Unit = {},
     val onEdit: () -> Unit = {},
+    val onExport: () -> Unit = {},
 )
 
 /**
@@ -244,6 +252,7 @@ fun PhotoContent(
             if (report != null) {
                 PhotoMenu(
                     onCopyAll = { copier.copyAll(report) },
+                    onExport = actions.onExport,
                     onSaveCopy = actions.onSaveCopy,
                     onOpenOriginal = actions.onOpenOriginal.takeIf { ref.origin == PhotoOrigin.Picker || ref.origin == PhotoOrigin.Share },
                 )
@@ -469,6 +478,7 @@ private fun PhotoOverview(
 @Composable
 private fun PhotoMenu(
     onCopyAll: () -> Unit,
+    onExport: () -> Unit,
     onSaveCopy: () -> Unit,
     onOpenOriginal: (() -> Unit)?,
 ) {
@@ -484,6 +494,14 @@ private fun PhotoMenu(
                 onClick = {
                     open = false
                     onCopyAll()
+                },
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.export_action)) },
+                leadingIcon = { Icon(Icons.Rounded.FileDownload, contentDescription = null) },
+                onClick = {
+                    open = false
+                    onExport()
                 },
             )
             DropdownMenuItem(

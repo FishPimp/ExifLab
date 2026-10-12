@@ -13,9 +13,12 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +40,8 @@ import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.ui.components.PhotoGridCells
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
+import io.github.fishpimp.exiflab.ui.export.ExportHost
+import io.github.fishpimp.exiflab.ui.export.ExportViewModel
 import io.github.fishpimp.exiflab.ui.navigation.Route
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -56,11 +61,14 @@ fun SelectionScreen(
     onBatchEdit: (Route.BatchEdit) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SelectionViewModel = viewModel(factory = SelectionViewModel.factory(refs)),
+    exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory),
 ) {
     val selection by viewModel.selection.collectAsStateWithLifecycle()
     val currentOnBatchEdit by rememberUpdatedState(onBatchEdit)
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) { viewModel.batchEditRequests.collect { currentOnBatchEdit(it) } }
     BackHandler(enabled = selection.active) { viewModel.selectionActions.onExit() }
+    ExportHost(snackbarHostState, exportViewModel)
     SelectionContent(
         refs = refs,
         onBack = onBack,
@@ -68,6 +76,8 @@ fun SelectionScreen(
         selection = selection,
         selectionActions = viewModel.selectionActions,
         onBatchAction = viewModel::startBatch,
+        onExport = { exportViewModel.open(selection.selectedIn(refs)) },
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -82,6 +92,8 @@ fun SelectionContent(
     selection: PhotoSelection = PhotoSelection(),
     selectionActions: SelectionActions = SelectionActions(),
     onBatchAction: (BatchKind) -> Unit = {},
+    onExport: () -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val title = pluralStringResource(R.plurals.photo_count, refs.size, refs.size)
     ScreenScaffold(
@@ -91,6 +103,7 @@ fun SelectionContent(
         navigationIcon = if (selection.active) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
         navigationLabel = if (selection.active) stringResource(R.string.selection_exit) else null,
         actions = { SelectionBarActions(selection, selectionActions, total = refs.size, enterSelectsAll = true) },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -121,6 +134,7 @@ fun SelectionContent(
                 visible = selection.active,
                 enabled = selection.count > 0,
                 onAction = onBatchAction,
+                onExport = onExport,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

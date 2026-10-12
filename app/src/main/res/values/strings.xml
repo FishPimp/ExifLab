@@ -446,6 +446,90 @@
     <string name="map_open_in_other_app">Open in another app</string>
     <string name="map_no_app">No app on this device can show the location.</string>
 
+    <!-- Export -->
+    <string name="export_action">Export</string>
+    <string name="export_title">Export metadata</string>
+    <string name="export_format_label">Format</string>
+    <string name="export_format_csv" translatable="false">CSV</string>
+    <string name="export_format_json" translatable="false">JSON</string>
+    <string name="export_format_pdf" translatable="false">PDF</string>
+    <string name="export_format_csv_body">A spreadsheet with one row per tag, for Excel, Numbers or Google Sheets.</string>
+    <string name="export_format_json_body">Structured data with every tag, for scripts and other apps.</string>
+    <string name="export_format_pdf_body">A printable report with a summary, a privacy check and every tag.</string>
+    <string name="export_options_title">Options</string>
+    <string name="export_option_raw">Include raw values</string>
+    <string name="export_option_raw_body">Each value exactly as stored, next to the readable one</string>
+    <string name="export_option_redact">Remove sensitive values</string>
+    <string name="export_option_redact_body">Leaves out location, names, serial numbers and other identifying values</string>
+    <string name="export_option_map">Include a map</string>
+    <string name="export_option_map_body">Loads map tiles for the location from OpenFreeMap. The photo itself is never sent.</string>
+    <string name="export_option_map_offline">You are offline, so the report shows the coordinates instead of a map</string>
+    <string name="export_option_map_redacted">Not available when sensitive values are removed</string>
+    <string name="export_option_spreadsheet">For spreadsheet apps</string>
+    <string name="export_option_spreadsheet_body">Helps Excel and similar apps read letters such as å, ä and ö, and keeps values from running as formulas</string>
+    <string name="export_file_name">File name</string>
+    <string name="export_file_name_hint">You can change it in the next step.</string>
+    <string name="export_confirm">Export</string>
+    <string name="export_running_title">Exporting metadata</string>
+    <string name="export_running_single">Writing the file</string>
+    <string name="export_running_preparing">Preparing the report: %1$d of %2$d</string>
+    <string name="export_running_photo">Photo %1$d of %2$d</string>
+    <string name="export_done_single">Metadata exported</string>
+    <plurals name="export_done">
+        <item quantity="one">Metadata of %d photo exported</item>
+        <item quantity="other">Metadata of %d photos exported</item>
+    </plurals>
+    <plurals name="export_done_skipped">
+        <item quantity="one">Exported. %d photo could not be read and was left out.</item>
+        <item quantity="other">Exported. %d photos could not be read and were left out.</item>
+    </plurals>
+    <string name="export_open">Open</string>
+    <string name="export_open_failed">No app on this device can open the exported file.</string>
+    <string name="export_cancelled">Export cancelled</string>
+    <string name="export_error_write">The file could not be saved. Try another place.</string>
+    <string name="export_error_pdf">The PDF report could not be created.</string>
+    <string name="export_error_unreadable_single">The photo could not be read, so nothing was exported.</string>
+    <string name="export_error_unreadable_all">None of the photos could be read, so nothing was exported.</string>
+    <string name="export_pdf_overline">Metadata report</string>
+    <string name="export_pdf_size">File size</string>
+    <string name="export_pdf_software">Software</string>
+    <string name="export_pdf_color_profile">Color profile</string>
+    <string name="export_pdf_privacy_found">This photo carries data that can identify people, places or devices.</string>
+    <string name="export_pdf_privacy_redacted">Their values are left out of this report.</string>
+    <plurals name="export_pdf_more_tags">
+        <item quantity="one">and %d more</item>
+        <item quantity="other">and %d more</item>
+    </plurals>
+    <string name="export_pdf_location_left_out">The location is left out of this report because sensitive values are removed.</string>
+    <string name="export_pdf_map_off">Map not included</string>
+    <string name="export_pdf_map_offline">Map not included (offline)</string>
+    <string name="export_pdf_map_failed">Map not included (it could not be loaded)</string>
+    <string name="export_pdf_gps_time">GPS time</string>
+    <string name="export_pdf_tags_title">All metadata</string>
+    <string name="export_pdf_continued">(continued)</string>
+    <string name="export_pdf_column_tag">Tag</string>
+    <string name="export_pdf_column_id">ID</string>
+    <string name="export_pdf_column_value">Value</string>
+    <string name="export_pdf_column_raw">Raw value</string>
+    <string name="export_pdf_column_file">File</string>
+    <string name="export_pdf_column_camera">Camera</string>
+    <string name="export_pdf_column_page">Page</string>
+    <string name="export_pdf_sensitive_tag">Sensitive: %1$s</string>
+    <string name="export_pdf_redacted_value">[removed]</string>
+    <string name="export_pdf_footer">Created with ExifLab - %1$s</string>
+    <string name="export_pdf_page">Page %1$d of %2$d</string>
+    <string name="export_pdf_summary_subtitle">Exported %1$s</string>
+    <string name="export_pdf_summary_redacted">Sensitive values removed</string>
+    <plurals name="export_pdf_summary_photos">
+        <item quantity="one">Photo</item>
+        <item quantity="other">Photos</item>
+    </plurals>
+    <string name="export_pdf_summary_private">With privacy findings</string>
+    <string name="export_pdf_summary_located">With location</string>
+    <string name="export_pdf_summary_unreadable">Could not be read</string>
+    <string name="export_pdf_privacy_none">None found</string>
+    <string name="export_pdf_not_included">Not included</string>
+
     <!-- Editor -->
     <string name="photo_edit">Edit</string>
     <string name="photo_saved_in_place">Changes saved</string>

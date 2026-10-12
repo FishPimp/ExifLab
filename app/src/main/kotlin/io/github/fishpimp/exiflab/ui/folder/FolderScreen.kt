@@ -23,10 +23,13 @@ import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +51,8 @@ import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.ui.components.PhotoGridCells
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
+import io.github.fishpimp.exiflab.ui.export.ExportHost
+import io.github.fishpimp.exiflab.ui.export.ExportViewModel
 import io.github.fishpimp.exiflab.ui.navigation.Route
 import io.github.fishpimp.exiflab.ui.selection.BatchActionsToolbar
 import io.github.fishpimp.exiflab.ui.selection.PhotoSelection
@@ -71,12 +76,15 @@ fun FolderScreen(
     onBatchEdit: (Route.BatchEdit) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FolderViewModel = viewModel(factory = FolderViewModel.factory(route)),
+    exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val selection by viewModel.selection.collectAsStateWithLifecycle()
     val currentOnBatchEdit by rememberUpdatedState(onBatchEdit)
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(viewModel) { viewModel.batchEditRequests.collect { currentOnBatchEdit(it) } }
     BackHandler(enabled = selection.active) { viewModel.selectionActions.onExit() }
+    ExportHost(snackbarHostState, exportViewModel)
     FolderContent(
         title = route.title,
         state = state,
@@ -86,6 +94,8 @@ fun FolderScreen(
         selection = selection,
         selectionActions = viewModel.selectionActions,
         onBatchAction = viewModel::startBatch,
+        onExport = { exportViewModel.open(viewModel.selectedPhotos(), folderName = route.title) },
+        snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
 }
@@ -102,6 +112,8 @@ fun FolderContent(
     selection: PhotoSelection = PhotoSelection(),
     selectionActions: SelectionActions = SelectionActions(),
     onBatchAction: (BatchKind) -> Unit = {},
+    onExport: () -> Unit = {},
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val listing = (state as? FolderUiState.Loaded)?.listing
     val hasPhotos = listing?.photos?.isNotEmpty() == true
@@ -116,6 +128,7 @@ fun FolderContent(
                 SelectionBarActions(selection, selectionActions, total = listing.photos.size, enterSelectsAll = false)
             }
         },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -136,6 +149,7 @@ fun FolderContent(
                 visible = selection.active,
                 enabled = selection.count > 0,
                 onAction = onBatchAction,
+                onExport = onExport,
                 modifier = Modifier.align(Alignment.BottomCenter),
             )
         }

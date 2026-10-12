@@ -432,6 +432,87 @@
     <string name="map_open_in_other_app">Öppna i en annan app</string>
     <string name="map_no_app">Det finns ingen app på enheten som kan visa platsen.</string>
 
+    <!-- Export -->
+    <string name="export_action">Exportera</string>
+    <string name="export_title">Exportera metadata</string>
+    <string name="export_format_label">Format</string>
+    <string name="export_format_csv_body">Ett kalkylark med en rad per tagg, för Excel, Numbers eller Google Kalkylark.</string>
+    <string name="export_format_json_body">Strukturerad data med alla taggar, för skript och andra appar.</string>
+    <string name="export_format_pdf_body">En utskrivbar rapport med sammanfattning, integritetskontroll och alla taggar.</string>
+    <string name="export_options_title">Alternativ</string>
+    <string name="export_option_raw">Ta med råvärden</string>
+    <string name="export_option_raw_body">Varje värde precis som det är lagrat, bredvid det läsbara</string>
+    <string name="export_option_redact">Ta bort känsliga värden</string>
+    <string name="export_option_redact_body">Utelämnar plats, namn, serienummer och andra identifierande värden</string>
+    <string name="export_option_map">Ta med en karta</string>
+    <string name="export_option_map_body">Hämtar kartbilder för platsen från OpenFreeMap. Själva bilden skickas aldrig.</string>
+    <string name="export_option_map_offline">Du är offline, så rapporten visar koordinaterna i stället för en karta</string>
+    <string name="export_option_map_redacted">Inte tillgängligt när känsliga värden tas bort</string>
+    <string name="export_option_spreadsheet">För kalkylprogram</string>
+    <string name="export_option_spreadsheet_body">Hjälper Excel och liknande appar att läsa tecken som å, ä och ö, och hindrar att värden körs som formler</string>
+    <string name="export_file_name">Filnamn</string>
+    <string name="export_file_name_hint">Du kan ändra det i nästa steg.</string>
+    <string name="export_confirm">Exportera</string>
+    <string name="export_running_title">Exporterar metadata</string>
+    <string name="export_running_single">Skriver filen</string>
+    <string name="export_running_preparing">Förbereder rapporten: %1$d av %2$d</string>
+    <string name="export_running_photo">Bild %1$d av %2$d</string>
+    <string name="export_done_single">Metadata exporterad</string>
+    <plurals name="export_done">
+        <item quantity="one">Metadata för %d bild exporterad</item>
+        <item quantity="other">Metadata för %d bilder exporterad</item>
+    </plurals>
+    <plurals name="export_done_skipped">
+        <item quantity="one">Exporterat. %d bild gick inte att läsa och utelämnades.</item>
+        <item quantity="other">Exporterat. %d bilder gick inte att läsa och utelämnades.</item>
+    </plurals>
+    <string name="export_open">Öppna</string>
+    <string name="export_open_failed">Det finns ingen app på enheten som kan öppna den exporterade filen.</string>
+    <string name="export_cancelled">Exporten avbröts</string>
+    <string name="export_error_write">Filen kunde inte sparas. Försök med en annan plats.</string>
+    <string name="export_error_pdf">PDF-rapporten kunde inte skapas.</string>
+    <string name="export_error_unreadable_single">Bilden kunde inte läsas, så inget exporterades.</string>
+    <string name="export_error_unreadable_all">Ingen av bilderna kunde läsas, så inget exporterades.</string>
+    <string name="export_pdf_overline">Metadatarapport</string>
+    <string name="export_pdf_size">Filstorlek</string>
+    <string name="export_pdf_software">Programvara</string>
+    <string name="export_pdf_color_profile">Färgprofil</string>
+    <string name="export_pdf_privacy_found">Bilden innehåller uppgifter som kan identifiera personer, platser eller enheter.</string>
+    <string name="export_pdf_privacy_redacted">Deras värden har utelämnats i rapporten.</string>
+    <plurals name="export_pdf_more_tags">
+        <item quantity="one">och %d till</item>
+        <item quantity="other">och %d till</item>
+    </plurals>
+    <string name="export_pdf_location_left_out">Platsen har utelämnats i rapporten eftersom känsliga värden tas bort.</string>
+    <string name="export_pdf_map_off">Ingen karta</string>
+    <string name="export_pdf_map_offline">Ingen karta (offline)</string>
+    <string name="export_pdf_map_failed">Ingen karta (den kunde inte läsas in)</string>
+    <string name="export_pdf_gps_time">GPS-tid</string>
+    <string name="export_pdf_tags_title">All metadata</string>
+    <string name="export_pdf_continued">(forts.)</string>
+    <string name="export_pdf_column_tag">Tagg</string>
+    <string name="export_pdf_column_id">ID</string>
+    <string name="export_pdf_column_value">Värde</string>
+    <string name="export_pdf_column_raw">Råvärde</string>
+    <string name="export_pdf_column_file">Fil</string>
+    <string name="export_pdf_column_camera">Kamera</string>
+    <string name="export_pdf_column_page">Sida</string>
+    <string name="export_pdf_sensitive_tag">Känslig: %1$s</string>
+    <string name="export_pdf_redacted_value">[borttaget]</string>
+    <string name="export_pdf_footer">Skapad med ExifLab - %1$s</string>
+    <string name="export_pdf_page">Sida %1$d av %2$d</string>
+    <string name="export_pdf_summary_subtitle">Exporterad %1$s</string>
+    <string name="export_pdf_summary_redacted">Känsliga värden borttagna</string>
+    <plurals name="export_pdf_summary_photos">
+        <item quantity="one">Bild</item>
+        <item quantity="other">Bilder</item>
+    </plurals>
+    <string name="export_pdf_summary_private">Med känsliga uppgifter</string>
+    <string name="export_pdf_summary_located">Med plats</string>
+    <string name="export_pdf_summary_unreadable">Kunde inte läsas</string>
+    <string name="export_pdf_privacy_none">Inga hittades</string>
+    <string name="export_pdf_not_included">Inte med</string>
+
     <!-- Editor -->
     <string name="photo_edit">Redigera</string>
     <string name="photo_saved_in_place">Ändringarna är sparade</string>
