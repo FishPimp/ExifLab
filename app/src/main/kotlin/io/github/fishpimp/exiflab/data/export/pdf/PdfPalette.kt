@@ -37,7 +37,8 @@ class PdfPalette(val scheme: ColorScheme, private val sensitive: ColorScheme) {
          */
         fun from(current: ColorScheme, isDark: Boolean, sensitiveColor: Color): PdfPalette {
             val light = if (isDark) dynamicColorScheme(seedColor = current.primary, isDark = false, style = PaletteStyle.TonalSpot) else current
-            val sensitive = dynamicColorScheme(seedColor = sensitiveColor, isDark = false, style = PaletteStyle.Fidelity)
+            // Tonal spot keeps the privacy cards a light tint that prints well, with dark text on them.
+            val sensitive = dynamicColorScheme(seedColor = sensitiveColor, isDark = false, style = PaletteStyle.TonalSpot)
             return PdfPalette(light, sensitive)
         }
     }

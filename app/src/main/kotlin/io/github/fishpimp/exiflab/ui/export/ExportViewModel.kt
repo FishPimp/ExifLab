@@ -173,7 +173,7 @@ class ExportViewModel(
         val settings = state.settings
         local.update { it.copy(progress = ExportProgress(0, request.photos.size)) }
         job = viewModelScope.launch {
-            var keepFile = false
+            var outcome: ExportEvent = ExportEvent.Cancelled
             try {
                 val result = withContext(Dispatchers.IO) {
                     documents.openOutput(uri).use { output ->
@@ -182,21 +182,25 @@ class ExportViewModel(
                         }
                     }
                 }
-                if (result.exported == 0) {
-                    eventChannel.send(ExportEvent.Failed(ExportError.Unreadable, request.isSingle))
+                outcome = if (result.exported == 0) {
+                    ExportEvent.Failed(ExportError.Unreadable, request.isSingle)
                 } else {
-                    keepFile = true
-                    eventChannel.send(ExportEvent.Finished(uri, settings.format.mimeType, result.exported, result.failed.size, request.isSingle))
+                    ExportEvent.Finished(uri, settings.format.mimeType, result.exported, result.failed.size, request.isSingle)
                 }
             } catch (e: CancellationException) {
-                eventChannel.trySend(ExportEvent.Cancelled)
+                outcome = ExportEvent.Cancelled
                 throw e
             } catch (e: Exception) {
                 val error = if (e !is IOException && settings.format == ExportFormat.Pdf) ExportError.Pdf else ExportError.Write
-                eventChannel.send(ExportEvent.Failed(error, request.isSingle))
+                outcome = ExportEvent.Failed(error, request.isSingle)
             } finally {
-                if (!keepFile) withContext(NonCancellable + Dispatchers.IO) { documents.delete(uri) }
-                local.update { it.copy(progress = null) }
+                // Also after cancelling: remove a file that is not complete, close the progress
+                // dialog, and only then say how it went.
+                withContext(NonCancellable) {
+                    if (outcome !is ExportEvent.Finished) withContext(Dispatchers.IO) { documents.delete(uri) }
+                    local.update { it.copy(progress = null) }
+                    eventChannel.send(outcome)
+                }
             }
         }
     }

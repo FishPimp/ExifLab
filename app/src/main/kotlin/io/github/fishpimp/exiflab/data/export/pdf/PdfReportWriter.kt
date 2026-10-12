@@ -2,6 +2,7 @@ package io.github.fishpimp.exiflab.data.export.pdf
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.pdf.PdfDocument
 import io.github.fishpimp.exiflab.data.export.ExportProgress
 import io.github.fishpimp.exiflab.data.export.ExportResult
@@ -16,6 +17,7 @@ import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import java.io.Closeable
 import java.io.OutputStream
 import java.time.LocalDate
 import kotlin.math.roundToInt
@@ -31,6 +33,32 @@ interface PdfMaps {
 
 /** A downscaled, upright preview of a photo, at most [maxPixels] on its long side. */
 typealias PdfThumbnails = suspend (ref: PhotoRef, maxPixels: Int) -> Bitmap?
+
+/** Where finished pages go: Android's [PdfDocument] in the app, a recorder in tests. */
+interface PdfPageSink : Closeable {
+    /** Adds page [number] (1-based) of [width] by [height] points; [draw] paints it. */
+    fun page(width: Int, height: Int, number: Int, draw: (Canvas) -> Unit)
+
+    fun writeTo(output: OutputStream)
+}
+
+/** Pages into a real PDF file. */
+class PdfDocumentSink : PdfPageSink {
+    private val document = PdfDocument()
+
+    override fun page(width: Int, height: Int, number: Int, draw: (Canvas) -> Unit) {
+        val page = document.startPage(PdfDocument.PageInfo.Builder(width, height, number).create())
+        try {
+            draw(page.canvas)
+        } finally {
+            document.finishPage(page)
+        }
+    }
+
+    override fun writeTo(output: OutputStream) = document.writeTo(output)
+
+    override fun close() = document.close()
+}
 
 /**
  * Writes the PDF report with Android's [PdfDocument]: A4 pages in points, the app's fonts and
@@ -48,6 +76,7 @@ class PdfReportWriter(
     private val thumbnails: PdfThumbnails,
     private val maps: PdfMaps,
     private val today: () -> LocalDate = { LocalDate.now() },
+    private val newSink: () -> PdfPageSink = ::PdfDocumentSink,
 ) : PdfExport {
 
     override suspend fun write(
@@ -65,9 +94,9 @@ class PdfReportWriter(
             layout = PdfReportLayout(painter),
             builder = PdfSectionBuilder(context, settings),
             exportedOn = today(),
-            mapMode = if (settings.includeMap) runCatching { maps.mode() }.getOrDefault(PdfMapMode.Failed) else PdfMapMode.Off,
+            mapMode = if (settings.includeMap) mapMode() else PdfMapMode.Off,
         )
-        val document = PdfDocument()
+        val document = newSink()
         try {
             val result = if (photos.size == 1) job.single(document, photos.single(), onProgress) else job.several(document, photos, onProgress)
             if (result.exported > 0) document.writeTo(output)
@@ -75,6 +104,15 @@ class PdfReportWriter(
         } finally {
             document.close()
         }
+    }
+
+    /** Whether maps can be made; a failure to find out means no map. */
+    private suspend fun mapMode(): PdfMapMode = try {
+        maps.mode()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        PdfMapMode.Failed
     }
 
     private inner class Job(
@@ -89,7 +127,7 @@ class PdfReportWriter(
         private val credit = builder.footerCredit(exportedOn)
         private var pageNumber = 0
 
-        suspend fun single(document: PdfDocument, ref: PhotoRef, onProgress: (ExportProgress) -> Unit): ExportResult {
+        suspend fun single(document: PdfPageSink, ref: PhotoRef, onProgress: (ExportProgress) -> Unit): ExportResult {
             onProgress(ExportProgress(0, 1))
             val report = MetadataExporter.readOrNull(readReport, ref)
                 ?: return ExportResult(0, listOf(MetadataExporter.displayName(ref, null)))
@@ -98,7 +136,7 @@ class PdfReportWriter(
             return ExportResult(if (drawn) 1 else 0, emptyList())
         }
 
-        suspend fun several(document: PdfDocument, photos: List<PhotoRef>, onProgress: (ExportProgress) -> Unit): ExportResult {
+        suspend fun several(document: PdfPageSink, photos: List<PhotoRef>, onProgress: (ExportProgress) -> Unit): ExportResult {
             // Pass 1: lay out every section without images to count its pages.
             val readable = mutableListOf<Pair<PhotoRef, PdfSummaryEntry>>()
             val failed = mutableListOf<String>()
@@ -144,7 +182,7 @@ class PdfReportWriter(
 
         /** Draws one photo's section; false when nothing could be drawn. [totalPages] null means "this section's own length". */
         private suspend fun drawPhoto(
-            document: PdfDocument,
+            document: PdfPageSink,
             ref: PhotoRef,
             report: MetadataReport,
             totalPages: Int?,
@@ -183,14 +221,13 @@ class PdfReportWriter(
             null
         }
 
-        private fun drawPage(document: PdfDocument, ops: List<PdfOp>, totalPages: Int, images: (PdfImage) -> Bitmap?) {
+        private fun drawPage(document: PdfPageSink, ops: List<PdfOp>, totalPages: Int, images: (PdfImage) -> Bitmap?) {
             pageNumber++
             val spec = layout.page
-            val info = PdfDocument.PageInfo.Builder(spec.width.roundToInt(), spec.height.roundToInt(), pageNumber).create()
-            val page = document.startPage(info)
             val footer = layout.footer(credit, builder.pageLabel(pageNumber, maxOf(totalPages, pageNumber)))
-            painter.draw(page.canvas, ops + footer, images)
-            document.finishPage(page)
+            document.page(spec.width.roundToInt(), spec.height.roundToInt(), pageNumber) { canvas ->
+                painter.draw(canvas, ops + footer, images)
+            }
         }
     }
 

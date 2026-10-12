@@ -18,8 +18,10 @@ class PdfTextWrapper(private val measurer: PdfTextMeasurer) {
         val source = if (clipped) text.take(MAX_CHARS) else text
         val lines = mutableListOf<String>()
         val paragraphs = source.replace("\r\n", "\n").replace('\r', '\n').split('\n')
+        // One line more than allowed is enough to know an ellipsis is needed.
+        val limit = if (maxLines == Int.MAX_VALUE) Int.MAX_VALUE else maxLines + 1
         for (paragraph in paragraphs) {
-            wrapParagraph(paragraph, style, width, lines, maxLines + 1)
+            wrapParagraph(paragraph, style, width, lines, limit)
             if (lines.size > maxLines) break
         }
         if (lines.size > maxLines || clipped) {

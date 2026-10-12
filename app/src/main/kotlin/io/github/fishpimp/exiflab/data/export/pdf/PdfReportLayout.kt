@@ -83,7 +83,7 @@ class PdfReportLayout(
         val bandTop = y
         val inner = BAND_PADDING
         val thumbSlot = THUMBNAIL_SIZE
-        val columnLeft = left + inner + thumbSlot + 18f
+        val columnLeft = left + inner + thumbSlot + 16f
         val columnWidth = page.contentRight - inner - columnLeft
         val bandOps = mutableListOf<PdfOp>()
 
@@ -117,34 +117,46 @@ class PdfReportLayout(
         return height
     }
 
+    /**
+     * Stat boxes, as many per row as fit their values on one line ("1/8000 s" stays whole);
+     * the rest wrap to further rows. Returns the total height.
+     */
     private fun statRowInto(ops: MutableList<PdfOp>, stats: List<PdfStat>, left: Float, top: Float, width: Float): Float {
         val gap = 6f
-        val count = stats.size
-        val boxWidth = (width - gap * (count - 1)) / count
-        val padding = 7f
-        val wrapped = stats.map { stat ->
-            wrapper.wrap(stat.value, PdfStyles.Numeral, boxWidth - 2 * padding, maxLines = 2) to
-                wrapper.wrap(stat.label, PdfStyles.NumeralLabel, boxWidth - 2 * padding, maxLines = 2)
-        }
-        val contentHeight = wrapped.maxOf { (value, label) ->
-            value.size * PdfStyles.Numeral.lineHeight + 1f + label.size * PdfStyles.NumeralLabel.lineHeight
-        }
-        val height = contentHeight + 2 * padding
-        wrapped.forEachIndexed { index, (value, label) ->
-            val boxLeft = left + index * (boxWidth + gap)
-            ops.add(PdfOp.Rect(boxLeft, top, boxLeft + boxWidth, top + height, PdfColor.AccentContainer, radius = 8f))
-            var y = top + padding
-            value.forEach { line ->
-                ops.add(PdfOp.Text(line, boxLeft + padding, y + PdfStyles.Numeral.baselineOffset, PdfStyles.Numeral))
-                y += PdfStyles.Numeral.lineHeight
+        val padding = 6f
+        fun boxWidth(perRow: Int) = (width - gap * (perRow - 1)) / perRow
+        val widest = stats.maxOf { measurer.width(it.value, PdfStyles.Numeral) }
+        // All in one row, else an even grid (2 by 2 for four), else one per row.
+        val perRow = listOf(stats.size, (stats.size + 1) / 2, 1).first { it == 1 || widest <= boxWidth(it) - 2 * padding }
+        val boxWidth = boxWidth(perRow)
+        var rowTop = top
+        stats.chunked(perRow).forEachIndexed { rowIndex, row ->
+            if (rowIndex > 0) rowTop += gap
+            val wrapped = row.map { stat ->
+                wrapper.wrap(stat.value, PdfStyles.Numeral, boxWidth - 2 * padding, maxLines = 2) to
+                    wrapper.wrap(stat.label, PdfStyles.NumeralLabel, boxWidth - 2 * padding, maxLines = 2)
             }
-            y += 1f
-            label.forEach { line ->
-                ops.add(PdfOp.Text(line, boxLeft + padding, y + PdfStyles.NumeralLabel.baselineOffset, PdfStyles.NumeralLabel))
-                y += PdfStyles.NumeralLabel.lineHeight
+            val contentHeight = wrapped.maxOf { (value, label) ->
+                value.size * PdfStyles.Numeral.lineHeight + 1f + label.size * PdfStyles.NumeralLabel.lineHeight
             }
+            val height = contentHeight + 2 * padding
+            wrapped.forEachIndexed { index, (value, label) ->
+                val boxLeft = left + index * (boxWidth + gap)
+                ops.add(PdfOp.Rect(boxLeft, rowTop, boxLeft + boxWidth, rowTop + height, PdfColor.AccentContainer, radius = 8f))
+                var y = rowTop + padding
+                value.forEach { line ->
+                    ops.add(PdfOp.Text(line, boxLeft + padding, y + PdfStyles.Numeral.baselineOffset, PdfStyles.Numeral))
+                    y += PdfStyles.Numeral.lineHeight
+                }
+                y += 1f
+                label.forEach { line ->
+                    ops.add(PdfOp.Text(line, boxLeft + padding, y + PdfStyles.NumeralLabel.baselineOffset, PdfStyles.NumeralLabel))
+                    y += PdfStyles.NumeralLabel.lineHeight
+                }
+            }
+            rowTop += height
         }
-        return height
+        return rowTop - top
     }
 
     /** Label over value, [columns] per row. Returns the y below the grid. */
@@ -216,7 +228,8 @@ class PdfReportLayout(
             return
         }
         val factOps = mutableListOf<PdfOp>()
-        val factsHeight = if (block.facts.isEmpty()) 0f else factGrid(factOps, block.facts, 0f, 0f, page.contentWidth, columns = 3) + 10f
+        val factColumns = block.facts.size.coerceIn(3, 4)
+        val factsHeight = if (block.facts.isEmpty()) 0f else factGrid(factOps, block.facts, 0f, 0f, page.contentWidth, columns = factColumns) + 10f
         // A map and the panel that stands in for it take the same room, credit line included, so a
         // map that fails to load never changes the page count.
         val creditHeight = PdfStyles.Small.lineHeight + 3f
@@ -235,14 +248,14 @@ class PdfReportLayout(
             }
             is PdfMap.Panel, PdfMap.None -> {
                 pages.add(PdfOp.Rect(left, top, right, top + MAP_HEIGHT, PdfColor.Panel, radius = 12f))
-                // A sparse grid suggests a map without pretending to be one.
-                val step = MAP_HEIGHT / 4f
-                var gx = left + step
-                while (gx < right - 1f) {
-                    pages.add(PdfOp.Line(gx, top + 6f, gx, top + MAP_HEIGHT - 6f, PdfColor.Line, 0.4f))
+                // A faint graticule suggests a map without pretending to be one.
+                val step = MAP_HEIGHT / 3f
+                var gx = left + (page.contentWidth % step) / 2f + step
+                while (gx < right - step / 2f) {
+                    pages.add(PdfOp.Line(gx, top, gx, top + MAP_HEIGHT, PdfColor.PanelStrong, 0.8f))
                     gx += step
                 }
-                for (i in 1..3) pages.add(PdfOp.Line(left + 6f, top + i * step, right - 6f, top + i * step, PdfColor.Line, 0.4f))
+                for (i in 1..2) pages.add(PdfOp.Line(left, top + i * step, right, top + i * step, PdfColor.PanelStrong, 0.8f))
                 val centerX = (left + right) / 2f
                 val centerY = top + MAP_HEIGHT / 2f - 14f
                 pages.add(PdfOp.Circle(centerX, centerY, 9f, PdfColor.AccentContainer))
@@ -284,12 +297,14 @@ class PdfReportLayout(
 
         fun startTable(continued: Boolean) {
             if (showTitle) {
-                val title = if (continued) "${table.title} ${table.continued}" else table.title
+                val fullTitle = if (continued) "${table.title} ${table.continued}" else table.title
+                val title = wrapper.wrap(fullTitle, PdfStyles.Subheading, width, maxLines = 1).first()
                 val y = pages.y
                 pages.add(PdfOp.Text(title, left, y + PdfStyles.Subheading.baselineOffset, PdfStyles.Subheading))
-                if (!continued && table.detail.isNotEmpty()) {
-                    val titleWidth = measurer.width(title, PdfStyles.Subheading)
-                    pages.add(PdfOp.Text(table.detail, left + titleWidth + 8f, y + PdfStyles.Subheading.baselineOffset, PdfStyles.BodyMuted))
+                val detailLeft = left + measurer.width(title, PdfStyles.Subheading) + 8f
+                // The tag count goes after the title when it fits beside it.
+                if (!continued && table.detail.isNotEmpty() && detailLeft + measurer.width(table.detail, PdfStyles.BodyMuted) <= left + width) {
+                    pages.add(PdfOp.Text(table.detail, detailLeft, y + PdfStyles.Subheading.baselineOffset, PdfStyles.BodyMuted))
                 }
                 pages.y += titleHeight
             }
@@ -419,8 +434,8 @@ class PdfReportLayout(
     }
 
     companion object {
-        const val THUMBNAIL_SIZE = 180f
-        const val MAP_HEIGHT = 190f
+        const val THUMBNAIL_SIZE = 168f
+        const val MAP_HEIGHT = 170f
         const val MAX_CELL_LINES = 30
         private const val BAND_PADDING = 16f
         private const val SECTION_GAP = 22f

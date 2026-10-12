@@ -66,7 +66,7 @@ object PdfStyles {
     val Label = PdfTextStyle(PdfFont.BodyStrong, 7.5f, PdfColor.Muted)
     val Value = PdfTextStyle(PdfFont.Body, 10f, PdfColor.Text)
     val ValueMono = PdfTextStyle(PdfFont.Mono, 9.5f, PdfColor.Text)
-    val Numeral = PdfTextStyle(PdfFont.MonoStrong, 13f, PdfColor.OnAccentContainer, lineHeight = 16f)
+    val Numeral = PdfTextStyle(PdfFont.MonoStrong, 12f, PdfColor.OnAccentContainer, lineHeight = 15f)
     val NumeralLabel = PdfTextStyle(PdfFont.Body, 7.5f, PdfColor.OnAccentContainer)
     val Coordinates = PdfTextStyle(PdfFont.MonoStrong, 14f, PdfColor.Text, lineHeight = 18f)
     val TableHeader = PdfTextStyle(PdfFont.BodyStrong, 7.5f, PdfColor.Muted)

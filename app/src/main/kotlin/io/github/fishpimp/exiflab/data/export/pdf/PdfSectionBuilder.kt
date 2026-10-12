@@ -7,7 +7,6 @@ import io.github.fishpimp.exiflab.data.export.ExportSettings
 import io.github.fishpimp.exiflab.metadata.export.cameraLabel
 import io.github.fishpimp.exiflab.metadata.model.LocationStatus
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
-import io.github.fishpimp.exiflab.metadata.model.OffsetSource
 import io.github.fishpimp.exiflab.ui.format.CaptureTimeFormat
 import io.github.fishpimp.exiflab.ui.format.ExposureFormat
 import io.github.fishpimp.exiflab.ui.format.LocationFormat
@@ -212,7 +211,7 @@ class PdfSectionBuilder(
         )
     }
 
-    /** "Sunday, 14 June 2026, 17:42:00" over "UTC+02:00 · Time zone from Exif" (or "Time zone unknown"). */
+    /** "Jun 14, 2026, 7:42:07 PM" over "UTC+02:00" (or "Time zone unknown"). */
     private fun taken(report: MetadataReport): String {
         val summary = report.summary
         val local = summary.capturedAt ?: return ""
@@ -220,10 +219,9 @@ class PdfSectionBuilder(
         val zone = if (offset == null) {
             string(R.string.photo_time_zone_unknown)
         } else {
-            resources.getString(R.string.photo_value_utc_offset, CaptureTimeFormat.utcOffset(offset)) +
-                (summary.utcOffsetSource?.let { " · " + string(it.labelRes) } ?: "")
+            resources.getString(R.string.photo_value_utc_offset, CaptureTimeFormat.utcOffset(offset))
         }
-        return "${CaptureTimeFormat.date(local, locale)}, ${CaptureTimeFormat.time(local, locale)}\n$zone"
+        return DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM).withLocale(locale).format(local) + "\n" + zone
     }
 
     private fun privacy(report: MetadataReport, redact: Boolean): PdfPrivacy {
@@ -255,7 +253,10 @@ class PdfSectionBuilder(
             val message = if (report.locationStatus == LocationStatus.Redacted) R.string.photo_location_redacted else R.string.photo_location_absent
             return PdfLocationBlock(title, null, null, emptyList(), PdfMap.None, string(message))
         }
+        val coordinates = LocationFormat.decimalDegrees(location.latitude, location.longitude)
         val facts = listOfNotNull(
+            // Always listed, map or not, so the block is the same size either way.
+            PdfFact(string(R.string.map_coordinates), coordinates, mono = true),
             location.altitudeMeters?.let { meters ->
                 val value = LocationFormat.altitudeMeters(meters)
                 PdfFact(
@@ -279,7 +280,7 @@ class PdfSectionBuilder(
         }
         return PdfLocationBlock(
             title = title,
-            coordinates = LocationFormat.decimalDegrees(location.latitude, location.longitude),
+            coordinates = coordinates,
             coordinatesDms = LocationFormat.degreesMinutesSeconds(location.latitude, location.longitude),
             facts = facts,
             map = map,
@@ -292,14 +293,6 @@ class PdfSectionBuilder(
     private fun date(day: LocalDate): String = DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM).withLocale(locale).format(day)
 
     private fun string(id: Int): String = resources.getString(id)
-
-    private val OffsetSource.labelRes: Int
-        get() = when (this) {
-            OffsetSource.ExifOffsetTime -> R.string.photo_offset_from_exif
-            OffsetSource.Xmp -> R.string.photo_offset_from_xmp
-            OffsetSource.GpsTimestamp -> R.string.photo_offset_from_gps
-            OffsetSource.MakerNote -> R.string.photo_offset_from_makernote
-        }
 
     private companion object {
         const val MAX_FINDING_TAGS = 6
