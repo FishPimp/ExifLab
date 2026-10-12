@@ -9,6 +9,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.withClip
 import io.github.fishpimp.exiflab.designsystem.R as DesignR
 
 /**
@@ -85,20 +86,19 @@ class PdfPainter(private val fonts: PdfFonts, private val palette: PdfPalette) :
     private fun drawImage(canvas: Canvas, op: PdfOp.Image, bitmap: Bitmap?) {
         val box = RectF(op.left, op.top, op.right, op.bottom)
         val clip = Path().apply { addRoundRect(box, op.radius, op.radius, Path.Direction.CW) }
-        canvas.save()
-        canvas.clipPath(clip)
-        fill.color = palette.argb(op.placeholder)
-        canvas.drawRect(box, fill)
-        if (bitmap != null && bitmap.width > 0 && bitmap.height > 0) {
-            // Fit inside the box, keeping the aspect ratio, centered.
-            val scale = minOf(box.width() / bitmap.width, box.height() / bitmap.height)
-            val width = bitmap.width * scale
-            val height = bitmap.height * scale
-            val left = box.left + (box.width() - width) / 2f
-            val top = box.top + (box.height() - height) / 2f
-            canvas.drawBitmap(bitmap, Rect(0, 0, bitmap.width, bitmap.height), RectF(left, top, left + width, top + height), imagePaint)
+        canvas.withClip(clip) {
+            fill.color = palette.argb(op.placeholder)
+            drawRect(box, fill)
+            if (bitmap != null && bitmap.width > 0 && bitmap.height > 0) {
+                // Fit inside the box, keeping the aspect ratio, centered.
+                val scale = minOf(box.width() / bitmap.width, box.height() / bitmap.height)
+                val width = bitmap.width * scale
+                val height = bitmap.height * scale
+                val left = box.left + (box.width() - width) / 2f
+                val top = box.top + (box.height() - height) / 2f
+                drawBitmap(bitmap, Rect(0, 0, bitmap.width, bitmap.height), RectF(left, top, left + width, top + height), imagePaint)
+            }
         }
-        canvas.restore()
     }
 
     private fun paint(style: PdfTextStyle): Paint = paints.getOrPut(style) {
