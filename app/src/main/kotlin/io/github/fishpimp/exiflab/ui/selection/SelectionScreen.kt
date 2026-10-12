@@ -38,6 +38,8 @@ import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.ui.components.PhotoGridCells
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.navigation.Route
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
+import io.github.fishpimp.exiflab.ui.shareclean.shareCleanViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +63,7 @@ fun SelectionScreen(
     val currentOnBatchEdit by rememberUpdatedState(onBatchEdit)
     LaunchedEffect(viewModel) { viewModel.batchEditRequests.collect { currentOnBatchEdit(it) } }
     BackHandler(enabled = selection.active) { viewModel.selectionActions.onExit() }
+    val shareClean = shareCleanViewModel()
     SelectionContent(
         refs = refs,
         onBack = onBack,
@@ -68,8 +71,10 @@ fun SelectionScreen(
         selection = selection,
         selectionActions = viewModel.selectionActions,
         onBatchAction = viewModel::startBatch,
+        onShareClean = { shareClean.open(selection.selectedIn(refs)) },
         modifier = modifier,
     )
+    ShareCleanSheetHost(shareClean)
 }
 
 /** Stateless photo grid of a selection, rendered directly by screenshot tests. */
@@ -82,6 +87,7 @@ fun SelectionContent(
     selection: PhotoSelection = PhotoSelection(),
     selectionActions: SelectionActions = SelectionActions(),
     onBatchAction: (BatchKind) -> Unit = {},
+    onShareClean: (() -> Unit)? = null,
 ) {
     val title = pluralStringResource(R.plurals.photo_count, refs.size, refs.size)
     ScreenScaffold(
@@ -122,6 +128,7 @@ fun SelectionContent(
                 enabled = selection.count > 0,
                 onAction = onBatchAction,
                 modifier = Modifier.align(Alignment.BottomCenter),
+                onShareClean = onShareClean,
             )
         }
     }

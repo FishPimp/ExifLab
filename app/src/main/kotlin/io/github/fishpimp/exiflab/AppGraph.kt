@@ -29,6 +29,11 @@ import io.github.fishpimp.exiflab.data.save.ContentResolverDocuments
 import io.github.fishpimp.exiflab.data.save.PhotoSaver
 import io.github.fishpimp.exiflab.data.save.SavedEditNotices
 import io.github.fishpimp.exiflab.data.save.WriteEngine
+import io.github.fishpimp.exiflab.data.shareclean.ShareCleanChoices
+import io.github.fishpimp.exiflab.data.shareclean.ShareCleanPreferences
+import io.github.fishpimp.exiflab.data.shareclean.ShareCleaner
+import io.github.fishpimp.exiflab.data.shareclean.ShareCleaning
+import io.github.fishpimp.exiflab.data.shareclean.SharedFilesStore
 import io.github.fishpimp.exiflab.data.settings.AppLanguage
 import io.github.fishpimp.exiflab.data.settings.SettingsRepository
 import io.github.fishpimp.exiflab.data.store.JsonListStore
@@ -36,6 +41,7 @@ import io.github.fishpimp.exiflab.data.store.libraryPreferences
 import io.github.fishpimp.exiflab.metadata.Metadata
 import io.github.fishpimp.exiflab.metadata.MetadataReader
 import io.github.fishpimp.exiflab.metadata.edit.Editing
+import io.github.fishpimp.exiflab.metadata.write.MetadataWriting
 import io.github.fishpimp.exiflab.thumbnails.photoImageLoader
 import io.github.fishpimp.exiflab.ui.edit.EditSaving
 import io.github.fishpimp.exiflab.ui.edit.PhotoSaverEditSaving
@@ -96,6 +102,26 @@ class AppGraph(context: Context) {
 
     /** Parses photo metadata. Stateless and thread-safe; blocking, so call it off the main thread. */
     val metadataReader: MetadataReader get() = Metadata.reader
+
+    /** Cleaned copies waiting to be shared, in the app's cache only. */
+    val sharedFilesStore: SharedFilesStore by lazy {
+        SharedFilesStore(appContext.cacheDir.resolve(SharedFilesStore.DIRECTORY_NAME))
+    }
+
+    /** The last Share clean preset. */
+    val shareCleanChoices: ShareCleanChoices by lazy { ShareCleanPreferences(appContext) }
+
+    /** Makes verified, cleaned copies of photos for sharing; see [ShareCleaner]. */
+    val shareCleaner: ShareCleaning by lazy {
+        ShareCleaner(
+            open = photoRepository::imageSource,
+            reader = { metadataReader },
+            planner = { Editing.planner },
+            writer = { MetadataWriting.writer },
+            previews = { Metadata.previewExtractor },
+            store = sharedFilesStore,
+        )
+    }
 
     val folderRepository: FolderRepository by lazy {
         FolderRepository(
@@ -185,11 +211,13 @@ class AppGraph(context: Context) {
     }
 
     /**
-     * Start-up maintenance, off the main thread: resolves saves a crash interrupted, resumes batch
-     * jobs that were cut short, then prunes backups. Skipped entirely while nothing was ever saved,
-     * so a fresh start opens no database.
+     * Start-up maintenance, off the main thread: deletes shared copies older than a day, resolves
+     * saves a crash interrupted, resumes batch jobs that were cut short, then prunes backups. The
+     * save maintenance is skipped while nothing was ever saved, so a fresh start opens no database.
      */
     fun startMaintenance() {
+        // Shared copies older than a day have been picked up by now.
+        appScope.launch(Dispatchers.IO) { sharedFilesStore.deleteOlderThan() }
         appScope.launch(Dispatchers.IO) {
             val hasHistory = appContext.getDatabasePath(EditHistoryDatabase.NAME).exists()
             val hasBackups = appContext.filesDir.resolve(BackupStore.DIRECTORY_NAME).exists()

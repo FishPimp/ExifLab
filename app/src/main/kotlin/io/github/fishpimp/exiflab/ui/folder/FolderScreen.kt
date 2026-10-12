@@ -57,6 +57,8 @@ import io.github.fishpimp.exiflab.ui.selection.SelectionBarActions
 import io.github.fishpimp.exiflab.ui.selection.SelectionBottomPadding
 import io.github.fishpimp.exiflab.ui.selection.dragToSelect
 import io.github.fishpimp.exiflab.ui.selection.selectionTitle
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
+import io.github.fishpimp.exiflab.ui.shareclean.shareCleanViewModel
 
 /**
  * Browses one folder of a granted tree: subfolders first, then photos newest first. Long press
@@ -77,6 +79,7 @@ fun FolderScreen(
     val currentOnBatchEdit by rememberUpdatedState(onBatchEdit)
     LaunchedEffect(viewModel) { viewModel.batchEditRequests.collect { currentOnBatchEdit(it) } }
     BackHandler(enabled = selection.active) { viewModel.selectionActions.onExit() }
+    val shareClean = shareCleanViewModel()
     FolderContent(
         title = route.title,
         state = state,
@@ -86,8 +89,13 @@ fun FolderScreen(
         selection = selection,
         selectionActions = viewModel.selectionActions,
         onBatchAction = viewModel::startBatch,
+        onShareClean = {
+            val photos = (state as? FolderUiState.Loaded)?.listing?.photos.orEmpty()
+            shareClean.open(selection.selectedIn(photos))
+        },
         modifier = modifier,
     )
+    ShareCleanSheetHost(shareClean)
 }
 
 /** Stateless folder layout, rendered directly by screenshot tests. */
@@ -102,6 +110,7 @@ fun FolderContent(
     selection: PhotoSelection = PhotoSelection(),
     selectionActions: SelectionActions = SelectionActions(),
     onBatchAction: (BatchKind) -> Unit = {},
+    onShareClean: (() -> Unit)? = null,
 ) {
     val listing = (state as? FolderUiState.Loaded)?.listing
     val hasPhotos = listing?.photos?.isNotEmpty() == true
@@ -137,6 +146,7 @@ fun FolderContent(
                 enabled = selection.count > 0,
                 onAction = onBatchAction,
                 modifier = Modifier.align(Alignment.BottomCenter),
+                onShareClean = onShareClean,
             )
         }
     }

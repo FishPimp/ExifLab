@@ -64,6 +64,9 @@ import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
 import io.github.fishpimp.exiflab.ui.components.messageRes
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanHomeCard
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
+import io.github.fishpimp.exiflab.ui.shareclean.shareCleanViewModel
 import kotlinx.coroutines.launch
 
 private val PagePadding = 20.dp
@@ -98,6 +101,10 @@ fun HomeScreen(
     val openFiles = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments(),
     ) { uris -> viewModel.open(uris, PhotoOrigin.Document) }
+    val shareClean = shareCleanViewModel()
+    val pickForShareClean = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(MAX_PHOTOS_PER_OPEN),
+    ) { uris -> shareClean.openUris(uris) }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -134,6 +141,13 @@ fun HomeScreen(
         onOpenBatchJob = onOpenBatchJob,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
+        onShareClean = {
+            launchPicker { pickForShareClean.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+        },
+    )
+    ShareCleanSheetHost(
+        viewModel = shareClean,
+        onOpenFailed = { error -> scope.launch { snackbarHostState.showSnackbar(resources.getString(error.messageRes)) } },
     )
 }
 
@@ -151,6 +165,7 @@ fun HomeContent(
     activeBatches: List<ActiveBatch> = emptyList(),
     onOpenBatchJob: (String) -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    onShareClean: () -> Unit = {},
 ) {
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -171,6 +186,9 @@ fun HomeContent(
                         enabled = !isOpening,
                         modifier = Modifier.padding(horizontal = PagePadding),
                     )
+                }
+                item {
+                    ShareCleanHomeCard(onClick = onShareClean, enabled = !isOpening, modifier = Modifier.padding(horizontal = PagePadding))
                 }
                 items(activeBatches, key = { "batch-${it.id}" }) { batch ->
                     ActiveBatchCard(batch, onClick = { onOpenBatchJob(batch.id) }, modifier = Modifier.padding(horizontal = PagePadding))
