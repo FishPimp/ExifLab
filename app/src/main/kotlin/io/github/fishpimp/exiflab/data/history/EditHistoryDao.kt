@@ -30,6 +30,10 @@ interface EditHistoryDao {
     @Query("SELECT * FROM edit_records WHERE batchId = :batchId ORDER BY createdAt, id")
     suspend fun recordsInBatch(batchId: String): List<EditRecord>
 
+    /** The newest record of [photoUri] in [batchId]; settles a batch item a crash interrupted. */
+    @Query("SELECT * FROM edit_records WHERE batchId = :batchId AND photoUri = :photoUri ORDER BY createdAt DESC, id DESC LIMIT 1")
+    suspend fun latestRecordInBatch(batchId: String, photoUri: String): EditRecord?
+
     @Query("SELECT * FROM edit_records WHERE state = 'Pending' ORDER BY createdAt")
     suspend fun pendingRecords(): List<EditRecord>
 
@@ -69,6 +73,10 @@ interface EditHistoryDao {
 
     @Query("UPDATE edit_batches SET failed = failed + 1 WHERE id = :batchId")
     suspend fun countFailed(batchId: String)
+
+    /** Takes back one failure, for a photo an interrupted batch writes again. */
+    @Query("UPDATE edit_batches SET failed = failed - 1 WHERE id = :batchId AND failed > 0")
+    suspend fun uncountFailed(batchId: String)
 
     @Query("UPDATE edit_batches SET cancelled = cancelled + :count WHERE id = :batchId")
     suspend fun countCancelled(batchId: String, count: Int)

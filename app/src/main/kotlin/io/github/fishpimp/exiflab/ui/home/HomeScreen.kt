@@ -20,12 +20,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -43,6 +47,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -52,6 +57,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.data.batch.ActiveBatch
 import io.github.fishpimp.exiflab.data.photos.MAX_PHOTOS_PER_OPEN
 import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
@@ -74,10 +80,12 @@ fun HomeScreen(
     onOpenPhotos: (List<PhotoRef>) -> Unit,
     onBrowseFolders: () -> Unit,
     onOpenPrivacy: () -> Unit,
+    onOpenBatchJob: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HomeViewModel = viewModel(factory = HomeViewModel.Factory),
 ) {
     val recents by viewModel.recents.collectAsStateWithLifecycle()
+    val activeBatches by viewModel.activeBatches.collectAsStateWithLifecycle()
     val isOpening by viewModel.isOpening.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -122,6 +130,8 @@ fun HomeScreen(
         onBrowseFolders = onBrowseFolders,
         onOpenRecent = { onOpenPhotos(listOf(it)) },
         onOpenPrivacy = onOpenPrivacy,
+        activeBatches = activeBatches,
+        onOpenBatchJob = onOpenBatchJob,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
@@ -138,6 +148,8 @@ fun HomeContent(
     onOpenRecent: (PhotoRef) -> Unit,
     onOpenPrivacy: () -> Unit,
     modifier: Modifier = Modifier,
+    activeBatches: List<ActiveBatch> = emptyList(),
+    onOpenBatchJob: (String) -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     Surface(modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
@@ -160,6 +172,9 @@ fun HomeContent(
                         modifier = Modifier.padding(horizontal = PagePadding),
                     )
                 }
+                items(activeBatches, key = { "batch-${it.id}" }) { batch ->
+                    ActiveBatchCard(batch, onClick = { onOpenBatchJob(batch.id) }, modifier = Modifier.padding(horizontal = PagePadding))
+                }
                 if (recents.isNotEmpty()) {
                     item {
                         RecentPhotosRow(
@@ -170,6 +185,7 @@ fun HomeContent(
                         )
                     }
                 }
+                item { BatchHintCard(Modifier.padding(horizontal = PagePadding)) }
                 item { PrivacyCard(onClick = onOpenPrivacy, modifier = Modifier.padding(horizontal = PagePadding)) }
             }
             if (isOpening) {
@@ -200,6 +216,68 @@ private fun HomeHero(modifier: Modifier = Modifier) {
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onSurface,
         )
+    }
+}
+
+/** How to edit many photos at once: there is no separate entry; it starts from a selection. */
+@Composable
+private fun BatchHintCard(modifier: Modifier = Modifier) {
+    Surface(shape = MaterialTheme.shapes.extraLarge, color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = modifier.fillMaxWidth()) {
+        Row(
+            Modifier.padding(20.dp).semantics(mergeDescendants = true) {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            ShapeIcon(
+                icon = Icons.Rounded.Checklist,
+                shape = MaterialShapes.Clover4Leaf,
+                size = 56.dp,
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_batch_title), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    stringResource(R.string.home_batch_body),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+/** A batch edit running in the background: its progress, and a way back to it. */
+@Composable
+private fun ActiveBatchCard(batch: ActiveBatch, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val progress = if (batch.total > 0) batch.done.toFloat() / batch.total else 0f
+    Card(
+        onClick = onClick,
+        shape = MaterialTheme.shapes.extraLarge,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        ),
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        Row(
+            Modifier.padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            CircularWavyProgressIndicator(progress = { progress }, modifier = Modifier.size(56.dp))
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.home_batch_running), style = MaterialTheme.typography.titleMedium)
+                Text(
+                    listOf(
+                        batch.title,
+                        pluralStringResource(R.plurals.batch_notification_progress, batch.total, batch.done, batch.total),
+                    ).filter { it.isNotBlank() }.joinToString(" · "),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+            Icon(Icons.AutoMirrored.Rounded.ArrowForward, contentDescription = null)
+        }
     }
 }
 

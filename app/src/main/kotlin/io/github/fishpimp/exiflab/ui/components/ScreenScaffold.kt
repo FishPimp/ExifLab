@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,6 +21,9 @@ import io.github.fishpimp.exiflab.R
 /**
  * Standard screen frame: a large expressive top app bar that collapses on scroll, with an
  * optional back button. The bar's title is announced as the screen title by TalkBack.
+ *
+ * @param navigationIcon replaces the back arrow, e.g. with a close icon in selection mode.
+ * @param navigationLabel the TalkBack label of [navigationIcon]; "Back" by default.
  */
 @Composable
 fun ScreenScaffold(
@@ -27,6 +31,8 @@ fun ScreenScaffold(
     modifier: Modifier = Modifier,
     subtitle: String? = null,
     onBack: (() -> Unit)? = null,
+    navigationIcon: ImageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+    navigationLabel: String? = null,
     actions: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit = {},
     floatingActionButton: @Composable () -> Unit = {},
     snackbarHost: @Composable () -> Unit = {},
@@ -42,7 +48,7 @@ fun ScreenScaffold(
                 navigationIcon = {
                     if (onBack != null) {
                         IconButton(onClick = onBack) {
-                            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = stringResource(R.string.action_back))
+                            Icon(navigationIcon, contentDescription = navigationLabel ?: stringResource(R.string.action_back))
                         }
                     }
                 },

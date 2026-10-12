@@ -1,5 +1,6 @@
 package io.github.fishpimp.exiflab.ui.folder
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,9 +12,12 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.HideImage
 import androidx.compose.material3.LoadingIndicator
@@ -21,7 +25,9 @@ import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
@@ -33,34 +39,53 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.folders.FolderListing
 import io.github.fishpimp.exiflab.data.folders.Subfolder
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.ui.components.PhotoGridCells
-import io.github.fishpimp.exiflab.ui.components.PhotoTile
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
 import io.github.fishpimp.exiflab.ui.navigation.Route
+import io.github.fishpimp.exiflab.ui.selection.BatchActionsToolbar
+import io.github.fishpimp.exiflab.ui.selection.PhotoSelection
+import io.github.fishpimp.exiflab.ui.selection.SelectablePhotoTile
+import io.github.fishpimp.exiflab.ui.selection.SelectionActions
+import io.github.fishpimp.exiflab.ui.selection.SelectionBarActions
+import io.github.fishpimp.exiflab.ui.selection.SelectionBottomPadding
+import io.github.fishpimp.exiflab.ui.selection.dragToSelect
+import io.github.fishpimp.exiflab.ui.selection.selectionTitle
 
-/** Browses one folder of a granted tree: subfolders first, then photos newest first. */
+/**
+ * Browses one folder of a granted tree: subfolders first, then photos newest first. Long press
+ * (or "Select") starts multi-select, with batch actions in a floating toolbar.
+ */
 @Composable
 fun FolderScreen(
     route: Route.Folder,
     onBack: () -> Unit,
     onOpenFolder: (Route.Folder) -> Unit,
     onOpenPhoto: (PhotoRef) -> Unit,
+    onBatchEdit: (Route.BatchEdit) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FolderViewModel = viewModel(factory = FolderViewModel.factory(route)),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val selection by viewModel.selection.collectAsStateWithLifecycle()
+    val currentOnBatchEdit by rememberUpdatedState(onBatchEdit)
+    LaunchedEffect(viewModel) { viewModel.batchEditRequests.collect { currentOnBatchEdit(it) } }
+    BackHandler(enabled = selection.active) { viewModel.selectionActions.onExit() }
     FolderContent(
         title = route.title,
         state = state,
         onBack = onBack,
         onOpenSubfolder = { onOpenFolder(Route.Folder(route.folderTreeUri, it.documentUri, it.name)) },
         onOpenPhoto = onOpenPhoto,
+        selection = selection,
+        selectionActions = viewModel.selectionActions,
+        onBatchAction = viewModel::startBatch,
         modifier = modifier,
     )
 }
@@ -74,12 +99,23 @@ fun FolderContent(
     onOpenSubfolder: (Subfolder) -> Unit,
     onOpenPhoto: (PhotoRef) -> Unit,
     modifier: Modifier = Modifier,
+    selection: PhotoSelection = PhotoSelection(),
+    selectionActions: SelectionActions = SelectionActions(),
+    onBatchAction: (BatchKind) -> Unit = {},
 ) {
     val listing = (state as? FolderUiState.Loaded)?.listing
+    val hasPhotos = listing?.photos?.isNotEmpty() == true
     ScreenScaffold(
-        title = title,
-        subtitle = listing?.let { folderSummary(it) },
-        onBack = onBack,
+        title = if (selection.active) selectionTitle(selection) else title,
+        subtitle = if (selection.active) title else listing?.let { folderSummary(it) },
+        onBack = if (selection.active) selectionActions.onExit else onBack,
+        navigationIcon = if (selection.active) Icons.Rounded.Close else Icons.AutoMirrored.Rounded.ArrowBack,
+        navigationLabel = if (selection.active) stringResource(R.string.selection_exit) else null,
+        actions = {
+            if (hasPhotos) {
+                SelectionBarActions(selection, selectionActions, total = listing.photos.size, enterSelectsAll = false)
+            }
+        },
         modifier = modifier,
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
@@ -94,20 +130,37 @@ fun FolderContent(
                         body = stringResource(R.string.folder_empty_body),
                     )
                 }
-                else -> FolderGrid(listing, onOpenSubfolder, onOpenPhoto)
+                else -> FolderGrid(listing, onOpenSubfolder, onOpenPhoto, selection, selectionActions)
             }
+            BatchActionsToolbar(
+                visible = selection.active,
+                enabled = selection.count > 0,
+                onAction = onBatchAction,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
 }
 
 @Composable
-private fun FolderGrid(listing: FolderListing, onOpenSubfolder: (Subfolder) -> Unit, onOpenPhoto: (PhotoRef) -> Unit) {
+private fun FolderGrid(
+    listing: FolderListing,
+    onOpenSubfolder: (Subfolder) -> Unit,
+    onOpenPhoto: (PhotoRef) -> Unit,
+    selection: PhotoSelection,
+    actions: SelectionActions,
+) {
     val showHeaders = listing.subfolders.isNotEmpty() && listing.photos.isNotEmpty()
     val wideFolders = isLargeFontScale()
+    val gridState = rememberLazyGridState()
     LazyVerticalGrid(
         columns = PhotoGridCells,
-        modifier = Modifier.widthIn(max = 1200.dp).fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+        state = gridState,
+        modifier = Modifier
+            .widthIn(max = 1200.dp)
+            .fillMaxSize()
+            .dragToSelect(gridState, listing.photos, selection, actions),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = if (selection.active) SelectionBottomPadding else 24.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
@@ -122,7 +175,14 @@ private fun FolderGrid(listing: FolderListing, onOpenSubfolder: (Subfolder) -> U
         }
         if (showHeaders) header("header-photos", R.string.folder_section_photos)
         items(listing.photos, key = { it.uri }, contentType = { "photo" }) { ref ->
-            PhotoTile(ref = ref, onClick = { onOpenPhoto(ref) })
+            SelectablePhotoTile(
+                ref = ref,
+                selectionActive = selection.active,
+                selected = selection.isSelected(ref.uri),
+                onOpen = { onOpenPhoto(ref) },
+                onBegin = { actions.onBegin(ref.uri) },
+                onToggle = { actions.onToggle(ref.uri) },
+            )
         }
         if (listing.isLoading) {
             item(key = "loading-more", span = { GridItemSpan(maxLineSpan) }) {

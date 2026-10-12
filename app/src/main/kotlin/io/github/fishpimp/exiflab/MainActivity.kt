@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
             val settings by settingsState.collectAsStateWithLifecycle()
             val awaitingShare by viewModel.awaitingLaunchShare.collectAsStateWithLifecycle()
             val externalOpen by viewModel.pendingOpen.collectAsStateWithLifecycle()
+            val batchJob by viewModel.pendingBatchJob.collectAsStateWithLifecycle()
             val current = settings ?: return@setContent
             if (awaitingShare) return@setContent
             ExifLabTheme(
@@ -85,6 +86,8 @@ class MainActivity : AppCompatActivity() {
                     externalOpen = externalOpen,
                     onExternalOpenHandled = viewModel::onExternalOpenHandled,
                     onExitSharedPhotos = ::finish,
+                    openBatchJob = batchJob,
+                    onBatchJobOpened = viewModel::onBatchJobOpened,
                 )
             }
         }

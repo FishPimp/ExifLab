@@ -3,6 +3,13 @@ package io.github.fishpimp.exiflab
 import android.content.Context
 import coil3.ImageLoader
 import io.github.fishpimp.exiflab.data.backup.BackupManager
+import io.github.fishpimp.exiflab.data.batch.BatchJobDao
+import io.github.fishpimp.exiflab.data.batch.BatchJobRepository
+import io.github.fishpimp.exiflab.data.batch.BatchRunner
+import io.github.fishpimp.exiflab.data.batch.BatchScheduling
+import io.github.fishpimp.exiflab.data.batch.DocumentBatchDestinations
+import io.github.fishpimp.exiflab.data.batch.PhotoSaverBatchSaving
+import io.github.fishpimp.exiflab.data.batch.WorkManagerBatchScheduler
 import io.github.fishpimp.exiflab.data.backup.BackupStore
 import io.github.fishpimp.exiflab.data.folders.FolderRepository
 import io.github.fishpimp.exiflab.data.folders.GrantedFolder
@@ -28,6 +35,7 @@ import io.github.fishpimp.exiflab.data.store.JsonListStore
 import io.github.fishpimp.exiflab.data.store.libraryPreferences
 import io.github.fishpimp.exiflab.metadata.Metadata
 import io.github.fishpimp.exiflab.metadata.MetadataReader
+import io.github.fishpimp.exiflab.metadata.edit.Editing
 import io.github.fishpimp.exiflab.thumbnails.photoImageLoader
 import io.github.fishpimp.exiflab.ui.edit.EditSaving
 import io.github.fishpimp.exiflab.ui.edit.PhotoSaverEditSaving
@@ -39,6 +47,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 
 /**
@@ -138,6 +147,27 @@ class AppGraph(context: Context) {
     /** The editor's view of the save pipeline. */
     val editSaving: EditSaving by lazy { PhotoSaverEditSaving(saver = { photoSaver }, engine = { writeEngine }) }
 
+    /** Batch jobs and their per-photo status. */
+    val batchJobDao: BatchJobDao get() = editHistoryDatabase.batchJobs()
+
+    private val batchScheduler: BatchScheduling by lazy { WorkManagerBatchScheduler(appContext) }
+
+    /** Drafts, starting, cancelling and observing batch edits. */
+    val batchJobs: BatchJobRepository by lazy { BatchJobRepository(dao = { batchJobDao }, scheduler = batchScheduler) }
+
+    /** What the background worker runs; see [BatchRunner]. */
+    val batchRunner: BatchRunner by lazy {
+        BatchRunner(
+            jobs = batchJobDao,
+            saving = PhotoSaverBatchSaving(saver = { photoSaver }, engine = { writeEngine }, history = { editHistoryDao }),
+            newDestinations = {
+                DocumentBatchDestinations(appContext.contentResolver, ContentResolverDocuments(appContext.contentResolver))
+            },
+            readReport = { ref -> withContext(Dispatchers.IO) { metadataReader.read(photoRepository.imageSource(ref)) } },
+            planner = { Editing.planner },
+        )
+    }
+
     /** Saves the editor finished, waiting for the photo's viewer to reload and offer Undo. */
     val savedEditNotices: SavedEditNotices by lazy { SavedEditNotices() }
 
@@ -155,8 +185,9 @@ class AppGraph(context: Context) {
     }
 
     /**
-     * Start-up maintenance, off the main thread: resolves saves a crash interrupted, then prunes
-     * backups. Skipped entirely while nothing was ever saved, so a fresh start opens no database.
+     * Start-up maintenance, off the main thread: resolves saves a crash interrupted, resumes batch
+     * jobs that were cut short, then prunes backups. Skipped entirely while nothing was ever saved,
+     * so a fresh start opens no database.
      */
     fun startMaintenance() {
         appScope.launch(Dispatchers.IO) {
@@ -164,6 +195,7 @@ class AppGraph(context: Context) {
             val hasBackups = appContext.filesDir.resolve(BackupStore.DIRECTORY_NAME).exists()
             if (!hasHistory && !hasBackups) return@launch
             runCatching { photoSaver.recoverInterrupted() }
+            if (hasHistory) runCatching { batchJobs.resumeUnfinished() }
             runCatching { backupManager.prune() }
         }
     }

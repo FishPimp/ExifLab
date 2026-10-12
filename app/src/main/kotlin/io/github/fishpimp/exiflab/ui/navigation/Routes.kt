@@ -13,6 +13,7 @@ import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation3.runtime.NavKey
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import kotlinx.serialization.Serializable
 
@@ -51,6 +52,15 @@ sealed interface Route : NavKey {
      */
     /** One edit from History: its changes, backup and restore actions. */
     @Serializable data class HistoryDetail(val recordId: String) : Route
+
+    /**
+     * The batch editor for photos stored as the draft job [jobId] (selections can hold thousands
+     * of photos, so they live in Room instead of the back stack), opened on [kind].
+     */
+    @Serializable data class BatchEdit(val jobId: String, val kind: BatchKind) : Route
+
+    /** A running batch job's progress, and its summary once it ends. */
+    @Serializable data class BatchRun(val jobId: String) : Route
 
     @Serializable data class MapView(val latitude: Double, val longitude: Double, val title: String? = null) : Route
 }

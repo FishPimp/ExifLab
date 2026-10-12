@@ -24,6 +24,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import io.github.fishpimp.exiflab.appGraph
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import io.github.fishpimp.exiflab.ui.batch.BatchEditScreen
+import io.github.fishpimp.exiflab.ui.batch.BatchRunScreen
 import io.github.fishpimp.exiflab.ui.edit.EditScreen
 import io.github.fishpimp.exiflab.ui.folder.FolderScreen
 import io.github.fishpimp.exiflab.ui.history.HistoryDetailScreen
@@ -49,12 +51,16 @@ import io.github.fishpimp.exiflab.ui.settings.SettingsScreen
  *   initial screen, so a share opens directly on the photo; later ones are pushed on Home.
  * @param onExternalOpenHandled called once [externalOpen] is on the back stack.
  * @param onExitSharedPhotos called on back from shared photos, to return to the sharing app.
+ * @param openBatchJob a batch job to show (its notification was tapped); pushed on Home.
+ * @param onBatchJobOpened called once [openBatchJob] is on the back stack.
  */
 @Composable
 fun ExifLabApp(
     externalOpen: ExternalOpen? = null,
     onExternalOpenHandled: (ExternalOpen) -> Unit = {},
     onExitSharedPhotos: () -> Unit = {},
+    openBatchJob: String? = null,
+    onBatchJobOpened: (String) -> Unit = {},
 ) {
     var currentTab by rememberSaveable { mutableStateOf(TopLevelDestination.Home) }
     // Only the first composition's request seeds the stacks; restored stacks ignore it.
@@ -88,6 +94,21 @@ fun ExifLabApp(
         backStacks.getValue(currentTab).add(route)
     }
 
+    /** Replaces the screen on top, e.g. the batch editor with the job it started. */
+    fun replaceTop(route: Route) {
+        val stack = backStacks.getValue(currentTab)
+        if (stack.size > 1) stack.removeAt(stack.lastIndex)
+        stack.add(route)
+    }
+
+    LaunchedEffect(openBatchJob) {
+        val jobId = openBatchJob ?: return@LaunchedEffect
+        val home = backStacks.getValue(TopLevelDestination.Home)
+        if ((home.lastOrNull() as? Route.BatchRun)?.jobId != jobId) home.add(Route.BatchRun(jobId))
+        currentTab = TopLevelDestination.Home
+        onBatchJobOpened(jobId)
+    }
+
     fun openPhoto(ref: PhotoRef) = navigate(Route.Photo(ref))
 
     fun back() {
@@ -108,6 +129,7 @@ fun ExifLabApp(
                 onOpenPhotos = { refs -> navigate(routeFor(refs)) },
                 onBrowseFolders = { currentTab = TopLevelDestination.Library },
                 onOpenPrivacy = { navigate(Route.Privacy) },
+                onOpenBatchJob = { navigate(Route.BatchRun(it)) },
             )
         }
         entry<Route.Library> { LibraryScreen(onOpenFolder = ::navigate) }
@@ -131,10 +153,22 @@ fun ExifLabApp(
         entry<Route.Privacy> { PrivacyScreen(onBack = ::back) }
         entry<Route.Licenses> { LicensesScreen(onBack = ::back) }
         entry<Route.Folder> { route ->
-            FolderScreen(route = route, onBack = ::back, onOpenFolder = ::navigate, onOpenPhoto = ::openPhoto)
+            FolderScreen(route = route, onBack = ::back, onOpenFolder = ::navigate, onOpenPhoto = ::openPhoto, onBatchEdit = ::navigate)
         }
         entry<Route.Selection> { route ->
-            SelectionScreen(refs = route.refs, onBack = ::back, onOpenPhoto = ::openPhoto)
+            SelectionScreen(refs = route.refs, onBack = ::back, onOpenPhoto = ::openPhoto, onBatchEdit = ::navigate)
+        }
+        entry<Route.BatchEdit> { route ->
+            BatchEditScreen(
+                jobId = route.jobId,
+                kind = route.kind,
+                onBack = ::back,
+                // The editor's page is replaced by the running job, so back returns to the photos.
+                onStarted = { replaceTop(Route.BatchRun(it)) },
+            )
+        }
+        entry<Route.BatchRun> { route ->
+            BatchRunScreen(jobId = route.jobId, onBack = ::back, onDone = ::back, onOpenPhoto = ::openPhoto)
         }
         entry<Route.MapView> { route -> MapViewScreen(route = route, onBack = ::back) }
         entry<Route.Photo> { route ->

@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.AP
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import io.github.fishpimp.exiflab.data.batch.BatchNotifications
 import io.github.fishpimp.exiflab.data.photos.OpenResult
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
@@ -62,12 +63,26 @@ class MainViewModel(private val photoRepository: PhotoRepository) : ViewModel() 
     /** Handles an intent delivered to the running activity. */
     fun onNewIntent(intent: Intent) = handle(intent, isLaunch = false)
 
+    private val _pendingBatchJob = MutableStateFlow<String?>(null)
+
+    /** A batch job to show, from a tap on its notification. */
+    val pendingBatchJob: StateFlow<String?> = _pendingBatchJob
+
+    /** Called by the shell once the batch job [jobId] is on screen. */
+    fun onBatchJobOpened(jobId: String) {
+        _pendingBatchJob.compareAndSet(jobId, null)
+    }
+
     /** Called by the shell once [open] is on screen. */
     fun onExternalOpenHandled(open: ExternalOpen) {
         _pendingOpen.compareAndSet(open, null)
     }
 
     private fun handle(intent: Intent, isLaunch: Boolean) {
+        if (intent.action == BatchNotifications.ACTION_OPEN_BATCH) {
+            intent.getStringExtra(BatchNotifications.EXTRA_BATCH_JOB_ID)?.let { _pendingBatchJob.value = it }
+            return
+        }
         val uris = intent.sharedStreamUris()
         if (uris.isEmpty()) return
         inFlight.update { it + 1 }

@@ -694,4 +694,185 @@
     <string name="edit_failure_no_destination">Ingen plats valdes för sidofilen, så inget sparades.</string>
     <string name="edit_failure_no_plan">Det finns inget färdigt att spara än.</string>
     <string name="edit_failure_dismiss">Stäng</string>
+
+    <!-- Batch edits: notifications -->
+    <string name="batch_notification_channel">Batchredigeringar</string>
+    <string name="batch_notification_channel_description">Förlopp för batchredigeringar som körs i bakgrunden</string>
+    <plurals name="batch_notification_progress">
+        <item quantity="one">%1$d av %2$d foto</item>
+        <item quantity="other">%1$d av %2$d foton</item>
+    </plurals>
+    <string name="batch_notification_cancelling">Stoppar när de pågående fotona är klara</string>
+    <string name="batch_notification_finished">Batchredigeringen är klar</string>
+    <string name="batch_notification_cancelled">Batchredigeringen avbröts</string>
+    <string name="batch_cancel">Avbryt</string>
+    <plurals name="batch_count_written">
+        <item quantity="one">%d skriven</item>
+        <item quantity="other">%d skrivna</item>
+    </plurals>
+    <plurals name="batch_count_skipped">
+        <item quantity="one">%d överhoppad</item>
+        <item quantity="other">%d överhoppade</item>
+    </plurals>
+    <plurals name="batch_count_failed">
+        <item quantity="one">%d misslyckades</item>
+        <item quantity="other">%d misslyckades</item>
+    </plurals>
+
+    <!-- Multi-select in photo grids -->
+    <plurals name="selection_count">
+        <item quantity="one">%d markerad</item>
+        <item quantity="other">%d markerade</item>
+    </plurals>
+    <string name="selection_start">Markera foton</string>
+    <string name="selection_select">Markera</string>
+    <string name="selection_open">Öppna</string>
+    <string name="selection_select_all">Markera alla</string>
+    <string name="selection_clear">Avmarkera alla</string>
+    <string name="selection_exit">Sluta markera</string>
+    <string name="selection_state_selected">Markerad</string>
+    <string name="selection_state_not_selected">Inte markerad</string>
+
+    <!-- Batch edits: actions -->
+    <string name="batch_action_location">Ange plats</string>
+    <string name="batch_action_location_body">Ge alla foton samma plats</string>
+    <string name="batch_action_shift">Förskjut tid</string>
+    <string name="batch_action_shift_body">Flytta alla datum lika mycket tidigare eller senare</string>
+    <string name="batch_action_time_zone">Rätta tidszon</string>
+    <string name="batch_action_time_zone_body">För en kameraklocka som var inställd på fel tidszon</string>
+    <string name="batch_action_author">Ange fotograf och upphovsrätt</string>
+    <string name="batch_action_author_body">Sätt ditt namn och din upphovsrätt på alla foton</string>
+    <string name="batch_action_strip">Ta bort metadata</string>
+    <string name="batch_action_strip_body">Ta bort privata uppgifter innan du delar</string>
+
+    <!-- Batch edits: editor -->
+    <string name="batch_preview_button">Förhandsgranska ändringarna</string>
+    <string name="batch_location_none">Välj platsen som alla foton får</string>
+    <string name="batch_location_chosen">Alla foton får den här positionen</string>
+    <string name="batch_shift_sample">Förhandsvisningen visar %1$s. Alla foton flyttas lika mycket.</string>
+    <string name="batch_author_body">Sparas i EXIF, XMP och IPTC i alla foton.</string>
+    <string name="batch_author_keep">Lämna tomt för att behålla det varje foto har</string>
+    <string name="batch_strip_title">Vad som ska tas bort</string>
+    <string name="batch_strip_body">RAW-filer ändras aldrig, så de hoppas över.</string>
+    <string name="batch_strip_all">Allt utom orientering och färgprofil</string>
+    <string name="batch_strip_all_body">Tar bort all EXIF-, XMP- och IPTC-metadata. Orientering och färgprofil behålls eftersom de påverkar hur fotot ser ut.</string>
+    <string name="batch_strip_location">Plats</string>
+    <string name="batch_strip_location_body">GPS-position och ortnamn</string>
+    <string name="batch_strip_device_ids">Serienummer</string>
+    <string name="batch_strip_device_ids_body">Serienummer för kamera och objektiv samt unika bild-id:n, som kan koppla foton till en viss kamera</string>
+    <string name="batch_strip_names">Namn och upphovsrätt</string>
+    <string name="batch_strip_names_body">Fotograf, ägare, upphovsrätt och kontaktuppgifter</string>
+    <string name="batch_strip_people">Personer</string>
+    <string name="batch_strip_people_body">Ansiktsområden och namn på personer i fotot</string>
+    <string name="batch_strip_device_info">Kamera och program</string>
+    <string name="batch_strip_device_info_body">Märke och modell på kamera och objektiv, och apparna som redigerade fotot</string>
+    <string name="batch_strip_dates">Datum och tider</string>
+    <string name="batch_strip_dates_body">När fotot togs, digitaliserades och ändrades</string>
+    <string name="batch_strip_maker_notes">Tillverkarens anteckningar</string>
+    <string name="batch_strip_maker_notes_body">Kameratillverkarens egna data, som ofta innehåller serienummer</string>
+    <string name="batch_strip_thumbnail">Inbäddad miniatyr</string>
+    <string name="batch_strip_thumbnail_body">En liten förhandsbild som fortfarande kan visa delar som beskärdes bort</string>
+    <string name="batch_strip_edit_history">Redigeringshistorik</string>
+    <string name="batch_strip_edit_history_body">Redigeringssteg och dokument-id:n från redigeringsappar</string>
+    <string name="batch_missing_title">Den här batchen finns inte längre</string>
+    <string name="batch_missing_body">Den har redan startats eller så har urvalet gått ut. Markera fotona igen.</string>
+
+    <!-- Batch edits: preview -->
+    <string name="batch_preview_title">Förhandsgranskning</string>
+    <plurals name="batch_checking">
+        <item quantity="one">Kontrollerar fotot: %1$d av %2$d</item>
+        <item quantity="other">Kontrollerar fotona: %1$d av %2$d</item>
+    </plurals>
+    <string name="batch_routes_title">Så sparas fotona</string>
+    <plurals name="batch_route_in_place">
+        <item quantity="one">%d foto redigeras på plats</item>
+        <item quantity="other">%d foton redigeras på plats</item>
+    </plurals>
+    <string name="batch_route_in_place_body">Bara metadata skrivs om; bilddata förblir identiska byte för byte. Originalen säkerhetskopieras först.</string>
+    <plurals name="batch_route_sidecar">
+        <item quantity="one">%d foto får en XMP-sidofil</item>
+        <item quantity="other">%d foton får XMP-sidofiler</item>
+    </plurals>
+    <string name="batch_route_sidecar_body">RAW-filer och filtyper som ExifLab inte kan skriva om ändras aldrig. Ändringarna hamnar i en XMP-fil bredvid.</string>
+    <plurals name="batch_route_copy">
+        <item quantity="one">%d skrivskyddat foto sparas som kopia</item>
+        <item quantity="other">%d skrivskyddade foton sparas som kopior</item>
+    </plurals>
+    <string name="batch_route_copy_body">Kopiorna behåller originalnamnen och hamnar i mappen du valde. Originalen förblir som de är.</string>
+    <plurals name="batch_route_skipped">
+        <item quantity="one">%d foto hoppas över</item>
+        <item quantity="other">%d foton hoppas över</item>
+    </plurals>
+    <plurals name="batch_count_reason">
+        <item quantity="one">%1$d foto: %2$s</item>
+        <item quantity="other">%1$d foton: %2$s</item>
+    </plurals>
+    <string name="batch_folder_title">Mapp för kopior</string>
+    <plurals name="batch_folder_needed">
+        <item quantity="one">%d foto kan inte ändras där det ligger. Välj en mapp för en redigerad kopia, eller hoppa över det.</item>
+        <item quantity="other">%d foton kan inte ändras där de ligger. Välj en mapp för redigerade kopior, eller hoppa över dem.</item>
+    </plurals>
+    <string name="batch_folder_choose">Välj mapp</string>
+    <string name="batch_folder_change">Byt mapp</string>
+    <string name="batch_folder_skip">Hoppa över dem i stället</string>
+    <string name="batch_folder_chosen">Kopiorna hamnar i %1$s</string>
+    <string name="batch_folder_unnamed">den valda mappen</string>
+    <string name="batch_folder_skipping">Ingen mapp vald, så de här fotona hoppas över.</string>
+    <string name="batch_folder_unavailable">ExifLab kan inte spara kopior i den mappen. Välj en annan.</string>
+    <plurals name="batch_warning_no_date">
+        <item quantity="one">%d foto saknar fotodatum</item>
+        <item quantity="other">%d foton saknar fotodatum</item>
+    </plurals>
+    <plurals name="batch_warning_unreadable">
+        <item quantity="one">%d foto kan inte läsas och kommer att misslyckas</item>
+        <item quantity="other">%d foton kan inte läsas och kommer att misslyckas</item>
+    </plurals>
+    <string name="batch_sample_title">Exempel</string>
+    <string name="batch_sample_body">Ändringarna i %1$s</string>
+    <string name="batch_sample_waiting">Kontrollerar det första fotot</string>
+    <string name="batch_sample_none">Inget synligt ändras i de här fotona.</string>
+    <plurals name="batch_start">
+        <item quantity="one">Redigera %d foto</item>
+        <item quantity="other">Redigera %d foton</item>
+    </plurals>
+    <string name="batch_start_nothing">Inget att spara</string>
+    <string name="batch_start_failed">Batchen kunde inte startas.</string>
+
+    <!-- Batch edits: progress and summary -->
+    <string name="batch_run_title">Batchredigering</string>
+    <string name="batch_run_waiting">Startar snart</string>
+    <string name="batch_run_current">Skriver nu</string>
+    <string name="batch_run_background">Du kan lämna den här skärmen. Redigeringen fortsätter i bakgrunden, och inget blir någonsin halvskrivet.</string>
+    <string name="batch_run_missing_body">Den kan ha tagits bort. Ändringar den sparade finns i Historik.</string>
+    <string name="batch_summary_title">Batchredigeringen är klar</string>
+    <string name="batch_summary_cancelled_title">Batchredigeringen avbröts</string>
+    <plurals name="batch_summary_written">
+        <item quantity="one">%1$d av %2$d foto skrivet</item>
+        <item quantity="other">%1$d av %2$d foton skrivna</item>
+    </plurals>
+    <string name="batch_summary_history">Alla ändringar finns i Historik, där enskilda foton också kan återställas.</string>
+    <string name="batch_filter_all">Alla (%1$d)</string>
+    <string name="batch_filter_status">%1$s (%2$d)</string>
+    <string name="batch_restore_nothing">Inget att återställa</string>
+    <string name="batch_status_pending">Väntar</string>
+    <string name="batch_status_running">Skriver</string>
+    <string name="batch_status_saved">Sparad</string>
+    <string name="batch_status_sidecar">Sidofil</string>
+    <string name="batch_status_copy">Kopia</string>
+    <string name="batch_status_skipped">Överhoppad</string>
+    <string name="batch_status_failed">Misslyckades</string>
+    <string name="batch_reason_nothing">inget att ändra</string>
+    <string name="batch_reason_read_only">skrivskyddat och ingen mapp för kopior</string>
+    <string name="batch_reason_cannot_strip">metadata kan inte tas bort ur RAW och andra filer som bara får sidofiler</string>
+    <string name="batch_reason_unsupported">ExifLab kan inte skriva den här filtypen</string>
+    <string name="batch_reason_no_sidecar_place">ingen mapp för XMP-sidofilen</string>
+    <string name="batch_reason_cancelled">avbröts innan det var dess tur</string>
+    <string name="batch_reason_unreadable">fotot kunde inte läsas</string>
+    <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för det här fotot</string>
+    <string name="batch_reason_folder_unavailable">kopian kunde inte skapas i den valda mappen</string>
+
+    <!-- Home: batch edits -->
+    <string name="home_batch_title">Redigera många foton samtidigt</string>
+    <string name="home_batch_body">Öppna en mapp eller välj flera foton och håll sedan in ett foto för att markera fler. Ange plats, förskjut tider, lägg till ditt namn eller ta bort metadata för alla på en gång.</string>
+    <string name="home_batch_running">Batchredigering pågår</string>
 </resources>
