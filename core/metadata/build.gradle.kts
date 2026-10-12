@@ -21,6 +21,8 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.truth)
+    // Parses exported JSON in tests only; the exporter writes JSON by hand.
+    testImplementation(libs.kotlinx.serialization.json)
 }
 
 tasks.test {
