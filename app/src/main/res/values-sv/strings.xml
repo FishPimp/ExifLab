@@ -408,6 +408,97 @@
     <string name="licenses_section_libraries">Bibliotek och typsnitt</string>
     <string name="licenses_section_map">Kartdata och kartstilar</string>
 
+    <!-- Share clean -->
+    <string name="share_clean_action">Dela rensad</string>
+    <string name="share_clean_title">Dela rensad</string>
+    <string name="share_clean_and_share">Rensa och dela</string>
+    <string name="share_clean_presets_title">Vad som ska tas bort</string>
+    <string name="share_clean_preset_location">Bara plats</string>
+    <string name="share_clean_preset_location_body">GPS-position och ortnamn</string>
+    <string name="share_clean_preset_device">Plats och enhet</string>
+    <string name="share_clean_preset_device_body">Även serienummer, kamerauppgifter, tillverkarens anteckningar och miniatyren</string>
+    <string name="share_clean_preset_everything">Allt</string>
+    <string name="share_clean_preset_everything_body">All metadata utom orientering och färgprofil</string>
+    <string name="share_clean_preset_custom">Anpassat</string>
+    <string name="share_clean_preset_custom_body">Välj vad som ska tas bort</string>
+    <string name="share_clean_custom_empty">Markera minst en sorts metadata för att dela.</string>
+    <string name="share_clean_removes">Tar bort: %1$s</string>
+    <string name="share_clean_keeps">Behåller: %1$s</string>
+    <string name="share_clean_removes_each">Tar bort från varje bild, där det finns: %1$s</string>
+    <string name="share_clean_nothing">Inget att ta bort med det här valet. Kopian behåller bildens metadata.</string>
+    <string name="share_clean_checking">Kontrollerar bilden…</string>
+    <string name="share_clean_summary_unavailable">Bilden kunde inte kontrolleras nu. Den kontrolleras igen vid rensningen.</string>
+    <string name="share_clean_kind_location">plats</string>
+    <plurals name="share_clean_kind_serials">
+        <item quantity="one">%d serienummer</item>
+        <item quantity="other">%d serienummer</item>
+    </plurals>
+    <plurals name="share_clean_kind_ids">
+        <item quantity="one">%d unikt id</item>
+        <item quantity="other">%d unika id:n</item>
+    </plurals>
+    <string name="share_clean_kind_camera">kamera och program</string>
+    <string name="share_clean_kind_names">namn och upphovsrätt</string>
+    <string name="share_clean_kind_people">personer</string>
+    <string name="share_clean_kind_dates">datum</string>
+    <string name="share_clean_kind_maker_notes">tillverkarens anteckningar</string>
+    <string name="share_clean_kind_thumbnail">inbäddad miniatyr</string>
+    <string name="share_clean_kind_edit_history">redigeringshistorik</string>
+    <plurals name="share_clean_kind_other">
+        <item quantity="one">%d annat fält</item>
+        <item quantity="other">%d andra fält</item>
+    </plurals>
+    <string name="share_clean_kind_serials_plain">serienummer</string>
+    <string name="share_clean_kind_ids_plain">unika id:n</string>
+    <string name="share_clean_kind_other_plain">annan metadata</string>
+    <string name="share_clean_category_device_ids">serienummer och unika id:n</string>
+    <string name="share_clean_category_all">all metadata utom orientering och färgprofil</string>
+    <string name="share_clean_raw_single">RAW-filer kan inte rensas. ExifLab delar i stället JPEG-förhandsbilden som finns i den här filen. Förhandsbilden har ingen metadata.</string>
+    <plurals name="share_clean_raw_many">
+        <item quantity="one">%d av bilderna är en RAW-fil, som inte kan rensas.</item>
+        <item quantity="other">%d av bilderna är RAW-filer, som inte kan rensas.</item>
+    </plurals>
+    <string name="share_clean_raw_previews">Dela deras JPEG-förhandsbilder i stället</string>
+    <string name="share_clean_raw_previews_on">Förhandsbilden i en RAW-fil har ingen metadata och är mindre.</string>
+    <string name="share_clean_raw_previews_off">RAW-filer utelämnas.</string>
+    <string name="share_clean_private_note">Rensade kopior görs på enheten och raderas efter ett dygn. Dina bilder förblir som de är.</string>
+    <string name="share_clean_share">Dela</string>
+    <plurals name="share_clean_share_count">
+        <item quantity="one">Dela %d bild</item>
+        <item quantity="other">Dela %d bilder</item>
+    </plurals>
+    <plurals name="share_clean_progress">
+        <item quantity="one">Rensar %1$d av %2$d bild</item>
+        <item quantity="other">Rensar %1$d av %2$d bilder</item>
+    </plurals>
+    <string name="share_clean_progress_body">Varje kopia läses in igen för att kontrollera att metadatan är borta.</string>
+    <string name="share_clean_result_some">Vissa bilder rensades inte</string>
+    <string name="share_clean_result_none">Inget kunde rensas</string>
+    <plurals name="share_clean_result_body">
+        <item quantity="one">%d bild utelämnas och delas inte.</item>
+        <item quantity="other">%d bilder utelämnas och delas inte.</item>
+    </plurals>
+    <string name="share_clean_reason_raw_left_out">RAW-fil, utelämnad</string>
+    <string name="share_clean_reason_no_preview">RAW-fil utan förhandsbild att dela i stället</string>
+    <string name="share_clean_reason_unsupported">%1$s-filer kan inte rensas</string>
+    <string name="share_clean_reason_unsupported_unknown">Den här filtypen kan inte rensas</string>
+    <string name="share_clean_reason_unreadable">Bilden kunde inte läsas</string>
+    <string name="share_clean_reason_write_failed">Den rensade kopian kunde inte göras</string>
+    <string name="share_clean_reason_still_contains">Innehöll fortfarande %1$s efter rensningen, så den delas inte</string>
+    <plurals name="share_clean_too_many">
+        <item quantity="one">Dela rensad tar %1$d bild åt gången. Markera färre för att fortsätta.</item>
+        <item quantity="other">Dela rensad tar högst %1$d bilder åt gången. Markera färre för att fortsätta.</item>
+    </plurals>
+    <plurals name="share_clean_chooser_title">
+        <item quantity="one">Dela rensad bild</item>
+        <item quantity="other">Dela %d rensade bilder</item>
+    </plurals>
+    <string name="share_clean_no_app">Det finns ingen app på enheten som kan ta emot bilder.</string>
+    <string name="home_share_clean_title">Dela utan metadata</string>
+    <string name="home_share_clean_body">Välj bilder och dela rensade kopior. Originalen förblir som de är.</string>
+    <string name="shortcut_share_clean_short">Dela rensad</string>
+    <string name="shortcut_share_clean_long">Dela utan metadata</string>
+
     <!-- Map -->
     <string name="map_title">Karta</string>
     <string name="map_description">Karta som visar %1$s</string>

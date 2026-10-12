@@ -420,6 +420,97 @@
     <string name="licenses_section_libraries">Libraries and fonts</string>
     <string name="licenses_section_map">Map data and styles</string>
 
+    <!-- Share clean -->
+    <string name="share_clean_action">Share clean</string>
+    <string name="share_clean_title">Share clean</string>
+    <string name="share_clean_and_share">Clean and share</string>
+    <string name="share_clean_presets_title">What to remove</string>
+    <string name="share_clean_preset_location">Location only</string>
+    <string name="share_clean_preset_location_body">GPS position and place names</string>
+    <string name="share_clean_preset_device">Location and device</string>
+    <string name="share_clean_preset_device_body">Also serial numbers, camera details, maker notes and the thumbnail</string>
+    <string name="share_clean_preset_everything">Everything</string>
+    <string name="share_clean_preset_everything_body">All metadata except orientation and color profile</string>
+    <string name="share_clean_preset_custom">Custom</string>
+    <string name="share_clean_preset_custom_body">Choose what to remove</string>
+    <string name="share_clean_custom_empty">Tick at least one kind of metadata to share.</string>
+    <string name="share_clean_removes">Removes: %1$s</string>
+    <string name="share_clean_keeps">Keeps: %1$s</string>
+    <string name="share_clean_removes_each">Removes from each photo, where present: %1$s</string>
+    <string name="share_clean_nothing">Nothing to remove with this choice. The copy keeps the photo\'s metadata.</string>
+    <string name="share_clean_checking">Checking the photo…</string>
+    <string name="share_clean_summary_unavailable">The photo couldn\'t be checked now. It is checked again while cleaning.</string>
+    <string name="share_clean_kind_location">location</string>
+    <plurals name="share_clean_kind_serials">
+        <item quantity="one">%d serial number</item>
+        <item quantity="other">%d serial numbers</item>
+    </plurals>
+    <plurals name="share_clean_kind_ids">
+        <item quantity="one">%d unique ID</item>
+        <item quantity="other">%d unique IDs</item>
+    </plurals>
+    <string name="share_clean_kind_camera">camera and software</string>
+    <string name="share_clean_kind_names">names and copyright</string>
+    <string name="share_clean_kind_people">people</string>
+    <string name="share_clean_kind_dates">dates</string>
+    <string name="share_clean_kind_maker_notes">maker notes</string>
+    <string name="share_clean_kind_thumbnail">embedded thumbnail</string>
+    <string name="share_clean_kind_edit_history">edit history</string>
+    <plurals name="share_clean_kind_other">
+        <item quantity="one">%d other field</item>
+        <item quantity="other">%d other fields</item>
+    </plurals>
+    <string name="share_clean_kind_serials_plain">serial numbers</string>
+    <string name="share_clean_kind_ids_plain">unique IDs</string>
+    <string name="share_clean_kind_other_plain">other metadata</string>
+    <string name="share_clean_category_device_ids">serial numbers and unique IDs</string>
+    <string name="share_clean_category_all">all metadata except orientation and color profile</string>
+    <string name="share_clean_raw_single">RAW files can\'t be cleaned. ExifLab shares the JPEG preview stored inside this one instead. The preview carries no metadata.</string>
+    <plurals name="share_clean_raw_many">
+        <item quantity="one">%d of these photos is a RAW file, which can\'t be cleaned.</item>
+        <item quantity="other">%d of these photos are RAW files, which can\'t be cleaned.</item>
+    </plurals>
+    <string name="share_clean_raw_previews">Share their JPEG previews instead</string>
+    <string name="share_clean_raw_previews_on">A RAW file\'s preview carries no metadata and is smaller.</string>
+    <string name="share_clean_raw_previews_off">RAW files are left out.</string>
+    <string name="share_clean_private_note">Cleaned copies are made on this device and deleted after a day. Your photos stay as they are.</string>
+    <string name="share_clean_share">Share</string>
+    <plurals name="share_clean_share_count">
+        <item quantity="one">Share %d photo</item>
+        <item quantity="other">Share %d photos</item>
+    </plurals>
+    <plurals name="share_clean_progress">
+        <item quantity="one">Cleaning %1$d of %2$d photo</item>
+        <item quantity="other">Cleaning %1$d of %2$d photos</item>
+    </plurals>
+    <string name="share_clean_progress_body">Each copy is read back to check that the metadata is gone.</string>
+    <string name="share_clean_result_some">Some photos weren\'t cleaned</string>
+    <string name="share_clean_result_none">Nothing could be cleaned</string>
+    <plurals name="share_clean_result_body">
+        <item quantity="one">%d photo is left out and won\'t be shared.</item>
+        <item quantity="other">%d photos are left out and won\'t be shared.</item>
+    </plurals>
+    <string name="share_clean_reason_raw_left_out">RAW file, left out</string>
+    <string name="share_clean_reason_no_preview">RAW file without a preview to share instead</string>
+    <string name="share_clean_reason_unsupported">%1$s files can\'t be cleaned</string>
+    <string name="share_clean_reason_unsupported_unknown">This file type can\'t be cleaned</string>
+    <string name="share_clean_reason_unreadable">The photo couldn\'t be read</string>
+    <string name="share_clean_reason_write_failed">The cleaned copy couldn\'t be made</string>
+    <string name="share_clean_reason_still_contains">Still contained %1$s after cleaning, so it isn\'t shared</string>
+    <plurals name="share_clean_too_many">
+        <item quantity="one">Share clean takes %1$d photo at a time. Select fewer to continue.</item>
+        <item quantity="other">Share clean takes up to %1$d photos at a time. Select fewer to continue.</item>
+    </plurals>
+    <plurals name="share_clean_chooser_title">
+        <item quantity="one">Share cleaned photo</item>
+        <item quantity="other">Share %d cleaned photos</item>
+    </plurals>
+    <string name="share_clean_no_app">No app on this device can receive photos.</string>
+    <string name="home_share_clean_title">Share without metadata</string>
+    <string name="home_share_clean_body">Pick photos and share cleaned copies. Your originals stay as they are.</string>
+    <string name="shortcut_share_clean_short">Share clean</string>
+    <string name="shortcut_share_clean_long">Share without metadata</string>
+
     <!-- Map -->
     <string name="map_title">Map</string>
     <string name="map_description">Map showing %1$s</string>

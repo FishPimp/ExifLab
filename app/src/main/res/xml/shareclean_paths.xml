@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Share clean: only the cleaned copies in cache/shared are ever served. -->
+<paths>
+    <cache-path
+        name="shared"
+        path="shared/" />
+</paths>

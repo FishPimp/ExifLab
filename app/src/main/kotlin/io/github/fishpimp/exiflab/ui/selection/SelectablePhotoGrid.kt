@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.LazyGridState
@@ -40,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -76,6 +78,7 @@ import io.github.fishpimp.exiflab.ui.batch.labelRes
 import io.github.fishpimp.exiflab.ui.components.FormatBadge
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.photoDescription
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanIconButton
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlin.math.max
@@ -257,6 +260,7 @@ fun Modifier.dragToSelect(
 /**
  * The batch actions for a selection, as an expressive floating toolbar of icon buttons with
  * tooltips (their names are also their TalkBack labels). Disabled while nothing is selected.
+ * [onShareClean] adds "Share clean" for the selected photos after the batch edits.
  */
 @Composable
 fun BatchActionsToolbar(
@@ -264,6 +268,7 @@ fun BatchActionsToolbar(
     enabled: Boolean,
     onAction: (BatchKind) -> Unit,
     modifier: Modifier = Modifier,
+    onShareClean: (() -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -287,6 +292,10 @@ fun BatchActionsToolbar(
                         Icon(kind.icon, contentDescription = label)
                     }
                 }
+            }
+            if (onShareClean != null) {
+                VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp).align(Alignment.CenterVertically))
+                ShareCleanIconButton(onClick = onShareClean, enabled = enabled, tooltipAbove = true)
             }
         }
     }

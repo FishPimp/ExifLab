@@ -82,6 +82,9 @@ import io.github.fishpimp.exiflab.metadata.model.SensitiveFinding
 import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.messageRes
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanIconButton
+import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
+import io.github.fishpimp.exiflab.ui.shareclean.shareCleanViewModel
 import kotlinx.coroutines.launch
 
 /** Width from which the overview puts the preview next to the camera summary. */
@@ -172,6 +175,7 @@ fun PhotoScreen(
         }
     }
 
+    val shareClean = shareCleanViewModel()
     PhotoContent(
         ref = ref,
         state = state,
@@ -196,7 +200,9 @@ fun PhotoScreen(
         },
         snackbarHostState = snackbarHostState,
         modifier = modifier,
+        onShareClean = { shareClean.open(listOf(viewModel.currentRef), report) },
     )
+    ShareCleanSheetHost(shareClean)
 }
 
 /** Everything the viewer can ask its host to do. Defaults do nothing, for previews and screenshot tests. */
@@ -221,6 +227,7 @@ data class PhotoActions(
  * scroll on their own.
  *
  * @param listState scroll state of the single column, or of the tag pane in two-pane mode.
+ * @param onShareClean opens Share clean for the photo (a top bar action); null hides it.
  */
 @Composable
 fun PhotoContent(
@@ -231,6 +238,7 @@ fun PhotoContent(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
     listState: LazyListState = rememberLazyListState(),
+    onShareClean: (() -> Unit)? = null,
 ) {
     val report = (state.load as? PhotoLoad.Loaded)?.report
     val name = ref.displayName ?: report?.fileName ?: stringResource(R.string.photo_untitled)
@@ -241,6 +249,7 @@ fun PhotoContent(
         subtitle = fileSubtitle(ref, report),
         onBack = actions.onBack,
         actions = {
+            if (report != null && onShareClean != null) ShareCleanIconButton(onClick = onShareClean)
             if (report != null) {
                 PhotoMenu(
                     onCopyAll = { copier.copyAll(report) },

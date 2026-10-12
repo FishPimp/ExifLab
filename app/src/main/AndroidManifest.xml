@@ -60,7 +60,45 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="image/*" />
             </intent-filter>
+            <!-- Launcher shortcut: "Share clean" picks photos and shares cleaned copies. -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/shortcuts" />
         </activity>
+
+        <!-- "Clean and share": a second share target that cleans shared photos and shares them on,
+             over the sending app (translucent), and the launcher shortcut's target. -->
+        <activity
+            android:name=".ui.shareclean.ShareCleanActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:icon="@mipmap/ic_share_clean"
+            android:label="@string/share_clean_and_share"
+            android:roundIcon="@mipmap/ic_share_clean"
+            android:taskAffinity=""
+            android:theme="@style/Theme.ExifLab.Translucent">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="image/*" />
+            </intent-filter>
+        </activity>
+
+        <!-- Serves cleaned copies (cache/shared only) to the app they are shared with, by read grant. -->
+        <provider
+            android:name=".data.shareclean.ShareCleanFileProvider"
+            android:authorities="${applicationId}.shareclean"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/shareclean_paths" />
+        </provider>
 
         <!-- WorkManager's foreground service, typed for batch edits writing files. -->
         <service

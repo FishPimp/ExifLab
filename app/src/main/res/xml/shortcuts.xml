@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static launcher shortcuts. The intent needs the real package name, so debug builds (which add
+     ".debug" to the application ID) override this file in src/debug/res/xml/shortcuts.xml. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:enabled="true"
+        android:icon="@mipmap/ic_shortcut_share_clean"
+        android:shortcutId="share_clean"
+        android:shortcutLongLabel="@string/shortcut_share_clean_long"
+        android:shortcutShortLabel="@string/shortcut_share_clean_short">
+        <intent
+            android:action="io.github.fishpimp.exiflab.action.SHARE_CLEAN"
+            android:targetClass="io.github.fishpimp.exiflab.ui.shareclean.ShareCleanActivity"
+            android:targetPackage="io.github.fishpimp.exiflab" />
+    </shortcut>
+</shortcuts>

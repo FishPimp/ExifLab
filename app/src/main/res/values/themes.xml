@@ -4,6 +4,13 @@
         <item name="android:windowBackground">@color/splash_background</item>
     </style>
 
+    <!-- "Clean and share": only its bottom sheet shows, over the app that shared the photos. -->
+    <style name="Theme.ExifLab.Translucent" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
+
     <style name="Theme.ExifLab.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
