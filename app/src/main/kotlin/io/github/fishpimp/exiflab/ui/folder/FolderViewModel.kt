@@ -13,6 +13,7 @@ import io.github.fishpimp.exiflab.data.folders.FolderListing
 import io.github.fishpimp.exiflab.data.folders.FolderRepository
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessException
+import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.ui.navigation.Route
 import io.github.fishpimp.exiflab.ui.selection.PhotoSelection
 import io.github.fishpimp.exiflab.ui.selection.PhotoSelectionHolder
@@ -73,6 +74,12 @@ class FolderViewModel(
 
     /** Opens the batch editor for the selected photos. */
     val batchEditRequests: Flow<Route.BatchEdit> = batchEvents.receiveAsFlow()
+
+    /** The selected photos in folder order, for exporting their metadata. */
+    fun selectedPhotos(): List<PhotoRef> {
+        val photos = (state.value as? FolderUiState.Loaded)?.listing?.photos ?: return emptyList()
+        return selection.value.selectedIn(photos)
+    }
 
     /** Stores the selected photos as a batch draft and asks to open the editor on [kind]. */
     fun startBatch(kind: BatchKind) {

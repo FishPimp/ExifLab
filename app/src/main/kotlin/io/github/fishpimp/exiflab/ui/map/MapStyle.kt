@@ -6,6 +6,7 @@ import org.maplibre.android.maps.Style
 import org.maplibre.android.style.layers.BackgroundLayer
 import org.maplibre.android.style.layers.CircleLayer
 import org.maplibre.android.style.layers.FillLayer
+import org.maplibre.android.style.layers.Layer
 import org.maplibre.android.style.layers.LineLayer
 import org.maplibre.android.style.layers.Property
 import org.maplibre.android.style.layers.PropertyFactory
@@ -42,15 +43,18 @@ private object StyleLayers {
  * Tints the style's land, water and parks towards the app's colors. Only these few layers are
  * touched, and only when they exist with the expected type, so a style update cannot break it.
  */
-internal fun Style.applyPalette(palette: MapPalette) {
-    (getLayer(StyleLayers.BACKGROUND) as? BackgroundLayer)
+internal fun Style.applyPalette(palette: MapPalette) = applyPalette(palette, ::getLayer)
+
+/** [applyPalette] for anything that hands out style layers by id, such as a map snapshotter. */
+internal fun applyPalette(palette: MapPalette, layer: (String) -> Layer?) {
+    (layer(StyleLayers.BACKGROUND) as? BackgroundLayer)
         ?.setProperties(PropertyFactory.backgroundColor(palette.land.toArgb()))
-    (getLayer(StyleLayers.WATER) as? FillLayer)
+    (layer(StyleLayers.WATER) as? FillLayer)
         ?.setProperties(PropertyFactory.fillColor(palette.water.toArgb()))
-    (getLayer(StyleLayers.WATERWAY) as? LineLayer)
+    (layer(StyleLayers.WATERWAY) as? LineLayer)
         ?.setProperties(PropertyFactory.lineColor(palette.water.toArgb()))
     StyleLayers.parks.forEach { id ->
-        (getLayer(id) as? FillLayer)?.setProperties(PropertyFactory.fillColor(palette.park.toArgb()))
+        (layer(id) as? FillLayer)?.setProperties(PropertyFactory.fillColor(palette.park.toArgb()))
     }
 }
 

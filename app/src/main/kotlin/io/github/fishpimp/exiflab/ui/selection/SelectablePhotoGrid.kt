@@ -27,6 +27,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.CheckCircle
 import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Deselect
+import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.SelectAll
@@ -53,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.pluralStringResource
@@ -261,6 +263,8 @@ fun Modifier.dragToSelect(
  * The batch actions for a selection, as an expressive floating toolbar of icon buttons with
  * tooltips (their names are also their TalkBack labels). Disabled while nothing is selected.
  * [onShareClean] adds "Share clean" for the selected photos after the batch edits.
+ *
+ * @param onExport exports the selection's metadata; the button is left out when null.
  */
 @Composable
 fun BatchActionsToolbar(
@@ -269,6 +273,7 @@ fun BatchActionsToolbar(
     onAction: (BatchKind) -> Unit,
     modifier: Modifier = Modifier,
     onShareClean: (() -> Unit)? = null,
+    onExport: (() -> Unit)? = null,
 ) {
     AnimatedVisibility(
         visible = visible,
@@ -282,21 +287,28 @@ fun BatchActionsToolbar(
             modifier = Modifier.padding(FloatingToolbarDefaults.ScreenOffset),
         ) {
             BatchKind.entries.forEach { kind ->
-                val label = stringResource(kind.labelRes)
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                    tooltip = { PlainTooltip { Text(label) } },
-                    state = rememberTooltipState(),
-                ) {
-                    IconButton(onClick = { onAction(kind) }, enabled = enabled) {
-                        Icon(kind.icon, contentDescription = label)
-                    }
-                }
+                ToolbarAction(icon = kind.icon, label = stringResource(kind.labelRes), enabled = enabled) { onAction(kind) }
+            }
+            if (onExport != null) {
+                ToolbarAction(icon = Icons.Rounded.FileDownload, label = stringResource(R.string.export_action), enabled = enabled, onClick = onExport)
             }
             if (onShareClean != null) {
                 VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp).align(Alignment.CenterVertically))
                 ShareCleanIconButton(onClick = onShareClean, enabled = enabled, tooltipAbove = true)
             }
+        }
+    }
+}
+
+@Composable
+private fun ToolbarAction(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
+    TooltipBox(
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        tooltip = { PlainTooltip { Text(label) } },
+        state = rememberTooltipState(),
+    ) {
+        IconButton(onClick = onClick, enabled = enabled) {
+            Icon(icon, contentDescription = label)
         }
     }
 }
