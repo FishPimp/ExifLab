@@ -50,12 +50,13 @@ fun <T> ChoiceRow(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val requiredWidth = remember(choices, labelStyle, density, measurer) {
             with(density) {
-                choices.sumOf { choice ->
+                // The buttons share the row equally, so the widest one decides whether all fit.
+                choices.maxOf { choice ->
                     val text = measurer.measure(choice.label, labelStyle, maxLines = 1).size.width.toDp()
                     val icon = if (choice.icon != null) 18.dp + ToggleButtonDefaults.IconSpacing else 0.dp
                     // Horizontal content padding of a small toggle button on both sides.
-                    (text + icon + 32.dp).value.toDouble()
-                }.dp + ButtonGroupDefaults.ConnectedSpaceBetween * (choices.size - 1)
+                    (text + icon + 32.dp).value
+                }.dp * choices.size + ButtonGroupDefaults.ConnectedSpaceBetween * (choices.size - 1)
             }
         }
         if (requiredWidth <= maxWidth) {

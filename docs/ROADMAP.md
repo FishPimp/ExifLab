@@ -14,6 +14,7 @@
 | Reading metadata | metadata-extractor + Adobe XMPCore, plus own readers where it falls short (CR3). |
 | Writing metadata | Own lossless writers per container (JPEG segments, PNG chunks, WebP RIFF chunks, HEIF boxes), verified by hashing image data before and after. |
 | UI | Kotlin, Compose, Material 3 Expressive, dynamic color + curated palettes, English and Swedish. |
+| Export | CSV (RFC 4180) and JSON (documented schema, version 1) written by `:core:metadata`; the PDF report drawn with Android's `PdfDocument` from a layout engine that is tested on the JVM. Exports stream one photo at a time; the PDF map comes from MapLibre's snapshotter only when online. Formats in `docs/EXPORT.md`. |
 | Batch edits | A selection becomes a draft job in Room (`batch_jobs`, `batch_job_items`), so navigation carries only its id. A WorkManager worker (expedited, foreground `dataSync`, progress notification) plans each photo and saves it through the journaled save pipeline, two at a time; per-photo status in Room lets the UI reattach and an interrupted job resume with its unfinished photos. Writable photos are edited in place, RAW and formats without a writer get sidecars, read-only photos become copies in a chosen folder or are skipped. |
 
 ## Milestones
