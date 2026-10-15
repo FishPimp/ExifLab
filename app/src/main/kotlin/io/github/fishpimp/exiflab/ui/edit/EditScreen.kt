@@ -18,8 +18,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -78,11 +80,11 @@ import io.github.fishpimp.exiflab.ui.edit.time.SetOffsetDialog
 import io.github.fishpimp.exiflab.ui.edit.time.ShiftTimeSheet
 import io.github.fishpimp.exiflab.ui.edit.time.TimeZoneWizard
 import io.github.fishpimp.exiflab.ui.photo.breakableFileName
-import kotlinx.coroutines.launch
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.ZoneOffset
+import kotlinx.coroutines.launch
 
 private val SingleColumnMaxWidth = 720.dp
 private val CompactGutter = 16.dp
@@ -342,7 +344,8 @@ private fun EditOverview(
         },
         snackbarHost = { SnackbarHost(snackbarHostState) },
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding)) {
+        // The keyboard shrinks the list so an inline field editor near the bottom can scroll into view.
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding()) {
             when (val load = state.load) {
                 EditLoad.Loading -> {
                     val description = stringResource(R.string.photo_loading)

@@ -198,6 +198,12 @@ class EditScreenshotTest {
         )
     }
 
+    /** A phone in landscape: too short for the stacked layout, so the panel sits beside the map and scrolls. */
+    @Test @Config(qualifiers = "w891dp-h411dp-land-xxhdpi")
+    fun location_picker_landscape_phone() = compose.snapshot("edit_location_landscape") {
+        LocationPicker(query = "", search = PlaceSearchState.Idle, availability = MapAvailability.Preview)
+    }
+
     @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
     fun location_picker_invalid() = compose.snapshot("edit_location_invalid", palette = BrandPalette.Citrus) {
         LocationPicker(query = "", search = PlaceSearchState.Idle, availability = MapAvailability.Preview, coordinates = "https://maps.app.goo.gl/x1Y2", pin = null)

@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -87,8 +89,8 @@ import io.github.fishpimp.exiflab.ui.format.LocationFormat
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.LocationMap
 import io.github.fishpimp.exiflab.ui.map.formatted
-import kotlinx.coroutines.launch
 import java.time.ZoneId
+import kotlinx.coroutines.launch
 
 /** Width of the editor's single column on large screens. */
 internal val BatchColumnMaxWidth = 720.dp
@@ -269,7 +271,8 @@ private fun BatchSetupPage(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        // The keyboard shrinks the page so the author fields scroll into view above it.
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding(), contentAlignment = Alignment.TopCenter) {
             Column(
                 Modifier
                     .widthIn(max = BatchColumnMaxWidth)
