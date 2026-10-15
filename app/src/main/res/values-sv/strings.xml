@@ -995,6 +995,10 @@
         <item quantity="one">%d foto saknar fotodatum</item>
         <item quantity="other">%d foton saknar fotodatum</item>
     </plurals>
+    <plurals name="batch_warning_other_zone">
+        <item quantity="one">%d bild har redan en annan UTC-förskjutning och behåller sin tid</item>
+        <item quantity="other">%d bilder har redan en annan UTC-förskjutning och behåller sin tid</item>
+    </plurals>
     <plurals name="batch_warning_unreadable">
         <item quantity="one">%d foto kan inte läsas och kommer att misslyckas</item>
         <item quantity="other">%d foton kan inte läsas och kommer att misslyckas</item>
@@ -1040,6 +1044,7 @@
     <string name="batch_reason_no_sidecar_place">ingen mapp för XMP-sidofilen</string>
     <string name="batch_reason_cancelled">avbröts innan det var dess tur</string>
     <string name="batch_reason_unreadable">fotot kunde inte läsas</string>
+    <string name="batch_reason_other_zone">har redan en annan UTC-förskjutning, så tiden behölls</string>
     <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för det här fotot</string>
     <string name="batch_reason_folder_unavailable">kopian kunde inte skapas i den valda mappen</string>
 

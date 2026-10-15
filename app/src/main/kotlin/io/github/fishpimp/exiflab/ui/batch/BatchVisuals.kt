@@ -104,6 +104,7 @@ val BatchItemReason.messageRes: Int
         BatchItemReason.PlanFailed -> R.string.batch_reason_plan_failed
         BatchItemReason.CopyFolderUnavailable -> R.string.batch_reason_folder_unavailable
         BatchItemReason.SaveFailed -> R.string.history_error_unknown
+        BatchItemReason.AlreadyHasOtherZone -> R.string.batch_reason_other_zone
     }
 
 @get:StringRes

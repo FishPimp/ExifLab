@@ -10,6 +10,7 @@ import io.github.fishpimp.exiflab.data.save.SaveRejection
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
+import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.EditPlan
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
@@ -225,7 +226,7 @@ class BatchRunner(
             saving.countFailed(batchId)
             return ItemResult.failed(BatchItemReason.PlanFailed)
         }
-        if (plan.changes.isEmpty) return ItemResult.skipped(BatchItemReason.NothingToChange)
+        if (plan.changes.isEmpty) return ItemResult.skipped(unchangedReason(plan))
 
         val decision = BatchRouting.route(ref, report.format, operation.kind, saving::canWrite, copyFolder != null)
         return when (decision.route) {
@@ -235,6 +236,9 @@ class BatchRunner(
             BatchRoute.Sidecar -> saveSidecar(ref, plan, batchId, copyFolder, destinations)
         }
     }
+
+    private fun unchangedReason(plan: EditPlan): BatchItemReason =
+        if (DefaultChangePlanner.OTHER_ZONE_WARNING in plan.warnings) BatchItemReason.AlreadyHasOtherZone else BatchItemReason.NothingToChange
 
     private suspend fun saveCopy(
         item: BatchJobItem,

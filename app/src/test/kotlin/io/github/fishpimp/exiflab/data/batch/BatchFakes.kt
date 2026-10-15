@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.data.save.SaveOutcome
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
+import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.EditPlan
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
@@ -64,6 +65,7 @@ internal object BatchPhotos {
 internal class BatchFakePlanner : ChangePlanner {
     override fun plan(report: MetadataReport, operations: List<EditOperation>): EditPlan {
         if (report.fileName.orEmpty().startsWith("same")) return EditPlan(MetadataChanges(), emptyList(), listOf("There is no capture date to shift"))
+        if (report.fileName.orEmpty().startsWith("zone")) return EditPlan(MetadataChanges(), emptyList(), listOf(DefaultChangePlanner.OTHER_ZONE_WARNING))
         return EditPlan(
             changes = MetadataChanges(removeBlocks = setOf(MetadataBlock.Xmp)),
             diff = listOf(FieldDiff("Artist", DirectoryGroup.Exif, null, "Maja")),

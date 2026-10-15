@@ -322,6 +322,7 @@ private fun WarningsCard(preview: BatchPreview) {
             add(
                 when (warning.kind) {
                     WarningCount.Kind.NoCaptureDate -> pluralStringResource(R.plurals.batch_warning_no_date, warning.count, warning.count)
+                    WarningCount.Kind.OtherTimeZone -> pluralStringResource(R.plurals.batch_warning_other_zone, warning.count, warning.count)
                     WarningCount.Kind.Other -> pluralStringResource(R.plurals.batch_count_reason, warning.count, warning.count, warning.text.orEmpty())
                 },
             )

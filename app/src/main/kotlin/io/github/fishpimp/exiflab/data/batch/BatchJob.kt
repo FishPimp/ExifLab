@@ -121,6 +121,9 @@ enum class BatchItemReason {
 
     /** The save pipeline failed; see [BatchJobItem.saveError]. */
     SaveFailed,
+
+    /** Fix time zone: the photo records a UTC offset other than the camera zone's, so its time is already right. */
+    AlreadyHasOtherZone,
 }
 
 /**

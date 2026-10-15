@@ -1012,6 +1012,10 @@
         <item quantity="one">%d photo has no capture date</item>
         <item quantity="other">%d photos have no capture date</item>
     </plurals>
+    <plurals name="batch_warning_other_zone">
+        <item quantity="one">%d photo already records a different UTC offset and keeps its time</item>
+        <item quantity="other">%d photos already record a different UTC offset and keep their time</item>
+    </plurals>
     <plurals name="batch_warning_unreadable">
         <item quantity="one">%d photo can\'t be read and will fail</item>
         <item quantity="other">%d photos can\'t be read and will fail</item>
@@ -1057,6 +1061,7 @@
     <string name="batch_reason_no_sidecar_place">no folder for the XMP sidecar</string>
     <string name="batch_reason_cancelled">cancelled before its turn</string>
     <string name="batch_reason_unreadable">the photo couldn\'t be read</string>
+    <string name="batch_reason_other_zone">already records a different UTC offset, so its time was kept</string>
     <string name="batch_reason_plan_failed">the change couldn\'t be prepared for this photo</string>
     <string name="batch_reason_folder_unavailable">the copy couldn\'t be created in the chosen folder</string>
 

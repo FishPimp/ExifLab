@@ -112,6 +112,16 @@ class BatchRunnerTest {
     }
 
     @Test
+    fun `photos that already record another offset are skipped with their own reason`() = runBlocking<Unit> {
+        val id = startedJob(listOf(BatchPhotos.folder("zone.jpg"), BatchPhotos.folder("a.jpg")))
+        runner(FakeBatchSaving()).run(id)
+        val items = dao.items(id).associateBy { it.displayName }
+        assertThat(items.getValue("zone.jpg").status).isEqualTo(BatchItemStatus.Skipped)
+        assertThat(items.getValue("zone.jpg").reason).isEqualTo(BatchItemReason.AlreadyHasOtherZone)
+        assertThat(items.getValue("a.jpg").status).isEqualTo(BatchItemStatus.Saved)
+    }
+
+    @Test
     fun `without a folder read-only photos are skipped and HEIF is written in place once supported`() = runBlocking<Unit> {
         val id = startedJob(listOf(BatchPhotos.picker("p.jpg"), BatchPhotos.picker("q.RAF"), BatchPhotos.folder("c.heic")))
         val saving = FakeBatchSaving(writable = setOf(ImageFormat.Jpeg, ImageFormat.Heif))
