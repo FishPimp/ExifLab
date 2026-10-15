@@ -43,7 +43,17 @@ class DefaultMetadataWriter : MetadataWriter {
                 val name = if (format == ImageFormat.Unknown) "This file type" else "${format.displayName} files"
                 throw UnsupportedEditException("$name cannot be edited in place")
             }
-            val sourceDigest = DefaultImageDataDigest().digest(source)
+            // A copy without the data after the image can only match the image up to its end.
+            val imageEnd = if (MetadataBlock.EmbeddedMedia in changes.removeBlocks) {
+                when (format) {
+                    ImageFormat.Jpeg -> JpegWriter.primaryEnd(seekable)
+                    ImageFormat.Png -> PngWriter.imageEnd(seekable)
+                    else -> null
+                }
+            } else {
+                null
+            }
+            val sourceDigest = DefaultImageDataDigest().digest(imageEnd?.let { PrefixImageSource(source, it) } ?: source)
             val skipped = mutableListOf<String>()
             val heif = if (format in HEIF_FORMATS) HeifWriter().prepare(seekable, changes, skipped) else null
             val sink = heif?.let { HeifDigestSink(it.digestPlan) } ?: ImageDigestSink.forFormat(format)!!

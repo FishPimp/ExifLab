@@ -5,6 +5,8 @@ import com.adobe.internal.xmp.XMPMeta
 import com.adobe.internal.xmp.XMPUtils
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
 import io.github.fishpimp.exiflab.metadata.io.SeekableSource
+import io.github.fishpimp.exiflab.metadata.write.EmbeddedExtra
+import io.github.fishpimp.exiflab.metadata.write.EmbeddedExtras
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
@@ -30,7 +32,9 @@ import java.nio.ByteBuffer
  * (removal only) are touched, each where it was. New Exif goes right after SOI (and JFIF), new XMP
  * right after Exif, new APP13 after XMP. Everything from the first SOS marker to the end of the
  * file, including data after EOI, is copied byte for byte; MPF offsets are fixed when segments
- * between the MPF header and the image data change size.
+ * between the MPF header and the image data change size. With [MetadataBlock.EmbeddedMedia] the
+ * copy ends at the primary image's EOI instead, without the MPF index and the XMP that points at
+ * what came after it.
  */
 internal class JpegWriter {
     private enum class Kind { Exif, Xmp, ExtendedXmp, Icc, Mpf, Photoshop, Comment, Other }
@@ -68,13 +72,15 @@ internal class JpegWriter {
         val (segments, sosOffset) = scan(source)
         val items = segments.map<Segment, Item> { Item.Copy(it) }.toMutableList()
         val removeBlocks = changes.removeBlocks
+        val dropMedia = MetadataBlock.EmbeddedMedia in removeBlocks
+        val primaryEnd = if (dropMedia) primaryEnd(source, sosOffset) ?: truncated() else null
 
         if (ExifEditor.affects(changes)) replaceExif(items, segments, changes, skipped)
-        if (XmpPackets.affects(changes)) replaceXmp(items, segments, changes)
+        if (XmpPackets.affects(changes) || (dropMedia && segments.any { it.kind == Kind.Xmp })) replaceXmp(items, segments, changes, dropMedia)
         if (IptcIim.affects(changes)) replacePhotoshop(items, segments, changes, skipped)
         if (MetadataBlock.IccProfile in removeBlocks) items.removeAll { it.kind == Kind.Icc }
         if (MetadataBlock.Comments in removeBlocks) items.removeAll { it.kind == Kind.Comment }
-        fixMpf(items, sosOffset)
+        if (dropMedia) items.removeAll { it.kind == Kind.Mpf } else fixMpf(items, sosOffset)
 
         out.write(SOI)
         for (item in items) {
@@ -88,6 +94,10 @@ internal class JpegWriter {
                     out.write(item.payload)
                 }
             }
+        }
+        if (primaryEnd != null) {
+            copyRange(source, sosOffset, primaryEnd - sosOffset, out)
+            return
         }
         var previous = 0
         var sawEoi = false
@@ -103,7 +113,63 @@ internal class JpegWriter {
                 }
             }
         }
-        if (!sawEoi) throw CorruptImageException("The JPEG image data ends without an end marker; the file may be truncated")
+        if (!sawEoi) truncated()
+    }
+
+    private fun truncated(): Nothing = throw CorruptImageException("The JPEG image data ends without an end marker; the file may be truncated")
+
+    /**
+     * The offset just after the primary image's EOI marker, following the scans from the first SOS
+     * at [sosOffset]: entropy-coded data (stuffed 0xFF00 bytes, restart markers) and the marker
+     * segments between progressive scans. Null when the data ends first.
+     */
+    private fun primaryEnd(source: SeekableSource, sosOffset: Long): Long? {
+        val length = source.length
+        var position = sosOffset
+        while (u8(source, position) == 0xFF) position++
+        // Now at the SOS marker code; skip it and its header.
+        position += 1 + u16(source, position + 1)
+        val buffer = ByteArray(SCAN_BUFFER)
+        var afterFf = false
+        scan@ while (position < length) {
+            val read = source.read(position, buffer)
+            if (read <= 0) return null
+            for (i in 0 until read) {
+                val c = buffer[i].toInt() and 0xFF
+                if (!afterFf) {
+                    afterFf = c == 0xFF
+                    continue
+                }
+                when {
+                    // A fill byte; the marker code is still to come.
+                    c == 0xFF -> Unit
+                    c == 0x00 || c == TEM || c in RST0..RST7 -> afterFf = false
+                    c == EOI -> return position + i + 1
+                    else -> {
+                        // A segment between scans (DHT, SOS, DRI, DNL, COM, APPn): skip it.
+                        val lengthAt = position + i + 1
+                        if (lengthAt + 2 > length) return null
+                        val segmentLength = u16(source, lengthAt)
+                        if (segmentLength < 2) return null
+                        position = lengthAt + segmentLength
+                        afterFf = false
+                        continue@scan
+                    }
+                }
+            }
+            position += read
+        }
+        return null
+    }
+
+    /** See [EmbeddedExtras.find]. */
+    private fun findExtras(source: SeekableSource): Set<EmbeddedExtra> {
+        val (segments, sosOffset) = scan(source)
+        val end = primaryEnd(source, sosOffset) ?: truncated()
+        return buildSet {
+            if (segments.any { it.kind == Kind.Mpf }) add(EmbeddedExtra.SecondaryImages)
+            if (EmbeddedExtras.hasData(source, end)) add(EmbeddedExtra.TrailingData)
+        }
     }
 
     private fun scan(source: SeekableSource): Pair<List<Segment>, Long> {
@@ -187,7 +253,7 @@ internal class JpegWriter {
         return JpegFacts(width, height, icc)
     }
 
-    private fun replaceXmp(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges) {
+    private fun replaceXmp(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges, dropMedia: Boolean) {
         val standard = segments.filter { it.kind == Kind.Xmp }
         var meta: XMPMeta? = null
         if (MetadataBlock.Xmp !in changes.removeBlocks) {
@@ -206,7 +272,10 @@ internal class JpegWriter {
             }
             meta?.let { main -> XmpPackets.extendedGuid(main)?.let { guid -> XmpPackets.mergeExtended(main, extendedPacket(segments, guid)) } }
         }
-        val packaged = XmpPackets.edit(meta, changes)?.let { XmpPackets.packageForJpeg(it, MAX_STANDARD_XMP) }
+        val edited = XmpPackets.edit(meta, changes)?.let { packet ->
+            if (dropMedia) packet.also(XmpPackets::removeEmbeddedMediaReferences).takeIf(XmpPackets::hasProperties) else packet
+        }
+        val packaged = edited?.let { XmpPackets.packageForJpeg(it, MAX_STANDARD_XMP) }
         val replacement = mutableListOf<Item>()
         if (packaged != null) {
             replacement += Item.New(APP1, XMP_SIGNATURE + packaged.standard, Kind.Xmp)
@@ -326,6 +395,16 @@ internal class JpegWriter {
     private fun int32(value: Int) = ByteBuffer.allocate(4).putInt(value).array()
 
     companion object {
+        /** See [EmbeddedExtras.find]. */
+        internal fun extras(source: SeekableSource): Set<EmbeddedExtra> = JpegWriter().findExtras(source)
+
+        /** The offset just after the primary image's EOI marker. */
+        internal fun primaryEnd(source: SeekableSource): Long {
+            val writer = JpegWriter()
+            return writer.primaryEnd(source, writer.scan(source).second) ?: writer.truncated()
+        }
+
+        private const val SCAN_BUFFER = 64 * 1024
         private val SOI = byteArrayOf(0xFF.toByte(), 0xD8.toByte())
         private const val APP0 = 0xE0
         private const val APP1 = 0xE1

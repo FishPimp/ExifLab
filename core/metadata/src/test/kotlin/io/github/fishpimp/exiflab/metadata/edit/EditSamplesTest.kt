@@ -262,6 +262,7 @@ class EditSamplesTest {
             MetadataBlock.PhotoshopResources -> prefixes += listOf("iptc:", "photoshop:")
             MetadataBlock.IccProfile -> prefixes += "icc:"
             MetadataBlock.Comments -> prefixes += listOf("jpeg-comment:", "png-text", "png-ztxt", "png-itxt")
+            MetadataBlock.EmbeddedMedia -> prefixes += listOf("mpf", "xmp")
         }
         // A WebP that gains EXIF or XMP gets an extended (VP8X) header.
         if (before.format == ImageFormat.WebP) prefixes += "webp"

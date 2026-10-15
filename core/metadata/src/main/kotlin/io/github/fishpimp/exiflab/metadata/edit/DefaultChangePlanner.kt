@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.metadata.edit
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.Rational
+import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.metadata.summary.MetadataDates
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
 import io.github.fishpimp.exiflab.metadata.write.ExifValue
@@ -370,6 +371,9 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         // A report with parse problems may not show a GPS IFD that is there, so it is dropped regardless.
         if (state.hasIfd(ExifIfd.Gps) || state.originalExif.keys.any { it.ifd == ExifIfd.Gps } || state.uncertain) state.dropIfd(ExifIfd.Gps)
         state.xmp.keys.filter { it.namespace == XmpNs.EXIF && it.name.startsWith("GPS") }.forEach(state::removeXmp)
+        // Vendor positions (DJI drone-dji:GpsLatitude, altitudes) and anything else XMP classifies as a location.
+        state.xmp.keys.filter { (includePlaceNames || it !in PLACE_XMP) && state.xmpSensitivity(it) == SensitivityCategory.Location }
+            .forEach(state::removeXmp)
         if (includePlaceNames) {
             PLACE_XMP.forEach(state::removeXmp)
             PLACE_IPTC.forEach { state.removeIptc(it) }
@@ -488,7 +492,10 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             XmpName(XmpNs.IPTC_CORE, "Location"), XmpName(XmpNs.IPTC_CORE, "CountryCode"),
             XmpName(XmpNs.IPTC_EXT, "LocationCreated"), XmpName(XmpNs.IPTC_EXT, "LocationShown"),
         )
-        val PLACE_IPTC = listOf(IptcTags.CITY, IptcTags.SUB_LOCATION, IptcTags.PROVINCE_STATE, IptcTags.COUNTRY_CODE, IptcTags.COUNTRY_NAME)
+        val PLACE_IPTC = listOf(
+            IptcTags.CITY, IptcTags.SUB_LOCATION, IptcTags.PROVINCE_STATE, IptcTags.COUNTRY_CODE, IptcTags.COUNTRY_NAME,
+            IptcTags.CONTENT_LOCATION_CODE, IptcTags.CONTENT_LOCATION_NAME,
+        )
 
         /** Positions closer than this (degrees, about 1 cm) count as unchanged. */
         const val SAME_POSITION = 1e-7

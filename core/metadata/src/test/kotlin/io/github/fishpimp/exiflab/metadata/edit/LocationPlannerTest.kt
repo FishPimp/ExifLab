@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.metadata.edit.EditFixtures.xmpTags
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.LocationStatus
+import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.metadata.write.WriteFixtures.assertUntouched
 import kotlin.random.Random
 import org.junit.Test
@@ -145,6 +146,45 @@ class LocationPlannerTest {
         assertThat(edited.after.location).isNull()
         assertThat(edited.xmp("photoshop:City")).isEqualTo("Stockholm")
         assertThat(edited.iptc(90)).isEqualTo("Stockholm")
+    }
+
+    @Test fun removeLocationDropsVendorXmpPositions() {
+        val dji = mapOf(
+            "xmlns:drone-dji" to "http://www.dji.com/drone-dji/1.0/",
+            "drone-dji:GpsLatitude" to "59.329444",
+            "drone-dji:GpsLongtitude" to "18.068611",
+            "drone-dji:AbsoluteAltitude" to "+112.50",
+            "drone-dji:RelativeAltitude" to "+80.10",
+            "drone-dji:FlightYawDegree" to "+12.3",
+            "photoshop:City" to "Stockholm",
+        )
+        val source = jpeg(gps = Photos.gpsIfd(), xmp = dji)
+        val before = Photos.read(source)
+        // The reader flags the drone's position and altitudes, so Share clean and exports see them.
+        assertThat(before.xmpTags().filter { it.sensitivity == SensitivityCategory.Location }.map { it.name })
+            .containsAtLeast("drone-dji:GpsLatitude", "drone-dji:GpsLongtitude", "drone-dji:AbsoluteAltitude", "drone-dji:RelativeAltitude")
+
+        val edited = edit(source, EditOperation.RemoveLocation(includePlaceNames = false))
+        assertThat(edited.after.xmpTags().map { it.name }.filter { it.startsWith("drone-dji:") }).containsExactly("drone-dji:FlightYawDegree")
+        assertThat(edited.xmp("photoshop:City")).isEqualTo("Stockholm")
+        assertThat(edited.after.directories.map { it.id }).doesNotContain("gps")
+        edited.assertIdempotent(EditOperation.RemoveLocation(includePlaceNames = false))
+
+        val stripped = edit(source, EditOperation.Strip(setOf(StripCategory.Location)))
+        assertThat(stripped.after.xmpTags().filter { it.sensitivity == SensitivityCategory.Location }).isEmpty()
+    }
+
+    @Test fun removeLocationWithPlaceNamesDropsIptcContentLocation() {
+        val source = jpeg(gps = Photos.gpsIfd(), iptc = listOf(26 to "SWE-STO", 27 to "Gamla stan, Stockholm", 90 to "Stockholm", 5 to "Title"))
+        val edited = edit(source, EditOperation.RemoveLocation(includePlaceNames = true))
+        assertThat(edited.iptc(26)).isNull()
+        assertThat(edited.iptc(27)).isNull()
+        assertThat(edited.iptc(90)).isNull()
+        assertThat(edited.iptc(5)).isEqualTo("Title")
+        assertThat(edited.after.directories.flatMap { it.tags }.filter { it.sensitivity == SensitivityCategory.Location }).isEmpty()
+
+        val kept = edit(source, EditOperation.RemoveLocation(includePlaceNames = false))
+        assertThat(kept.iptc(27)).isEqualTo("Gamla stan, Stockholm")
     }
 
     @Test fun removingAMissingLocationIsANoOp() {

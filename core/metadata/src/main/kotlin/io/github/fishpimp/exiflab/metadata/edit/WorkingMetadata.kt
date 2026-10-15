@@ -2,9 +2,11 @@ package io.github.fishpimp.exiflab.metadata.edit
 
 import com.adobe.internal.xmp.XMPMetaFactory
 import java.math.BigInteger
+import io.github.fishpimp.exiflab.metadata.mapping.SensitivityClassifier
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.MetadataTag
+import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.metadata.write.ExifChange
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
 import io.github.fishpimp.exiflab.metadata.write.ExifValue
@@ -154,6 +156,12 @@ internal class WorkingMetadata(val report: MetadataReport) {
         xmp[name] = XmpEntry(prefixOf(name), shape, values, typed = true)
     }
 
+    /** How the reader classifies the top-level property [name] (by its prefixed path, as in the report). */
+    fun xmpSensitivity(name: XmpName): SensitivityCategory? {
+        val prefix = xmp[name]?.prefix ?: originalXmp[name]?.prefix ?: prefixOf(name)
+        return SensitivityClassifier.classifyXmp("$prefix:${name.name}")
+    }
+
     fun removeXmp(name: XmpName) {
         xmp.remove(name)
     }
@@ -189,7 +197,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
             MetadataBlock.MakerNote -> exif.remove(MAKER_NOTE_KEY)
             MetadataBlock.Xmp -> xmp.clear()
             MetadataBlock.Iptc, MetadataBlock.PhotoshopResources -> iptc.clear()
-            MetadataBlock.IccProfile, MetadataBlock.Comments -> Unit
+            MetadataBlock.IccProfile, MetadataBlock.Comments, MetadataBlock.EmbeddedMedia -> Unit
         }
     }
 

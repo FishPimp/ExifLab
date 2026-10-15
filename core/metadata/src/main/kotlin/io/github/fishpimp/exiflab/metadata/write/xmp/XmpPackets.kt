@@ -82,6 +82,22 @@ internal object XmpPackets {
         }
     }
 
+    /**
+     * Removes what points at data after a JPEG's primary image, for a copy without it: the Google
+     * Container directory (Motion Photo video, Ultra HDR gain map), the camera's Motion Photo and
+     * Micro Video fields, and the gain map description (hdrgm).
+     */
+    fun removeEmbeddedMediaReferences(meta: XMPMeta) {
+        try {
+            for (namespace in listOf(NS_CONTAINER, NS_HDR_GAIN_MAP)) {
+                if (isRegistered(namespace)) XMPUtils.removeProperties(meta, namespace, null, true, false)
+            }
+            if (isRegistered(NS_GOOGLE_CAMERA)) GOOGLE_CAMERA_MEDIA.forEach { meta.deleteProperty(NS_GOOGLE_CAMERA, it) }
+        } catch (e: XMPException) {
+            throw UnsupportedEditException("Cannot remove the embedded media references from the XMP metadata: ${e.message}")
+        }
+    }
+
     fun hasProperties(meta: XMPMeta): Boolean = try {
         meta.iterator(IteratorOptions().setJustLeafnodes(true)).hasNext()
     } catch (_: XMPException) {
@@ -208,6 +224,13 @@ internal object XmpPackets {
         return registered.removeSuffix(":") + ":" + local
     }
 
+    private const val NS_CONTAINER = "http://ns.google.com/photos/1.0/container/"
+    private const val NS_GOOGLE_CAMERA = "http://ns.google.com/photos/1.0/camera/"
+    private const val NS_HDR_GAIN_MAP = "http://ns.adobe.com/hdr-gain-map/1.0/"
+    private val GOOGLE_CAMERA_MEDIA = listOf(
+        "MotionPhoto", "MotionPhotoVersion", "MotionPhotoPresentationTimestampUs",
+        "MicroVideo", "MicroVideoVersion", "MicroVideoOffset", "MicroVideoPresentationTimestampUs",
+    )
     private const val STANDARD_PADDING = 2048
     private const val GUID_LENGTH = 32
 }

@@ -44,6 +44,10 @@ class PngWriterTest {
 
     private val exifTiff = TiffBuilder(false).build(Photos.ifd0(Photos.exifIfd(), Photos.gpsIfd()))
 
+    private companion object {
+        const val EXIF_NS = "http://ns.adobe.com/exif/1.0/"
+    }
+
     @Test fun addsExifAndXmpBeforeTheImageData() {
         val source = Containers.png()
         val written = write(
@@ -90,6 +94,69 @@ class PngWriterTest {
         assertThat(after.tag("xmp", "xmp:Rating").rawValue).isEqualTo("5")
         assertThat(after.tag("xmp", "xmp:Label").rawValue).isEqualTo("Blue")
         assertThat(types(written.bytes).count { it == "iTXt" }).isEqualTo(1)
+    }
+
+    private fun deflate(bytes: ByteArray): ByteArray {
+        val deflater = Deflater().apply { setInput(bytes); finish() }
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(65536)
+        while (!deflater.finished()) out.write(buffer, 0, deflater.deflate(buffer))
+        return out.toByteArray()
+    }
+
+    /** An ImageMagick "Raw profile type [name]" zTXt chunk holding [bytes] in hex. */
+    private fun rawProfileChunk(name: String, bytes: ByteArray): ByteArray {
+        val hex = bytes.joinToString("") { "%02x".format(it) }.chunked(72).joinToString("\n")
+        val text = "\n$name\n${"%8d".format(bytes.size)}\n$hex\n"
+        return Containers.pngChunk("zTXt", "Raw profile type $name".toByteArray() + byteArrayOf(0, 0) + deflate(text.toByteArray()))
+    }
+
+    @Test fun xmpInZtxtAndTextChunksIsEditedAndReplacedByOneItxt() {
+        val packet = Xmp.packet(Xmp.description(mapOf("exif:GPSLatitude" to "59,19.75N", "exif:GPSLongitude" to "18,4.1167E", "xmp:Rating" to "2")))
+        val ztxt = Containers.pngChunk("zTXt", "XML:com.adobe.xmp".toByteArray() + byteArrayOf(0, 0) + deflate(packet.toByteArray()))
+        val text = Containers.pngTextChunk("XML:com.adobe.xmp", packet)
+        for (chunk in listOf(ztxt, text)) {
+            val source = Containers.pngWithChunks(Containers.png(), chunk)
+            val written = write(
+                source,
+                MetadataChanges(xmp = listOf(XmpChange.Remove(EXIF_NS, "GPSLatitude"), XmpChange.Remove(EXIF_NS, "GPSLongitude"))),
+            )
+            assertThat(types(written.bytes)).containsExactly("IHDR", "iTXt", "IDAT", "IEND").inOrder()
+            val after = Photos.read(written.bytes)
+            assertThat(after.tagOrNull("xmp", "exif:GPSLatitude")).isNull()
+            assertThat(after.tagOrNull("xmp", "exif:GPSLongitude")).isNull()
+            assertThat(after.tag("xmp", "xmp:Rating").rawValue).isEqualTo("2")
+        }
+    }
+
+    @Test fun imageMagickRawProfilesAreFoldedIntoTheEditedBlocks() {
+        val packet = Xmp.packet(Xmp.description(mapOf("exif:GPSLatitude" to "59,19.75N", "xmp:Rating" to "2")))
+        val source = Containers.pngWithChunks(
+            Containers.png(),
+            rawProfileChunk("exif", "Exif\u0000\u0000".toByteArray(Charsets.ISO_8859_1) + exifTiff),
+            rawProfileChunk("xmp", packet.toByteArray()),
+            Containers.pngTextChunk("Comment", "hello"),
+        )
+        val written = write(
+            source,
+            MetadataChanges(
+                exif = listOf(ascii(ExifIfd.Primary, Photos.ARTIST, "Jane Doe"), ExifChange.Remove(ExifIfd.Primary, 0x8825)),
+                xmp = listOf(XmpChange.Remove(EXIF_NS, "GPSLatitude")),
+            ),
+        )
+        assertThat(types(written.bytes)).containsExactly("IHDR", "tEXt", "eXIf", "iTXt", "IDAT", "IEND").inOrder()
+        val after = Photos.read(written.bytes)
+        // The EXIF of the hex copy is kept, edited, in the eXIf chunk; the copies are gone.
+        assertThat(after.tag("exif-ifd0", "Artist").rawValue).isEqualTo("Jane Doe")
+        assertThat(after.tag("exif-subifd", "Date/Time Original").rawValue).isNotEmpty()
+        assertThat(after.directories.map { it.id }).doesNotContain("gps")
+        assertThat(after.tag("xmp", "xmp:Rating").rawValue).isEqualTo("2")
+        assertThat(after.tagOrNull("xmp", "exif:GPSLatitude")).isNull()
+        assertThat(after.directories.flatMap { it.tags }.map { it.name }.filter { it.startsWith("Raw profile") }).isEmpty()
+
+        // An edit that touches neither block keeps them.
+        val untouched = write(source, MetadataChanges(removeBlocks = setOf(MetadataBlock.IccProfile)))
+        assertThat(types(untouched.bytes).count { it == "zTXt" }).isEqualTo(2)
     }
 
     @Test fun removesTextChunksProfilesAndMetadataBlocks() {
