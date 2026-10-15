@@ -853,6 +853,24 @@
     <string name="edit_review_nothing">No changes are queued.</string>
     <string name="edit_review_no_visible_changes">The file already has these values, so nothing visible changes.</string>
     <string name="edit_review_warnings_title">Good to know</string>
+    <string name="plan_warning_no_date_shift">There is no capture date to shift.</string>
+    <string name="plan_warning_no_date_convert">There is no capture date to move to another time zone.</string>
+    <string name="plan_warning_no_date_zone">There is no capture date to set the time zone for.</string>
+    <string name="plan_warning_latitude">The latitude %1$s is outside −90 to 90 degrees, so the location was not changed.</string>
+    <string name="plan_warning_longitude">The longitude %1$s is outside −180 to 180 degrees, so the location was not changed.</string>
+    <string name="plan_warning_altitude">An altitude of %1$s m is not plausible, so the location was not changed.</string>
+    <string name="plan_warning_author_not_ascii_iptc">The author has characters EXIF can\'t store, so it is saved in XMP and IPTC only.</string>
+    <string name="plan_warning_author_not_ascii">The author has characters EXIF can\'t store, so it is saved in XMP only.</string>
+    <string name="plan_warning_copyright_not_ascii_iptc">The copyright has characters EXIF can\'t store, so it is saved in XMP and IPTC only.</string>
+    <string name="plan_warning_copyright_not_ascii">The copyright has characters EXIF can\'t store, so it is saved in XMP only.</string>
+    <plurals name="plan_warning_author_iptc_too_long">
+        <item quantity="one">The author is longer than IPTC allows (%d byte), so it is not saved in IPTC.</item>
+        <item quantity="other">The author is longer than IPTC allows (%d bytes), so it is not saved in IPTC.</item>
+    </plurals>
+    <plurals name="plan_warning_copyright_iptc_too_long">
+        <item quantity="one">The copyright is longer than IPTC allows (%d byte), so it is not saved in IPTC.</item>
+        <item quantity="other">The copyright is longer than IPTC allows (%d bytes), so it is not saved in IPTC.</item>
+    </plurals>
     <string name="edit_review_done">Done</string>
     <string name="edit_save_in_place">Save</string>
     <string name="edit_save_copy">Save as copy</string>
@@ -875,6 +893,17 @@
         <item quantity="one">%d change could not be stored in this file type:</item>
         <item quantity="other">%d changes could not be stored in this file type:</item>
     </plurals>
+    <plurals name="write_skip_iptc_unsupported">
+        <item quantity="one">%2$s files can\'t hold IPTC, so %1$d IPTC change was not written.</item>
+        <item quantity="other">%2$s files can\'t hold IPTC, so %1$d IPTC changes were not written.</item>
+    </plurals>
+    <string name="write_skip_this_file_type">This file type</string>
+    <string name="write_skip_heif_color_profile">The color profile is part of the HEIF image itself, so it was kept.</string>
+    <string name="write_skip_structural_tag">EXIF tag %1$s describes the structure of the file and can\'t be set directly.</string>
+    <string name="write_skip_iptc_invalid">IPTC %1$s is not a valid IPTC field, so it was not written.</string>
+    <string name="write_skip_iptc_too_long">IPTC %1$s is longer than IPTC allows, so it was not written.</string>
+    <string name="write_skip_maker_note_moved">The MakerNote was moved to make room. The camera maker\'s own tools may no longer read all of it.</string>
+    <string name="write_skip_exif_dropped">Damaged EXIF data that could not be kept was left out.</string>
     <string name="edit_failure_title">Not saved</string>
     <string name="edit_failure_rolled_back">The file was put back exactly as it was.</string>
     <string name="edit_failure_read_only">This photo can\'t be changed where it is. Save it as a copy instead.</string>

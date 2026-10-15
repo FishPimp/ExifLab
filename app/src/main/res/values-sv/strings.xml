@@ -836,6 +836,24 @@
     <string name="edit_review_nothing">Inga ändringar väntar.</string>
     <string name="edit_review_no_visible_changes">Filen har redan de här värdena, så inget synligt ändras.</string>
     <string name="edit_review_warnings_title">Bra att veta</string>
+    <string name="plan_warning_no_date_shift">Det finns inget fotodatum att flytta.</string>
+    <string name="plan_warning_no_date_convert">Det finns inget fotodatum att flytta till en annan tidszon.</string>
+    <string name="plan_warning_no_date_zone">Det finns inget fotodatum att ange tidszon för.</string>
+    <string name="plan_warning_latitude">Latituden %1$s ligger utanför −90 till 90 grader, så platsen ändrades inte.</string>
+    <string name="plan_warning_longitude">Longituden %1$s ligger utanför −180 till 180 grader, så platsen ändrades inte.</string>
+    <string name="plan_warning_altitude">En höjd på %1$s m är inte rimlig, så platsen ändrades inte.</string>
+    <string name="plan_warning_author_not_ascii_iptc">Upphovspersonen innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP och IPTC.</string>
+    <string name="plan_warning_author_not_ascii">Upphovspersonen innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP.</string>
+    <string name="plan_warning_copyright_not_ascii_iptc">Upphovsrätten innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP och IPTC.</string>
+    <string name="plan_warning_copyright_not_ascii">Upphovsrätten innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP.</string>
+    <plurals name="plan_warning_author_iptc_too_long">
+        <item quantity="one">Upphovspersonen är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+        <item quantity="other">Upphovspersonen är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+    </plurals>
+    <plurals name="plan_warning_copyright_iptc_too_long">
+        <item quantity="one">Upphovsrätten är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+        <item quantity="other">Upphovsrätten är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+    </plurals>
     <string name="edit_review_done">Klar</string>
     <string name="edit_save_in_place">Spara</string>
     <string name="edit_save_copy">Spara som kopia</string>
@@ -858,6 +876,17 @@
         <item quantity="one">%d ändring gick inte att lagra i den här filtypen:</item>
         <item quantity="other">%d ändringar gick inte att lagra i den här filtypen:</item>
     </plurals>
+    <plurals name="write_skip_iptc_unsupported">
+        <item quantity="one">%2$s-filer kan inte innehålla IPTC, så %1$d IPTC-ändring skrevs inte.</item>
+        <item quantity="other">%2$s-filer kan inte innehålla IPTC, så %1$d IPTC-ändringar skrevs inte.</item>
+    </plurals>
+    <string name="write_skip_this_file_type">Den här filtypen</string>
+    <string name="write_skip_heif_color_profile">Färgprofilen är en del av själva HEIF-bilden, så den behölls.</string>
+    <string name="write_skip_structural_tag">EXIF-taggen %1$s beskriver filens struktur och kan inte anges direkt.</string>
+    <string name="write_skip_iptc_invalid">IPTC %1$s är inte ett giltigt IPTC-fält, så det skrevs inte.</string>
+    <string name="write_skip_iptc_too_long">IPTC %1$s är längre än IPTC tillåter, så det skrevs inte.</string>
+    <string name="write_skip_maker_note_moved">MakerNote flyttades för att få plats. Kameratillverkarens egna verktyg kanske inte längre kan läsa allt i den.</string>
+    <string name="write_skip_exif_dropped">Skadad EXIF-data som inte gick att behålla utelämnades.</string>
     <string name="edit_failure_title">Inte sparat</string>
     <string name="edit_failure_rolled_back">Filen återställdes exakt som den var.</string>
     <string name="edit_failure_read_only">Fotot kan inte ändras där det ligger. Spara det som en kopia i stället.</string>

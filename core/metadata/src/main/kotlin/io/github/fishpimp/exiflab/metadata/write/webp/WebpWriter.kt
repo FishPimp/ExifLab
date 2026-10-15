@@ -1,10 +1,12 @@
 package io.github.fishpimp.exiflab.metadata.write.webp
 
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.io.SeekableSource
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.bytesAt
 import io.github.fishpimp.exiflab.metadata.write.copyRange
 import io.github.fishpimp.exiflab.metadata.write.copyToEnd
@@ -45,10 +47,10 @@ internal class WebpWriter {
         }
     }
 
-    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<String>) {
+    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<WriteSkip>) {
         val (chunks, riffEnd) = scan(source)
         if (chunks.none { it.fourCc in WebpDigestSink.IMAGE_CHUNKS && it.fourCc != "ANIM" }) throw CorruptImageException("The WebP file has no image data")
-        if (changes.iptc.isNotEmpty()) skipped += "WebP files cannot hold IPTC-IIM; ${changes.iptc.size} IPTC change(s) were not written"
+        if (changes.iptc.isNotEmpty()) skipped += WriteSkip.IptcUnsupported(ImageFormat.WebP, changes.iptc.size)
 
         val editExif = ExifEditor.affects(changes)
         val editXmp = XmpPackets.affects(changes)

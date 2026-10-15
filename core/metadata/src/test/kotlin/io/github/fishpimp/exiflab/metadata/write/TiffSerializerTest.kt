@@ -61,7 +61,7 @@ class TiffSerializerTest {
     }
 
     private fun roundTrip(tiff: ByteArray, edit: MetadataChanges = MetadataChanges(), maxSize: Int = Int.MAX_VALUE): ByteArray {
-        val notes = mutableListOf<String>()
+        val notes = mutableListOf<WriteSkip>()
         val document = ExifEditor.apply(TiffParser.parse(tiff, notes), edit, jpeg = null, skipped = notes)!!
         return TiffSerializer.serialize(document, maxSize, notes)
     }
@@ -187,18 +187,18 @@ class TiffSerializerTest {
 
     @Test fun damagedLinksAreDroppedWithANoteAndCyclesEnd() {
         val source = TiffBuilder().build(TiffBuilder.ifd { ascii(Photos.MAKE, "X") })
-        val notes = mutableListOf<String>()
+        val notes = mutableListOf<WriteSkip>()
         // IFD0 is at 8 with one entry; point its next link back at itself.
         val cyclic = source.copyOf().also { ByteBuffer.wrap(it, 8 + 2 + 12, 4).putInt(8) }
         val document = TiffParser.parse(cyclic, notes)
         assertThat(document.ifd0.next).isNull()
-        assertThat(notes.single()).contains("Dropped")
+        assertThat((notes.single() as WriteSkip.ExifDataDropped).detail).contains("Dropped")
 
         // A count of 10 moves the value out of line, to an offset far outside the block.
         val outside = source.copyOf().also { ByteBuffer.wrap(it, 8 + 2 + 4, 4).putInt(10) }
-        val dropped = mutableListOf<String>()
+        val dropped = mutableListOf<WriteSkip>()
         assertThat(TiffParser.parse(outside, dropped).ifd0.isEmpty).isTrue()
-        assertThat(dropped.single()).contains("0x010F")
+        assertThat((dropped.single() as WriteSkip.ExifDataDropped).detail).contains("0x010F")
     }
 
     @Test fun valuesAreValidated() {

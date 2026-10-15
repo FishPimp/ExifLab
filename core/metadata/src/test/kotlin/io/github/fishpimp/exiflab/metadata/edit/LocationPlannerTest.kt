@@ -109,7 +109,10 @@ class LocationPlannerTest {
             assertWithMessage("$operation").that(plan.diff).isEmpty()
             assertWithMessage("$operation").that(plan.warnings).hasSize(1)
         }
-        assertThat(plan(fullJpeg(), EditOperation.SetLocation(90.5, 0.0)).warnings.single()).contains("latitude")
+        assertThat(plan(fullJpeg(), EditOperation.SetLocation(90.5, 0.0)).warnings).containsExactly(PlanWarning.LatitudeOutOfRange(90.5))
+        assertThat(plan(fullJpeg(), EditOperation.SetLocation(0.0, -180.01)).warnings).containsExactly(PlanWarning.LongitudeOutOfRange(-180.01))
+        assertThat(plan(fullJpeg(), EditOperation.SetLocation(10.0, 10.0, altitudeMeters = 1e7)).warnings)
+            .containsExactly(PlanWarning.AltitudeImplausible(1e7))
     }
 
     @Test fun removeLocationDropsGpsAndPlaceNames() {

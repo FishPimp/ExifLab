@@ -12,18 +12,26 @@ import io.github.fishpimp.exiflab.data.save.SaveOutcome
 import io.github.fishpimp.exiflab.data.save.SaveRejection
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.data.save.SavedEditNotices
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.edit.TagCatalog
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.screenshots.FakeCatalog
 import io.github.fishpimp.exiflab.screenshots.FakePlanner
 import io.github.fishpimp.exiflab.screenshots.FakeReports
 import io.github.fishpimp.exiflab.screenshots.FakeSaving
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.photo.PhotoLoadError
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.time.Duration
+import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -40,12 +48,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.time.Duration
-import java.time.LocalDateTime
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class EditViewModelTest {
@@ -414,13 +416,13 @@ class EditViewModelTest {
 
     @Test
     fun `skipped changes are shown before returning to the viewer`() = runTest(dispatcher) {
-        saving.outcome = { ref, _ -> SaveOutcome.Saved("r1", EditMode.InPlace, ref.uri, skipped = listOf("IPTC City: PNG has no IPTC")) }
+        saving.outcome = { ref, _ -> SaveOutcome.Saved("r1", EditMode.InPlace, ref.uri, skipped = listOf(WriteSkip.IptcUnsupported(ImageFormat.Png, 1))) }
         val vm = viewModel()
         val state = observe(vm)
         val events = events(vm)
         vm.setLocation(1.0, 2.0, null)
         vm.save(SaveMode.InPlace)
-        assertThat(state().save).isEqualTo(SaveState.SavedWithSkipped(EditMode.InPlace, listOf("IPTC City: PNG has no IPTC"), null))
+        assertThat(state().save).isEqualTo(SaveState.SavedWithSkipped(EditMode.InPlace, listOf(WriteSkip.IptcUnsupported(ImageFormat.Png, 1)), null))
         assertThat(events).isEmpty()
         assertThat(notices.forPhoto(FakeReports.phoneRef.uri).first()!!.skipped).isEqualTo(1)
         vm.finishAfterSave()

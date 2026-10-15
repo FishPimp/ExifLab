@@ -4,6 +4,7 @@ import io.github.fishpimp.exiflab.metadata.write.IptcChange
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.charset.CharacterCodingException
@@ -73,13 +74,12 @@ internal object IptcIim {
      * declaring it in 1:90 (and converting existing Latin-1 text) when non-ASCII text is added.
      * Returns null when nothing but the record version and character set remain.
      */
-    fun apply(datasets: MutableList<IptcDataset>, changes: List<IptcChange>, skipped: MutableList<String>): List<IptcDataset>? {
+    fun apply(datasets: MutableList<IptcDataset>, changes: List<IptcChange>, skipped: MutableList<WriteSkip>): List<IptcDataset>? {
         val nonAscii = changes.any { change -> change is IptcChange.Set && change.values.any { value -> value.any { it.code > 0x7F } } }
         if (nonAscii) declareUtf8(datasets)
         for (change in changes) {
-            val name = "IPTC %d:%03d".format(change.record, change.dataset)
             if (change.record !in 1..9 || change.dataset !in 0..255) {
-                skipped += "$name is not a valid IPTC dataset"
+                skipped += WriteSkip.IptcDatasetRejected(change.record, change.dataset, tooLong = false)
                 continue
             }
             val first = datasets.indexOfFirst { it.record == change.record && it.dataset == change.dataset }
@@ -87,7 +87,7 @@ internal object IptcIim {
             if (change !is IptcChange.Set) continue
             val encoded = change.values.map { IptcDataset(change.record, change.dataset, it.toByteArray(Charsets.UTF_8)) }
             if (encoded.any { it.data.size > MAX_DATASET }) {
-                skipped += "$name is longer than IPTC allows"
+                skipped += WriteSkip.IptcDatasetRejected(change.record, change.dataset, tooLong = true)
                 continue
             }
             val key = change.record * 256 + change.dataset
@@ -191,7 +191,7 @@ internal object PhotoshopResources {
      * Applies IPTC changes and removals to [resources]; returns null when no resource remains.
      * Only the IPTC resource (and the digest Photoshop keeps of it) is rewritten.
      */
-    fun edit(resources: MutableList<PhotoshopResource>?, changes: MetadataChanges, skipped: MutableList<String>): List<PhotoshopResource>? {
+    fun edit(resources: MutableList<PhotoshopResource>?, changes: MetadataChanges, skipped: MutableList<WriteSkip>): List<PhotoshopResource>? {
         val list = if (MetadataBlock.PhotoshopResources in changes.removeBlocks || resources == null) mutableListOf() else resources
         val iptcIndex = list.indexOfFirst { it.id == IPTC && it.signature.contentEquals(SIGNATURE_8BIM) }
         val existing = if (iptcIndex >= 0 && MetadataBlock.Iptc !in changes.removeBlocks) IptcIim.parse(list[iptcIndex].data) else mutableListOf()

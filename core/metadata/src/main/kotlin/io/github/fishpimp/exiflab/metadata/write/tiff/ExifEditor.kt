@@ -7,6 +7,7 @@ import io.github.fishpimp.exiflab.metadata.write.ExifValue
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 
 /**
  * Applies the EXIF part of [MetadataChanges] to a parsed block. Block removals run first, then
@@ -22,7 +23,7 @@ internal object ExifEditor {
      * IFDs created from nothing get the tags EXIF requires for JPEG (resolution, chroma
      * positioning, components, color space, pixel dimensions).
      */
-    fun apply(original: TiffDocument?, changes: MetadataChanges, jpeg: JpegFacts?, skipped: MutableList<String>): TiffDocument? {
+    fun apply(original: TiffDocument?, changes: MetadataChanges, jpeg: JpegFacts?, skipped: MutableList<WriteSkip>): TiffDocument? {
         var document = if (MetadataBlock.Exif in changes.removeBlocks) null else original
         if (MetadataBlock.MakerNote in changes.removeBlocks) document?.exif?.remove(Tiff.TAG_MAKER_NOTE)
         if (MetadataBlock.ExifThumbnail in changes.removeBlocks) document?.ifd0?.next = null
@@ -33,7 +34,7 @@ internal object ExifEditor {
             when (change) {
                 is ExifChange.Set -> {
                     if (change.tag in Tiff.STRUCTURAL_TAGS) {
-                        skipped += "$name is part of the file structure and cannot be set directly"
+                        skipped += WriteSkip.StructuralTag(change.ifd, change.tag)
                         continue
                     }
                     val target = document ?: newDocument(jpeg != null).also { document = it }

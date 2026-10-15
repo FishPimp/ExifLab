@@ -1,11 +1,13 @@
 package io.github.fishpimp.exiflab.metadata.write.heif
 
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.io.SeekableSource
 import io.github.fishpimp.exiflab.metadata.write.COPY_BUFFER
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.bytesAt
 import io.github.fishpimp.exiflab.metadata.write.copyRange
 import io.github.fishpimp.exiflab.metadata.write.latin1
@@ -135,7 +137,7 @@ internal class HeifWriter {
         }
     }
 
-    fun prepare(source: SeekableSource, changes: MetadataChanges, skipped: MutableList<String>): Output {
+    fun prepare(source: SeekableSource, changes: MetadataChanges, skipped: MutableList<WriteSkip>): Output {
         val file = HeifStructure.read(source)
         val meta = file.parseMeta()
         val movie = file.parseMovie()
@@ -144,9 +146,9 @@ internal class HeifWriter {
         HeifDigest.plan(meta, movie, file.length)
         validateLocations(meta, file.length)
 
-        if (changes.iptc.isNotEmpty()) skipped += "HEIF files cannot hold IPTC-IIM; ${changes.iptc.size} IPTC change(s) were not written"
+        if (changes.iptc.isNotEmpty()) skipped += WriteSkip.IptcUnsupported(ImageFormat.Heif, changes.iptc.size)
         if (MetadataBlock.IccProfile in changes.removeBlocks && hasIccProfile(meta)) {
-            skipped += "The color profile of a HEIF image is part of its image description and was kept"
+            skipped += WriteSkip.HeifColorProfileKept
         }
 
         resolveLengths(meta, file.length)

@@ -11,6 +11,7 @@ import io.github.fishpimp.exiflab.metadata.edit.EditableField
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.ui.photo.PhotoLoadError
 
 /** Reading the photo to edit. */
@@ -36,7 +37,7 @@ sealed interface PlanState {
     /** The planner is not part of this build (or failed to start). */
     data object Unavailable : PlanState
 
-    /** The planner rejected the edits; [message] is its English explanation. */
+    /** The planner rejected the edits; [message] is its English explanation, for debugging only and never shown. */
     data class Failed(val message: String?) : PlanState
 }
 
@@ -104,10 +105,10 @@ sealed interface SaveState {
     data class Failed(val failure: SaveFailure) : SaveState
 
     /**
-     * Saved, but the file format could not hold everything; the review lists [skipped] (English,
-     * from the writer) before returning to the viewer.
+     * Saved, but the file format could not hold everything; the review lists [skipped] before
+     * returning to the viewer.
      */
-    data class SavedWithSkipped(val mode: EditMode, val skipped: List<String>, val openCopy: PhotoRef?) : SaveState
+    data class SavedWithSkipped(val mode: EditMode, val skipped: List<WriteSkip>, val openCopy: PhotoRef?) : SaveState
 }
 
 @Immutable

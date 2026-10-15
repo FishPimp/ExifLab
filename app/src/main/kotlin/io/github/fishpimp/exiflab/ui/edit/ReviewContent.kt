@@ -67,6 +67,7 @@ import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
 import io.github.fishpimp.exiflab.designsystem.theme.ExifLabTheme
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.ui.history.DiffKindChip
@@ -155,7 +156,8 @@ fun ReviewContent(
                         EditorBanner(
                             icon = Icons.Rounded.ErrorOutline,
                             title = stringResource(R.string.edit_review_plan_failed),
-                            text = planState.message ?: stringResource(R.string.edit_review_plan_failed_body),
+                            // The planner's own message is English and technical; it is never shown.
+                            text = stringResource(R.string.edit_review_plan_failed_body),
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer,
                             announce = true,
@@ -246,15 +248,16 @@ private fun PlanningRow() {
 }
 
 @Composable
-private fun WarningsBanner(warnings: List<String>) {
+private fun WarningsBanner(warnings: List<PlanWarning>) {
+    val lines = warnings.map { planWarningText(it) }.distinct()
     EditorBanner(
         icon = Icons.Rounded.Info,
         title = stringResource(R.string.edit_review_warnings_title),
-        text = warnings.first(),
+        text = lines.first(),
         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        warnings.drop(1).forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
+        lines.drop(1).forEach { Text(it, style = MaterialTheme.typography.bodyMedium) }
     }
 }
 
@@ -387,7 +390,7 @@ private fun SavedResult(saved: SaveState.SavedWithSkipped) {
         contentColor = colors.onAddedContainer,
         announce = true,
     ) {
-        saved.skipped.forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
+        saved.skipped.map { writeSkipText(it) }.distinct().forEach { Text("• $it", style = MaterialTheme.typography.bodyMedium) }
     }
 }
 

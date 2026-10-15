@@ -191,7 +191,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             found = true
         }
         if (!found) {
-            state.warnings += "There is no capture date to shift"
+            state.warnings += PlanWarning.NoCaptureDate(DateAction.Shift)
             return
         }
         shiftGps(by)
@@ -265,7 +265,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             }
             found = true
         }
-        if (!found) state.warnings += "There is no capture date to convert"
+        if (!found) state.warnings += PlanWarning.NoCaptureDate(DateAction.Convert)
     }
 
     private fun setUtcOffset(offset: ZoneOffset) {
@@ -289,7 +289,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             found = true
             state.setIptc(slot.timeDataset, listOf(EditDates.formatIptcTime(time.first, offset)))
         }
-        if (!found) state.warnings += "There is no capture date to set the time zone for"
+        if (!found) state.warnings += PlanWarning.NoCaptureDate(DateAction.SetZone)
     }
 
     // ---- Location ----
@@ -299,15 +299,15 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         val longitude = operation.longitude
         val altitude = operation.altitudeMeters
         if (!latitude.isFinite() || latitude !in -90.0..90.0) {
-            state.warnings += "The latitude $latitude is outside -90 to 90 degrees; the location was not changed"
+            state.warnings += PlanWarning.LatitudeOutOfRange(latitude)
             return
         }
         if (!longitude.isFinite() || longitude !in -180.0..180.0) {
-            state.warnings += "The longitude $longitude is outside -180 to 180 degrees; the location was not changed"
+            state.warnings += PlanWarning.LongitudeOutOfRange(longitude)
             return
         }
         if (altitude != null && (!altitude.isFinite() || abs(altitude) > MAX_ALTITUDE)) {
-            state.warnings += "The altitude $altitude m is not plausible; the location was not changed"
+            state.warnings += PlanWarning.AltitudeImplausible(altitude)
             return
         }
         val previous = currentPosition()
@@ -381,21 +381,21 @@ internal class PlanSteps(private val state: WorkingMetadata) {
     private fun setAuthorship(operation: EditOperation.SetAuthorship) {
         if (operation.changeArtist) {
             setAuthorField(
-                value = operation.artist, what = "artist", exifTag = ExifTags.ARTIST,
+                value = operation.artist, field = AuthorField.Artist, exifTag = ExifTags.ARTIST,
                 xmp = { state.setXmp(XmpName(XmpNs.DC, "creator"), XmpShape.Seq, listOf(it)) },
                 xmpName = XmpName(XmpNs.DC, "creator"), iptcDataset = IptcTags.BY_LINE,
             )
         }
         if (operation.changeCopyright) {
             setAuthorField(
-                value = operation.copyright, what = "copyright", exifTag = ExifTags.COPYRIGHT,
+                value = operation.copyright, field = AuthorField.Copyright, exifTag = ExifTags.COPYRIGHT,
                 xmp = { state.setXmp(XmpName(XmpNs.DC, "rights"), XmpShape.LangAlt, listOf(it)) },
                 xmpName = XmpName(XmpNs.DC, "rights"), iptcDataset = IptcTags.COPYRIGHT_NOTICE,
             )
         }
     }
 
-    private fun setAuthorField(value: String?, what: String, exifTag: Int, xmp: (String) -> Unit, xmpName: XmpName, iptcDataset: Int) {
+    private fun setAuthorField(value: String?, field: AuthorField, exifTag: Int, xmp: (String) -> Unit, xmpName: XmpName, iptcDataset: Int) {
         val text = value?.trim()?.takeIf { it.isNotEmpty() }
         val writeIptc = state.hasIptc || state.report.format == ImageFormat.Jpeg
         if (text == null) {
@@ -404,21 +404,22 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             state.removeIptc(iptcDataset)
             return
         }
+        val maxIptcBytes = IptcTags.MAX_BYTES.getValue(iptcDataset)
+        val fitsIptc = text.toByteArray(Charsets.UTF_8).size <= maxIptcBytes
         val ascii = AsciiText.lossless(text)
         if (ascii != null) {
             state.setExif(ExifIfd.Primary, exifTag, ExifValue.Ascii(ascii))
         } else {
             state.removeExif(ExifIfd.Primary, exifTag)
-            state.warnings += "The $what has characters EXIF cannot store; it is saved in XMP" + if (writeIptc) " and IPTC only" else " only"
+            state.warnings += PlanWarning.NonAsciiField(field, alsoIptc = writeIptc && fitsIptc)
         }
         xmp(text)
         if (writeIptc) {
-            val max = IptcTags.MAX_BYTES.getValue(iptcDataset)
-            if (text.toByteArray(Charsets.UTF_8).size <= max) {
+            if (fitsIptc) {
                 state.setIptc(iptcDataset, listOf(text))
             } else {
                 state.removeIptc(iptcDataset)
-                state.warnings += "The $what is longer than IPTC allows ($max bytes); it is saved in EXIF and XMP only"
+                state.warnings += PlanWarning.IptcTooLong(field, maxIptcBytes)
             }
         }
     }

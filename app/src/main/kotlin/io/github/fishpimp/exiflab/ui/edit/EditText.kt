@@ -6,10 +6,15 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.metadata.ImageFormat
+import io.github.fishpimp.exiflab.metadata.edit.AuthorField
+import io.github.fishpimp.exiflab.metadata.edit.DateAction
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.EditableField
 import io.github.fishpimp.exiflab.metadata.edit.FieldKind
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.ui.edit.time.hoursPart
 import io.github.fishpimp.exiflab.ui.edit.time.minutesPart
 import io.github.fishpimp.exiflab.ui.edit.time.secondsPart
@@ -17,6 +22,7 @@ import io.github.fishpimp.exiflab.ui.format.CaptureTimeFormat
 import io.github.fishpimp.exiflab.ui.format.ExposureFormat
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.formatted
+import java.text.NumberFormat
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -97,12 +103,17 @@ fun validationMessage(error: ValidationError, field: EditableField?): String = w
     ValidationError.Empty -> stringResource(R.string.edit_error_empty)
     ValidationError.NotANumber -> stringResource(R.string.edit_error_not_a_number)
     ValidationError.OutOfRange -> when (val kind = field?.kind) {
-        is FieldKind.Integer -> stringResource(R.string.edit_error_out_of_range_between, kind.min.toString(), kind.max.toString())
+        is FieldKind.Integer -> stringResource(
+            R.string.edit_error_out_of_range_between,
+            localizedNumber(kind.min.toDouble(), LocalLocale.current.platformLocale),
+            localizedNumber(kind.max.toDouble(), LocalLocale.current.platformLocale),
+        )
         is FieldKind.Number -> {
             val min = kind.min
             val max = kind.max
             if (min != null && max != null) {
-                stringResource(R.string.edit_error_out_of_range_between, trimNumber(min), trimNumber(max))
+                val locale = LocalLocale.current.platformLocale
+                stringResource(R.string.edit_error_out_of_range_between, localizedNumber(min, locale), localizedNumber(max, locale))
             } else {
                 stringResource(R.string.edit_error_out_of_range)
             }
@@ -116,8 +127,66 @@ fun validationMessage(error: ValidationError, field: EditableField?): String = w
     ValidationError.InvalidChoice -> stringResource(R.string.edit_error_invalid_choice)
 }
 
-private fun trimNumber(value: Double): String =
-    if (value == Math.floor(value) && !value.isInfinite()) value.toLong().toString() else value.toString()
+/**
+ * [value] in the locale's own form ("2,8" in Swedish), without grouping or an exponent and with
+ * at most six decimals, so range limits and warnings read like the numbers the user types.
+ */
+fun localizedNumber(value: Double, locale: Locale): String =
+    NumberFormat.getNumberInstance(locale).apply {
+        isGroupingUsed = false
+        maximumFractionDigits = 6
+    }.format(value)
+
+/** The localized text of a planner warning. */
+@Composable
+fun planWarningText(warning: PlanWarning): String {
+    val locale = LocalLocale.current.platformLocale
+    return when (warning) {
+        is PlanWarning.NoCaptureDate -> stringResource(
+            when (warning.action) {
+                DateAction.Shift -> R.string.plan_warning_no_date_shift
+                DateAction.Convert -> R.string.plan_warning_no_date_convert
+                DateAction.SetZone -> R.string.plan_warning_no_date_zone
+            },
+        )
+        is PlanWarning.LatitudeOutOfRange -> stringResource(R.string.plan_warning_latitude, localizedNumber(warning.value, locale))
+        is PlanWarning.LongitudeOutOfRange -> stringResource(R.string.plan_warning_longitude, localizedNumber(warning.value, locale))
+        is PlanWarning.AltitudeImplausible -> stringResource(R.string.plan_warning_altitude, localizedNumber(warning.value, locale))
+        is PlanWarning.NonAsciiField -> stringResource(
+            when (warning.field) {
+                AuthorField.Artist -> if (warning.alsoIptc) R.string.plan_warning_author_not_ascii_iptc else R.string.plan_warning_author_not_ascii
+                AuthorField.Copyright -> if (warning.alsoIptc) R.string.plan_warning_copyright_not_ascii_iptc else R.string.plan_warning_copyright_not_ascii
+            },
+        )
+        is PlanWarning.IptcTooLong -> pluralStringResource(
+            when (warning.field) {
+                AuthorField.Artist -> R.plurals.plan_warning_author_iptc_too_long
+                AuthorField.Copyright -> R.plurals.plan_warning_copyright_iptc_too_long
+            },
+            warning.maxBytes,
+            warning.maxBytes,
+        )
+    }
+}
+
+/** The localized text of something a writer could not store, or had to repair, while saving. */
+@Composable
+fun writeSkipText(skip: WriteSkip): String = when (skip) {
+    is WriteSkip.IptcUnsupported -> pluralStringResource(
+        R.plurals.write_skip_iptc_unsupported,
+        skip.count,
+        skip.count,
+        skip.container.takeIf { it != ImageFormat.Unknown }?.displayName ?: stringResource(R.string.write_skip_this_file_type),
+    )
+    WriteSkip.HeifColorProfileKept -> stringResource(R.string.write_skip_heif_color_profile)
+    is WriteSkip.StructuralTag -> stringResource(R.string.write_skip_structural_tag, "0x%04X".format(Locale.ROOT, skip.tag))
+    is WriteSkip.IptcDatasetRejected -> stringResource(
+        if (skip.tooLong) R.string.write_skip_iptc_too_long else R.string.write_skip_iptc_invalid,
+        "%d:%03d".format(Locale.ROOT, skip.record, skip.dataset),
+    )
+    WriteSkip.MakerNoteMoved -> stringResource(R.string.write_skip_maker_note_moved)
+    is WriteSkip.ExifDataDropped -> stringResource(R.string.write_skip_exif_dropped)
+}
 
 /** How dates are typed in date-time fields, matching the EXIF layout. */
 const val DATE_TIME_EXAMPLE = "2026-06-14 17:42:07"

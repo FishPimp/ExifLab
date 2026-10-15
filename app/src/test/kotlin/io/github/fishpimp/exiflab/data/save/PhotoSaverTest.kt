@@ -11,7 +11,9 @@ import io.github.fishpimp.exiflab.data.history.SaveError
 import io.github.fishpimp.exiflab.data.save.SaveTestHarness.Companion.ORIGINAL
 import io.github.fishpimp.exiflab.data.save.SaveTestHarness.Companion.changes
 import io.github.fishpimp.exiflab.data.save.SaveTestHarness.Companion.diff
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
@@ -48,7 +50,7 @@ class PhotoSaverTest {
         assertThat(outcome).isInstanceOf(SaveOutcome.Saved::class.java)
         outcome as SaveOutcome.Saved
         assertThat(outcome.mode).isEqualTo(EditMode.InPlace)
-        assertThat(outcome.skipped).containsExactly("IPTC")
+        assertThat(outcome.skipped).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.Png, 1))
         assertThat(h.fileOf(ref.uri).readBytes()).isEqualTo(edited)
 
         val record = h.dao.record(outcome.recordId)!!

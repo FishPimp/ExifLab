@@ -4,25 +4,27 @@ import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.EditRecord
 import io.github.fishpimp.exiflab.data.history.EditState
 import io.github.fishpimp.exiflab.data.history.SaveError
+import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
-import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.format
 import io.github.fishpimp.exiflab.data.save.SaveOutcome
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
+import io.github.fishpimp.exiflab.metadata.edit.DateAction
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.EditPlan
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.LocationStatus
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.PhotoSummary
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
-import kotlinx.coroutines.delay
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.delay
 
 /** Photos for batch tests; the file name decides how the fakes treat them. */
 internal object BatchPhotos {
@@ -63,7 +65,7 @@ internal object BatchPhotos {
 /** Plans one change for every photo, except photos named "same*" (nothing to change, with a warning). */
 internal class BatchFakePlanner : ChangePlanner {
     override fun plan(report: MetadataReport, operations: List<EditOperation>): EditPlan {
-        if (report.fileName.orEmpty().startsWith("same")) return EditPlan(MetadataChanges(), emptyList(), listOf("There is no capture date to shift"))
+        if (report.fileName.orEmpty().startsWith("same")) return EditPlan(MetadataChanges(), emptyList(), listOf(PlanWarning.NoCaptureDate(DateAction.Shift)))
         return EditPlan(
             changes = MetadataChanges(removeBlocks = setOf(MetadataBlock.Xmp)),
             diff = listOf(FieldDiff("Artist", DirectoryGroup.Exif, null, "Maja")),

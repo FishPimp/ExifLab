@@ -185,7 +185,7 @@ class CaptureTimePlannerTest {
 
     @Test fun shiftWithoutAnyDateWarnsAndChangesNothing() {
         val plan = plan(jpeg(exif = null), EditOperation.ShiftCaptureTime(Duration.ofHours(1)))
-        assertThat(plan.warnings).containsExactly("There is no capture date to shift")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.Shift))
         assertThat(plan.changes.isEmpty).isTrue()
         assertThat(plan.diff).isEmpty()
         assertThat(plan(fullJpeg(), EditOperation.ShiftCaptureTime(Duration.ZERO)).changes.isEmpty).isTrue()
@@ -269,7 +269,7 @@ class CaptureTimePlannerTest {
 
     @Test fun timeZoneChangeWithoutDatesWarns() {
         val plan = plan(jpeg(exif = null), EditOperation.ChangeTimeZone(tokyo, stockholm))
-        assertThat(plan.warnings).containsExactly("There is no capture date to convert")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.Convert))
         assertThat(plan.changes.isEmpty).isTrue()
     }
 
@@ -297,7 +297,7 @@ class CaptureTimePlannerTest {
 
     @Test fun setUtcOffsetWithoutDatesWarns() {
         val plan = plan(jpeg(exif = null), EditOperation.SetUtcOffset(ZoneOffset.UTC))
-        assertThat(plan.warnings).containsExactly("There is no capture date to set the time zone for")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.SetZone))
         assertThat(plan.changes.isEmpty).isTrue()
     }
 

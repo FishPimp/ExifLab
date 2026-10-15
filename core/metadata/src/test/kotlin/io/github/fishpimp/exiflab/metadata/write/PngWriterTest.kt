@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.metadata.write
 import com.google.common.truth.Truth.assertThat
 import io.github.fishpimp.exiflab.metadata.ByteArrayImageSource
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.fixtures.Containers
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos.tag
@@ -133,7 +134,7 @@ class PngWriterTest {
 
     @Test fun reportsIptcAsSkipped() {
         val written = write(Containers.png(), MetadataChanges(iptc = listOf(IptcChange.Set(2, 120, listOf("Caption")))))
-        assertThat(written.result.skipped.single()).contains("IPTC")
+        assertThat(written.result.skipped).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.Png, 1))
         assertThat(written.bytes).isEqualTo(Containers.png())
     }
 

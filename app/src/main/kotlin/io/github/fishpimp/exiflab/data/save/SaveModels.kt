@@ -2,6 +2,7 @@ package io.github.fishpimp.exiflab.data.save
 
 import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.SaveError
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 
 /** Where [PhotoSaver.save] writes an edit. */
 sealed interface SaveTarget {
@@ -43,13 +44,13 @@ sealed interface SaveOutcome {
      * Written and verified.
      *
      * @property targetUri the file that was written (the photo, the copy or the sidecar).
-     * @property skipped changes the container could not hold, in English, from the writer.
+     * @property skipped changes the container could not hold, from the writer.
      */
     data class Saved(
         val recordId: String,
         val mode: EditMode,
         val targetUri: String,
-        val skipped: List<String> = emptyList(),
+        val skipped: List<WriteSkip> = emptyList(),
     ) : SaveOutcome
 
     /** Writing failed after the target was opened, and the target was put back exactly as it was. */

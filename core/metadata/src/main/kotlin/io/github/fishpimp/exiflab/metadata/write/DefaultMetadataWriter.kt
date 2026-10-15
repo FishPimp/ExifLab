@@ -44,7 +44,7 @@ class DefaultMetadataWriter : MetadataWriter {
                 throw UnsupportedEditException("$name cannot be edited in place")
             }
             val sourceDigest = DefaultImageDataDigest().digest(source)
-            val skipped = mutableListOf<String>()
+            val skipped = mutableListOf<WriteSkip>()
             val heif = if (format in HEIF_FORMATS) HeifWriter().prepare(seekable, changes, skipped) else null
             val sink = heif?.let { HeifDigestSink(it.digestPlan) } ?: ImageDigestSink.forFormat(format)!!
             val buffered = BufferedOutputStream(output, COPY_BUFFER)
@@ -61,7 +61,9 @@ class DefaultMetadataWriter : MetadataWriter {
             if (outputDigest != sourceDigest) {
                 throw ImageDataMismatchException("The image data would change (source $sourceDigest, output $outputDigest); the output must be discarded")
             }
-            WriteResult(format, tee.count, sourceDigest, outputDigest, skipped.distinct())
+            // The HEIF writer handles AVIF too; name the file's own format.
+            val named = skipped.map { if (it is WriteSkip.IptcUnsupported) it.copy(container = format) else it }
+            WriteResult(format, tee.count, sourceDigest, outputDigest, named.distinct())
         }
     } catch (e: SourceAccessException) {
         throw e.failure
