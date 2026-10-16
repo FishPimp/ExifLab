@@ -2,6 +2,7 @@ package io.github.fishpimp.exiflab.screenshots
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.test.junit4.createComposeRule
+import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.designsystem.theme.BrandPalette
 import io.github.fishpimp.exiflab.designsystem.theme.ThemeMode
 import io.github.fishpimp.exiflab.ui.folder.FolderContent
@@ -81,6 +82,12 @@ class LibraryScreenshotTest {
         onRegrant = {},
         onRemove = {},
     )
+
+    /** A folder that could not be read offers to try again. */
+    @Test @Config(qualifiers = "sv-w411dp-h891dp-xxhdpi")
+    fun folder_error_swedish() = compose.snapshot("folder_error_sv", palette = BrandPalette.Citrus) {
+        FolderContent(title = "Camera", state = FolderUiState.Failed(PhotoAccessError.ReadFailed), onBack = {}, onOpenSubfolder = {}, onOpenPhoto = {})
+    }
 
     @Composable
     private fun Folder() = WithFakeThumbnails {

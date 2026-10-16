@@ -202,7 +202,8 @@
     <string name="folder_error_title">This folder cannot be opened</string>
     <string name="folder_error_access_body">ExifLab no longer has access to it. Grant access again from the Library.</string>
     <string name="folder_error_missing_body">It may have been moved, renamed or deleted.</string>
-    <string name="folder_error_read_body">Something went wrong while reading it. Try again later.</string>
+    <string name="folder_error_read_body">Something went wrong while reading it.</string>
+    <string name="folder_error_open_library">Go to Library</string>
     <plurals name="folder_count">
         <item quantity="one">%d folder</item>
         <item quantity="other">%d folders</item>

@@ -22,12 +22,16 @@ import io.github.fishpimp.exiflab.ui.selection.actions
 import io.github.fishpimp.exiflab.ui.selection.exitSelectionWhenStarted
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -52,11 +56,23 @@ class FolderViewModel(
     private val selectionHolder = PhotoSelectionHolder()
     private val batchEvents = Channel<Route.BatchEdit>(Channel.BUFFERED)
 
-    val state: StateFlow<FolderUiState> = repository.listChildren(folderTreeUri, documentUri)
-        .map<FolderListing, FolderUiState> { FolderUiState.Loaded(it) }
-        .catch { e ->
-            if (e !is PhotoAccessException) throw e
-            emit(FolderUiState.Failed(e.error))
+    private val attempts = MutableStateFlow(0)
+    private var retrying = false
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val state: StateFlow<FolderUiState> = attempts
+        .flatMapLatest {
+            repository.listChildren(folderTreeUri, documentUri)
+                .map<FolderListing, FolderUiState> { FolderUiState.Loaded(it) }
+                .onStart {
+                    // Show that a retry is running, not the old failure.
+                    if (retrying) emit(FolderUiState.Loading)
+                    retrying = false
+                }
+                .catch { e ->
+                    if (e !is PhotoAccessException) throw e
+                    emit(FolderUiState.Failed(e.error))
+                }
         }
         .onEach { state ->
             // Photos deleted while selected drop out of the selection.
@@ -69,6 +85,12 @@ class FolderViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FolderUiState.Loading)
 
     val selection: StateFlow<PhotoSelection> = selectionHolder.state
+
+    /** Lists the folder again after a failure, e.g. once an SD card is back. */
+    fun retry() {
+        retrying = true
+        attempts.value++
+    }
 
     val selectionActions: SelectionActions = selectionHolder.actions {
         (state.value as? FolderUiState.Loaded)?.listing?.photos?.map { it.uri }.orEmpty()

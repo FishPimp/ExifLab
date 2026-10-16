@@ -200,7 +200,8 @@
     <string name="folder_error_title">Mappen kan inte öppnas</string>
     <string name="folder_error_access_body">ExifLab har inte längre åtkomst till den. Ge åtkomst igen från Biblioteket.</string>
     <string name="folder_error_missing_body">Den kan ha flyttats, bytt namn eller raderats.</string>
-    <string name="folder_error_read_body">Något gick fel när den lästes. Försök igen senare.</string>
+    <string name="folder_error_read_body">Något gick fel när den lästes.</string>
+    <string name="folder_error_open_library">Gå till Biblioteket</string>
     <plurals name="folder_count">
         <item quantity="one">%d mapp</item>
         <item quantity="other">%d mappar</item>

@@ -53,6 +53,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -83,12 +84,19 @@ import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
 /**
  * The History tab. On phones an edit opens [onOpenRecord] (its own screen); on expanded widths
  * the list and the selected edit sit side by side.
+ *
+ * @param selectedId the edit the user chose for the detail pane (the newest is shown otherwise),
+ *   kept by the host so it survives folding and unfolding. Folding to one pane opens it with
+ *   [onOpenRecord]; the host turns such a screen back into the selection on unfolding.
+ * @param onSelect changes [selectedId].
  */
 @Composable
 fun HistoryScreen(
     onOpenRecord: (String) -> Unit,
     onOpenPhoto: (PhotoRef) -> Unit,
     modifier: Modifier = Modifier,
+    selectedId: String? = null,
+    onSelect: (String?) -> Unit = {},
     viewModel: HistoryViewModel = viewModel(factory = HistoryViewModel.Factory),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -110,23 +118,27 @@ fun HistoryScreen(
         }
     }
     val twoPane = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
-    var selectedId by rememberSaveable { mutableStateOf<String?>(null) }
-    if (twoPane) {
-        // Start the detail pane on the newest edit rather than leaving it blank.
-        LaunchedEffect(state.days, selectedId) {
-            if (selectedId == null) selectedId = state.days.firstNotNullOfOrNull { day -> day.items.firstRecordId() }
+    // The detail pane starts on the newest edit rather than blank.
+    val shownId = if (twoPane) selectedId ?: state.days.firstNotNullOfOrNull { day -> day.items.firstRecordId() } else null
+    val currentSelectedId by rememberUpdatedState(selectedId)
+    LaunchedEffect(twoPane) {
+        // Folded to one pane: the edit that was open beside the list stays open, as its own screen.
+        val open = currentSelectedId
+        if (!twoPane && open != null) {
+            onSelect(null)
+            onOpenRecord(open)
         }
     }
     HistoryContent(
         state = state,
-        onOpenRecord = { id -> if (twoPane) selectedId = id else onOpenRecord(id) },
+        onOpenRecord = { id -> if (twoPane) onSelect(id) else onOpenRecord(id) },
         onRestoreBatch = viewModel::restoreBatch,
-        selectedRecordId = selectedId.takeIf { twoPane },
+        selectedRecordId = shownId,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
         detailPane = if (twoPane) {
             { paneModifier ->
-                val id = selectedId
+                val id = shownId
                 if (id == null) {
                     HistoryDetailPlaceholder(paneModifier)
                 } else {
@@ -134,7 +146,7 @@ fun HistoryScreen(
                         recordId = id,
                         snackbarHostState = snackbarHostState,
                         onOpenPhoto = onOpenPhoto,
-                        onOpenRecord = { selectedId = it },
+                        onOpenRecord = onSelect,
                         modifier = paneModifier,
                     )
                 }
