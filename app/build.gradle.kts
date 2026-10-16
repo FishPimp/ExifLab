@@ -51,6 +51,14 @@ android {
         generateLocaleConfig = true
     }
 
+    // The in-app language picker switches languages at runtime, so every install needs every
+    // language's resources; an App Bundle must not split them by locale.
+    bundle {
+        language {
+            enableSplit = false
+        }
+    }
+
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
