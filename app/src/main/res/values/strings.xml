@@ -773,6 +773,7 @@
     <string name="edit_location_copy_open_file">Open file</string>
     <string name="edit_location_remove">Remove location</string>
     <string name="edit_location_remove_body">Take GPS data out of the photo</string>
+    <string name="edit_location_remove_sidecar">The location can\'t be removed from this file. RAW files and other files that only get an XMP sidecar are never changed, so the location in them stays.</string>
     <string name="edit_location_remove_title">Remove location?</string>
     <string name="edit_location_remove_dialog_body">GPS position, altitude and direction are removed from EXIF and XMP when you save.</string>
     <string name="edit_location_remove_places">Also remove place names (city, region, country)</string>
@@ -853,6 +854,8 @@
     <string name="edit_review_nothing">No changes are queued.</string>
     <string name="edit_review_no_visible_changes">The file already has these values, so nothing visible changes.</string>
     <string name="edit_review_warnings_title">Good to know</string>
+    <string name="edit_review_sidecar_removals_title">Removed fields stay in the file</string>
+    <string name="edit_review_sidecar_removals_body">This file is never changed; the sidecar only records your edits. EXIF and IPTC fields marked Removed stay in the file itself, and other apps can still show them.</string>
     <string name="plan_warning_no_date_shift">There is no capture date to shift.</string>
     <string name="plan_warning_no_date_convert">There is no capture date to move to another time zone.</string>
     <string name="plan_warning_no_date_zone">There is no capture date to set the time zone for.</string>

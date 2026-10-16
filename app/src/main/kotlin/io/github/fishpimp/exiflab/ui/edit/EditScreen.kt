@@ -392,6 +392,7 @@ private fun EditorSections(
                 onChangeLocation = { actions.onOpenPage(EditorPage.Location) },
                 onCopyFromPhoto = actions.onCopyLocation,
                 onRemoveLocation = { removingLocation = true },
+                sidecarOnly = state.sidecarOnly,
             )
             AuthorCard(report, state.edits, actions.onSetAuthorship)
         }
@@ -401,7 +402,7 @@ private fun EditorSections(
             if (includeTools) {
                 item(key = "tools", contentType = "tools") { tools(Modifier.padding(horizontal = gutter).padding(top = 8.dp, bottom = 24.dp)) }
             }
-            allFieldsItems(state.fields, state.fieldEditor, fieldDraft, fieldQuery, actions.fields, gutter)
+            allFieldsItems(state.fields, state.fieldEditor, fieldDraft, fieldQuery, actions.fields, gutter, sidecarOnly = state.sidecarOnly)
         }
     }
 

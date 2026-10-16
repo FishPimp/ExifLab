@@ -143,6 +143,12 @@ data class EditUiState(
     val hasEdits: Boolean get() = edits.isNotEmpty()
     val isSaving: Boolean get() = save is SaveState.Saving || save is SaveState.ChoosingDestination
     val canSave: Boolean get() = plan is PlanState.Ready && !plan.plan.changes.isEmpty && !isSaving
+
+    /**
+     * The file is never changed (RAW and formats ExifLab can't write): edits only go to an XMP
+     * sidecar, which can add and change values but can't take anything out of the file itself.
+     */
+    val sidecarOnly: Boolean get() = saveOptions?.modes == listOf(SaveMode.Sidecar)
 }
 
 /** One-off things the screen does for the view model. */

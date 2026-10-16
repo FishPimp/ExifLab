@@ -756,6 +756,7 @@
     <string name="edit_location_copy_open_file">Öppna fil</string>
     <string name="edit_location_remove">Ta bort plats</string>
     <string name="edit_location_remove_body">Ta bort GPS-data från bilden</string>
+    <string name="edit_location_remove_sidecar">Platsen kan inte tas bort ur den här filen. RAW-filer och andra filer som bara får en XMP-sidofil ändras aldrig, så platsen i dem finns kvar.</string>
     <string name="edit_location_remove_title">Ta bort platsen?</string>
     <string name="edit_location_remove_dialog_body">GPS-position, höjd och riktning tas bort från EXIF och XMP när du sparar.</string>
     <string name="edit_location_remove_places">Ta även bort ortnamn (stad, region, land)</string>
@@ -836,6 +837,8 @@
     <string name="edit_review_nothing">Inga ändringar väntar.</string>
     <string name="edit_review_no_visible_changes">Filen har redan de här värdena, så inget synligt ändras.</string>
     <string name="edit_review_warnings_title">Bra att veta</string>
+    <string name="edit_review_sidecar_removals_title">Borttagna fält finns kvar i filen</string>
+    <string name="edit_review_sidecar_removals_body">Den här filen ändras aldrig; sidofilen sparar bara dina ändringar. EXIF- och IPTC-fält som är markerade Borttagen finns kvar i själva filen, och andra appar kan fortfarande visa dem.</string>
     <string name="plan_warning_no_date_shift">Det finns inget fotodatum att flytta.</string>
     <string name="plan_warning_no_date_convert">Det finns inget fotodatum att flytta till en annan tidszon.</string>
     <string name="plan_warning_no_date_zone">Det finns inget fotodatum att ange tidszon för.</string>

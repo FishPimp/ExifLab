@@ -15,6 +15,7 @@ import io.github.fishpimp.exiflab.metadata.edit.FieldKind
 import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
 import io.github.fishpimp.exiflab.metadata.write.WriteSkip
+import io.github.fishpimp.exiflab.ui.edit.time.ZonePlaces
 import io.github.fishpimp.exiflab.ui.edit.time.hoursPart
 import io.github.fishpimp.exiflab.ui.edit.time.minutesPart
 import io.github.fishpimp.exiflab.ui.edit.time.secondsPart
@@ -38,7 +39,7 @@ fun editSummary(edit: PendingEdit): String {
     return when (val op = edit.operation) {
         is EditOperation.SetCaptureTime -> stringResource(R.string.edit_summary_set_time, dateTimeText(op.local, op.offset, locale))
         is EditOperation.ShiftCaptureTime -> stringResource(R.string.edit_summary_shift_time, durationText(op.by))
-        is EditOperation.ChangeTimeZone -> stringResource(R.string.edit_summary_time_zone, zoneName(op.cameraZone), zoneName(op.actualZone))
+        is EditOperation.ChangeTimeZone -> stringResource(R.string.edit_summary_time_zone, zoneName(op.cameraZone, locale), zoneName(op.actualZone, locale))
         is EditOperation.SetUtcOffset -> stringResource(R.string.edit_summary_offset, utcText(op.offset))
         is EditOperation.SetLocation -> stringResource(R.string.edit_summary_location, LatLng(op.latitude, op.longitude).formatted())
         is EditOperation.RemoveLocation -> stringResource(
@@ -78,10 +79,10 @@ fun dateTimeText(local: LocalDateTime, offset: ZoneOffset?, locale: Locale = Loc
     return if (offset != null) "$text ${utcText(offset)}" else text
 }
 
-/** "Stockholm" for Europe/Stockholm, "UTC+02:00" for a plain offset. */
+/** "Stockholm" for Europe/Stockholm ("Köpenhamn" for Europe/Copenhagen in Swedish), "UTC+02:00" for a plain offset. */
 @Composable
-fun zoneName(zone: ZoneId): String =
-    if (zone is ZoneOffset) utcText(zone) else zone.id.substringAfterLast('/').replace('_', ' ')
+fun zoneName(zone: ZoneId, locale: Locale = LocalLocale.current.platformLocale): String =
+    if (zone is ZoneOffset) utcText(zone) else ZonePlaces.city(ZonePlaces.names(locale), zone.id) ?: zone.id.substringAfterLast('/').replace('_', ' ')
 
 /** "+1 d 2 h 30 min", "−45 s": the signed parts of a shift that are not zero. */
 @Composable

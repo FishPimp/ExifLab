@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.CheckCircle
@@ -46,6 +47,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -92,6 +94,11 @@ fun ReviewContent(
     val options = state.saveOptions
     val plan = (state.plan as? PlanState.Ready)?.plan
     val saved = state.save as? SaveState.SavedWithSkipped
+    val listState = rememberLazyListState()
+    // A failure banner is inserted near the top; bring it into view so it is seen and announced.
+    LaunchedEffect(state.save) {
+        if (state.save is SaveState.Failed) listState.animateScrollToItem(0)
+    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -136,6 +143,7 @@ fun ReviewContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             LazyColumn(
+                state = listState,
                 modifier = Modifier.widthIn(max = 720.dp).fillMaxSize(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -169,6 +177,17 @@ fun ReviewContent(
                     is PlanState.Ready -> {
                         if (planState.plan.warnings.isNotEmpty()) {
                             item(key = "warnings") { WarningsBanner(planState.plan.warnings) }
+                        }
+                        if (state.sidecarOnly && saved == null && planState.plan.diff.any { it.kind == FieldDiff.Kind.Removed && it.group in FileOnlyGroups }) {
+                            item(key = "sidecar-removals") {
+                                EditorBanner(
+                                    icon = Icons.Rounded.ErrorOutline,
+                                    title = stringResource(R.string.edit_review_sidecar_removals_title),
+                                    text = stringResource(R.string.edit_review_sidecar_removals_body),
+                                    containerColor = MaterialTheme.colorScheme.errorContainer,
+                                    contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                                )
+                            }
                         }
                         if (options != null && saved == null) {
                             item(key = "destination") { DestinationCard(options, ref, report) }
@@ -441,6 +460,9 @@ val SaveMode.icon: ImageVector
         SaveMode.Copy -> Icons.Rounded.SaveAs
         SaveMode.Sidecar -> Icons.Rounded.Description
     }
+
+/** Blocks only the file itself holds: an XMP sidecar can't remove anything from them. */
+internal val FileOnlyGroups = setOf(DirectoryGroup.Exif, DirectoryGroup.Gps, DirectoryGroup.Iptc, DirectoryGroup.MakerNote)
 
 /** [diff] by metadata block, in the order the review shows them. */
 internal fun groupedDiff(diff: List<FieldDiff>): List<Pair<DirectoryGroup, List<FieldDiff>>> =
