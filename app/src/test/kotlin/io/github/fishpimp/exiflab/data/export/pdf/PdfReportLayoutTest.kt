@@ -157,7 +157,10 @@ class PdfReportLayoutTest {
         val mapBaseline = withMap.flatMap { it.textOps }.first { it.text == "Tag 0" }.baseline
         val panelBaseline = withPanel.flatMap { it.textOps }.first { it.text == "Tag 0" }.baseline
         assertThat(mapBaseline).isWithin(0.01f).of(panelBaseline)
-        assertThat(withMap.first().ops.filterIsInstance<PdfOp.Image>().map { it.image }).contains(PdfImage.Map)
+        val images = withMap.first().ops.filterIsInstance<PdfOp.Image>()
+        // The pin goes on the map (centered on the position), not on the photo.
+        assertThat(images.single { it.image == PdfImage.Map }.locationMark).isTrue()
+        assertThat(images.single { it.image == PdfImage.Thumbnail }.locationMark).isFalse()
         assertThat(withPanel.flatMap { it.textOps }.map { it.text }).contains("Map not included (offline)")
     }
 
