@@ -93,7 +93,7 @@ internal class WorkingMetadata(val report: MetadataReport) {
     private val removedBlocks = LinkedHashSet<MetadataBlock>()
     private val droppedIfds = LinkedHashSet<ExifIfd>()
     private val removedNamespaces = LinkedHashSet<String>()
-    val warnings = mutableListOf<String>()
+    val warnings = mutableListOf<PlanWarning>()
 
     /** Blocks the report shows. A report with parse warnings may miss some, so removals are kept then. */
     private val presentBlocks: Set<MetadataBlock> = buildSet {

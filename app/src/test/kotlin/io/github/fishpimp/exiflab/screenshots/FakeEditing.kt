@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.metadata.edit.EditableField
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.edit.FieldKind
 import io.github.fishpimp.exiflab.metadata.edit.FieldOption
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.edit.TagCatalog
 import io.github.fishpimp.exiflab.metadata.edit.Validation
 import io.github.fishpimp.exiflab.metadata.edit.ValidationError
@@ -171,7 +172,7 @@ internal class FakeCatalog : TagCatalog {
  */
 internal class FakePlanner(
     private val catalog: TagCatalog = FakeCatalog(),
-    private val warnings: List<String> = emptyList(),
+    private val warnings: List<PlanWarning> = emptyList(),
 ) : ChangePlanner {
     val calls = mutableListOf<List<EditOperation>>()
 

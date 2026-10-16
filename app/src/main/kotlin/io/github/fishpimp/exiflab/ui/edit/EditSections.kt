@@ -12,12 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Copyright
 import androidx.compose.material.icons.rounded.EditCalendar
 import androidx.compose.material.icons.rounded.EditLocationAlt
 import androidx.compose.material.icons.rounded.EditNote
-import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Info
 import androidx.compose.material.icons.rounded.LocationOff
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhotoLibrary
@@ -52,8 +53,11 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -104,14 +108,24 @@ fun PendingEditsCard(edits: List<PendingEdit>, onRemove: (Long) -> Unit, onDisca
                         onClick = { onRemove(edit.id) },
                         label = { Text(summary, maxLines = 3) },
                         trailingIcon = {
-                            Icon(Icons.Rounded.Close, contentDescription = removeLabel, modifier = Modifier.size(InputChipDefaults.AvatarSize))
+                            Icon(Icons.Rounded.Close, contentDescription = null, modifier = Modifier.size(InputChipDefaults.AvatarSize))
                         },
                         colors = InputChipDefaults.inputChipColors(
                             selectedContainerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
                             selectedLabelColor = MaterialTheme.colorScheme.onSurface,
                             selectedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
-                        modifier = Modifier.heightIn(min = 48.dp),
+                        // Announced once, as a button that removes the edit, not as a checked checkbox.
+                        modifier = Modifier
+                            .heightIn(min = 48.dp)
+                            .clearAndSetSemantics {
+                                contentDescription = summary
+                                role = Role.Button
+                                onClick(label = removeLabel) {
+                                    onRemove(edit.id)
+                                    true
+                                }
+                            },
                     )
                 }
             }
@@ -228,6 +242,7 @@ fun LocationCard(
     onCopyFromPhoto: () -> Unit,
     onRemoveLocation: () -> Unit,
     modifier: Modifier = Modifier,
+    sidecarOnly: Boolean = false,
 ) {
     val state = report.locationAfter(edits)
     val location = state.location
@@ -297,15 +312,36 @@ fun LocationCard(
                 }
             }
             if (location != null || (!state.removed && report.locationStatus != LocationStatus.Absent)) {
-                EditorActionRow(
-                    Icons.Rounded.LocationOff,
-                    stringResource(R.string.edit_location_remove),
-                    stringResource(R.string.edit_location_remove_body),
-                    onRemoveLocation,
-                    tint = MaterialTheme.colorScheme.error,
-                )
+                if (sidecarOnly) {
+                    // A sidecar can't take anything out of the file itself, so removing would only look done.
+                    SidecarOnlyNote(stringResource(R.string.edit_location_remove_sidecar))
+                } else {
+                    EditorActionRow(
+                        Icons.Rounded.LocationOff,
+                        stringResource(R.string.edit_location_remove),
+                        stringResource(R.string.edit_location_remove_body),
+                        onRemoveLocation,
+                        tint = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         }
+    }
+}
+
+/** Why a removal is not offered for a file that only gets an XMP sidecar. */
+@Composable
+internal fun SidecarOnlyNote(text: String, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+            .semantics(mergeDescendants = true) {},
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(Icons.Rounded.Info, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
     }
 }
 

@@ -339,7 +339,7 @@ class HeifWriterTest {
         assertThat(after.tagOrNull("xmp", "xmp:Label")).isNull()
         assertThat(after.tagOrNull("xmp", "xmpMM:DocumentID")).isNull()
         assertThat(after.tag("xmp", "dc:title[1]").rawValue).isEqualTo("Title")
-        assertThat(written.result.skipped.single()).contains("IPTC")
+        assertThat(written.result.skipped).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.Heif, 1))
         assertUntouched(
             before, after,
             setOf("exif-ifd0:${Photos.COPYRIGHT}", "exif-ifd0:${Photos.ARTIST}", "exif-subifd:${Photos.EXPOSURE_BIAS}", "exif-subifd:${Photos.MAKER_NOTE}", "gps:", "xmp:"),
@@ -357,9 +357,7 @@ class HeifWriterTest {
         val spec = simplePhoto().let { it.copy(properties = it.properties.toMutableList().also { list -> list[3] = HeifFixtures.colrIcc() }) }
         val source = heif(spec)
         val written = edit(source, MetadataChanges(iptc = listOf(IptcChange.Set(2, 80, listOf("Jane"))), removeBlocks = setOf(MetadataBlock.IccProfile, MetadataBlock.Iptc)))
-        assertThat(written.result.skipped).hasSize(2)
-        assertThat(written.result.skipped.joinToString()).contains("IPTC")
-        assertThat(written.result.skipped.joinToString()).contains("color profile")
+        assertThat(written.result.skipped).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.Heif, 1), WriteSkip.HeifColorProfileKept)
         // Nothing the container can hold changed, so the file is the same.
         assertThat(written.bytes).isEqualTo(source)
     }

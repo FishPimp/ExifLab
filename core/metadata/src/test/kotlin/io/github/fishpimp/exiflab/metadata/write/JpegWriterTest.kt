@@ -412,7 +412,7 @@ class JpegWriterTest {
 
     @Test fun structuralTagsCannotBeSetDirectly() {
         val written = write(phoneJpeg(), changes(set(ExifIfd.Primary, Photos.EXIF_IFD, ExifValue.Longs(listOf(8)))))
-        assertThat(written.result.skipped.single()).contains("0x8769")
+        assertThat(written.result.skipped).containsExactly(WriteSkip.StructuralTag(ExifIfd.Primary, Photos.EXIF_IFD))
     }
 
     private fun makerNoteOffset(tiff: ByteArray): Long {

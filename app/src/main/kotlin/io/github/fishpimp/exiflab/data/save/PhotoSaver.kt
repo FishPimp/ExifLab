@@ -17,6 +17,7 @@ import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.write.ImageDataMismatchException
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.XmpSidecarWriter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -162,7 +163,7 @@ class PhotoSaver(
         if (!ref.writable) return SaveOutcome.Rejected(SaveRejection.ReadOnly)
         if (!engine.canWrite(format)) return SaveOutcome.Rejected(SaveRejection.UnsupportedFormat)
         return withPhotoLock(ref.uri) {
-            var skipped = emptyList<String>()
+            var skipped = emptyList<WriteSkip>()
             val outcome = journaled(newRecord(draft, EditMode.InPlace, targetUri = null, targetName = null), requireBackup = true) { original, temp ->
                 val source = FileImageSource(checkNotNull(original), ref.displayName)
                 val result = temp.outputStream().use { out -> engine.write(source, changes, out) }
@@ -182,7 +183,7 @@ class PhotoSaver(
         if (!engine.canWrite(format)) return SaveOutcome.Rejected(SaveRejection.UnsupportedFormat)
         return withPhotoLock(ref.uri) {
             val targetName = runCatching { documents.displayName(destinationUri) }.getOrNull()
-            var skipped = emptyList<String>()
+            var skipped = emptyList<WriteSkip>()
             val record = newRecord(draft, EditMode.Copy, targetUri = destinationUri, targetName = targetName)
             val outcome = journaled(record, requireBackup = false) { _, temp ->
                 val source = DocumentImageSource(documents, ref.uri, ref.displayName, ref.size)
@@ -540,7 +541,7 @@ class PhotoSaver(
             else -> SaveError.Unknown
         }
 
-        fun SaveOutcome.withSkipped(skipped: List<String>): SaveOutcome =
+        fun SaveOutcome.withSkipped(skipped: List<WriteSkip>): SaveOutcome =
             if (this is SaveOutcome.Saved && skipped.isNotEmpty()) copy(skipped = skipped) else this
     }
 }

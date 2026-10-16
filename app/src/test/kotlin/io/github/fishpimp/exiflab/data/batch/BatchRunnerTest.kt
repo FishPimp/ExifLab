@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.StripCategory
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
@@ -124,7 +125,7 @@ class BatchRunnerTest {
 
         val items = dao.items(id).associateBy { it.displayName }
         assertThat(items.getValue("notes.jpg").status).isEqualTo(BatchItemStatus.Saved)
-        assertThat(items.getValue("notes.jpg").noteLines).containsExactly("IPTC", "MakerNote moved").inOrder()
+        assertThat(items.getValue("notes.jpg").skips).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.Png, 1), WriteSkip.MakerNoteMoved).inOrder()
         assertThat(items.getValue("a.jpg").notes).isNull()
         assertThat(dao.countWithNotes(id)).isEqualTo(1)
     }

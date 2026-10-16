@@ -9,8 +9,8 @@ import io.github.fishpimp.exiflab.data.batch.BatchRouting
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
-import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
@@ -42,9 +42,9 @@ enum class PreviewOutcome {
     Unreadable,
 }
 
-/** A planner warning shared by [count] photos. [text] is the planner's (English) text unless the kind is known. */
+/** A planner warning shared by [count] photos. [warning] is the planner's warning for [Kind.Other]. */
 @Immutable
-data class WarningCount(val kind: Kind, val count: Int, val text: String? = null) {
+data class WarningCount(val kind: Kind, val count: Int, val warning: PlanWarning? = null) {
     enum class Kind { NoCaptureDate, OtherTimeZone, Other }
 }
 
@@ -110,7 +110,7 @@ class BatchAnalyzer(
         val outcomes = Array(photos.size) { routeOf(photos[it], null, kind) }
         val reasons = arrayOfNulls<BatchItemReason>(photos.size)
         photos.forEachIndexed { index, ref -> reasons[index] = skipReason(ref, null, kind) }
-        val warnings = LinkedHashMap<Pair<WarningCount.Kind, String?>, Int>()
+        val warnings = LinkedHashMap<Pair<WarningCount.Kind, PlanWarning?>, Int>()
         var sample: SamplePlan? = null
         var sampleIndex = Int.MAX_VALUE
         var checked = 0
@@ -145,8 +145,8 @@ class BatchAnalyzer(
                                 val (report, plan) = result
                                 outcomes[index] = if (plan.changes.isEmpty) PreviewOutcome.Unchanged else routeOf(ref, report.format, kind)
                                 reasons[index] = skipReason(ref, report.format, kind)
-                                plan.warnings.forEach { text ->
-                                    val key = warningKey(text)
+                                plan.warnings.forEach { warning ->
+                                    val key = warningKey(warning)
                                     warnings[key] = (warnings[key] ?: 0) + 1
                                 }
                                 if (plan.diff.isNotEmpty() && index < sampleIndex) {
@@ -178,17 +178,17 @@ class BatchAnalyzer(
     private fun skipReason(ref: PhotoRef, format: ImageFormat?, kind: BatchKind): BatchItemReason? =
         BatchRouting.route(ref, format, kind, canWrite, hasCopyFolder = true).reason
 
-    private fun warningKey(text: String): Pair<WarningCount.Kind, String?> = when {
-        text.startsWith(NO_CAPTURE_DATE_PREFIX) -> WarningCount.Kind.NoCaptureDate to null
-        text == DefaultChangePlanner.OTHER_ZONE_WARNING -> WarningCount.Kind.OtherTimeZone to null
-        else -> WarningCount.Kind.Other to text
+    private fun warningKey(warning: PlanWarning): Pair<WarningCount.Kind, PlanWarning?> = when (warning) {
+        is PlanWarning.NoCaptureDate -> WarningCount.Kind.NoCaptureDate to null
+        PlanWarning.OtherUtcOffset -> WarningCount.Kind.OtherTimeZone to null
+        else -> WarningCount.Kind.Other to warning
     }
 
     private fun summarize(
         outcomes: Array<PreviewOutcome>,
         reasons: Array<BatchItemReason?>,
         checked: Int,
-        warnings: Map<Pair<WarningCount.Kind, String?>, Int>,
+        warnings: Map<Pair<WarningCount.Kind, PlanWarning?>, Int>,
         sample: SamplePlan?,
     ): BatchPreview {
         val counts = IntArray(PreviewOutcome.entries.size)
@@ -219,6 +219,5 @@ class BatchAnalyzer(
     companion object {
         const val DEFAULT_CONCURRENCY = 4
         private const val EMIT_INTERVAL_MS = 150L
-        private const val NO_CAPTURE_DATE_PREFIX = "There is no capture date"
     }
 }

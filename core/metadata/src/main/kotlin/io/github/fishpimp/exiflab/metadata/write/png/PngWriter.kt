@@ -4,10 +4,12 @@ import com.adobe.internal.xmp.XMPException
 import com.adobe.internal.xmp.XMPMeta
 import com.adobe.internal.xmp.XMPUtils
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.io.SeekableSource
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.bytesAt
 import io.github.fishpimp.exiflab.metadata.write.copyRange
 import io.github.fishpimp.exiflab.metadata.write.copyToEnd
@@ -48,14 +50,14 @@ internal class PngWriter {
         class New(val type: String, val data: ByteArray) : Item()
     }
 
-    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<String>) {
+    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<WriteSkip>) {
         val (chunks, end) = scan(source)
         if (chunks.none { it.kind == Kind.Image }) throw CorruptImageException("The PNG file has no image data")
         // New chunks go before the image data, and before the first APNG frame control chunk.
         val firstImage = chunks.indexOfFirst { it.kind == Kind.Image || it.type == "fcTL" }
         val remove = changes.removeBlocks
 
-        if (changes.iptc.isNotEmpty()) skipped += "PNG files cannot hold IPTC-IIM; ${changes.iptc.size} IPTC change(s) were not written"
+        if (changes.iptc.isNotEmpty()) skipped += WriteSkip.IptcUnsupported(ImageFormat.Png, changes.iptc.size)
 
         val editExif = ExifEditor.affects(changes)
         val exifChunk = chunks.firstOrNull { it.kind == Kind.Exif }
@@ -144,7 +146,7 @@ internal class PngWriter {
         }
     }
 
-    private fun exifChunkData(chunks: List<Chunk>, chunk: Chunk?, changes: MetadataChanges, skipped: MutableList<String>): ByteArray? {
+    private fun exifChunkData(chunks: List<Chunk>, chunk: Chunk?, changes: MetadataChanges, skipped: MutableList<WriteSkip>): ByteArray? {
         val data = when {
             MetadataBlock.Exif in changes.removeBlocks -> null
             chunk != null -> chunk.data

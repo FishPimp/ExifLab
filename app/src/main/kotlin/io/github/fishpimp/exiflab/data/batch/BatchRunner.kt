@@ -10,8 +10,8 @@ import io.github.fishpimp.exiflab.data.save.SaveRejection
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
-import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.EditPlan
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -245,7 +245,7 @@ class BatchRunner(
     }
 
     private fun unchangedReason(plan: EditPlan): BatchItemReason =
-        if (DefaultChangePlanner.OTHER_ZONE_WARNING in plan.warnings) BatchItemReason.AlreadyHasOtherZone else BatchItemReason.NothingToChange
+        if (PlanWarning.OtherUtcOffset in plan.warnings) BatchItemReason.AlreadyHasOtherZone else BatchItemReason.NothingToChange
 
     private suspend fun saveCopy(
         item: BatchJobItem,
@@ -300,7 +300,7 @@ class BatchRunner(
             BatchItemStatus.of(outcome.mode),
             recordId = outcome.recordId,
             targetUri = outcome.targetUri,
-            notes = outcome.skipped.takeIf { it.isNotEmpty() }?.joinToString("\n"),
+            notes = WriteSkipCodec.encode(outcome.skipped),
         )
         is SaveOutcome.RolledBack -> ItemResult.failed(BatchItemReason.SaveFailed, outcome.error, outcome.recordId)
         is SaveOutcome.Failed -> {

@@ -114,7 +114,7 @@
     <string name="photo_location_altitude">Höjd</string>
     <string name="photo_location_direction">Riktning</string>
     <string name="photo_value_altitude">%1$d m ö.h.</string>
-    <string name="photo_value_altitude_below">%1$d m under havsytan</string>
+    <string name="photo_value_altitude_below">%1$d m under havet</string>
     <string name="photo_value_direction">%1$d° %2$s</string>
     <string name="compass_n">N</string>
     <string name="compass_ne">NO</string>
@@ -200,7 +200,8 @@
     <string name="folder_error_title">Mappen kan inte öppnas</string>
     <string name="folder_error_access_body">ExifLab har inte längre åtkomst till den. Ge åtkomst igen från Biblioteket.</string>
     <string name="folder_error_missing_body">Den kan ha flyttats, bytt namn eller raderats.</string>
-    <string name="folder_error_read_body">Något gick fel när den lästes. Försök igen senare.</string>
+    <string name="folder_error_read_body">Något gick fel när den lästes.</string>
+    <string name="folder_error_open_library">Gå till Biblioteket</string>
     <plurals name="folder_count">
         <item quantity="one">%d mapp</item>
         <item quantity="other">%d mappar</item>
@@ -628,8 +629,8 @@
     <string name="edit_before">Före</string>
     <string name="edit_after">Efter</string>
     <string name="edit_utc_offset">UTC%1$s</string>
-    <string name="edit_load_failed_title">Fotot kan inte redigeras</string>
-    <string name="edit_load_failed_body">ExifLab kunde inte läsa fotots metadata, så det finns inget att redigera.</string>
+    <string name="edit_load_failed_title">Bilden kan inte redigeras</string>
+    <string name="edit_load_failed_body">ExifLab kunde inte läsa bildens metadata, så det finns inget att redigera.</string>
     <plurals name="edit_pending_title">
         <item quantity="one">%d ändring väntar på att sparas</item>
         <item quantity="other">%d ändringar väntar på att sparas</item>
@@ -688,7 +689,7 @@
     </plurals>
 
     <string name="edit_time_title">Datum och tid</string>
-    <string name="edit_time_subtitle">När fotot togs, så som kameran registrerade det</string>
+    <string name="edit_time_subtitle">När bilden togs, så som kameran registrerade det</string>
     <string name="edit_time_none">Inget fotodatum</string>
     <string name="edit_time_offset_unknown">Tidszonen är inte registrerad</string>
     <string name="edit_time_set">Ange datum och tid</string>
@@ -715,7 +716,7 @@
     <string name="edit_shift_decrease">%1$s, minska</string>
     <string name="edit_shift_increase">%1$s, öka</string>
     <string name="edit_shift_apply">Flytta</string>
-    <string name="edit_shift_no_date">Fotot har inget fotodatum att flytta.</string>
+    <string name="edit_shift_no_date">Bilden har inget fotodatum att flytta.</string>
     <string name="edit_shift_preview_description">Förhandsvisning, flyttad %1$s</string>
     <string name="edit_shift_offset_kept">Tidszonen förblir %1$s</string>
 
@@ -723,11 +724,11 @@
     <string name="edit_tz_step">Steg %1$d av %2$d</string>
     <string name="edit_tz_camera_question">Kamerans klocka var inställd på</string>
     <string name="edit_tz_camera_body">Tidszonen som kamerans klocka visade, ofta din hemmatidszon.</string>
-    <string name="edit_tz_actual_question">Fotot togs i</string>
+    <string name="edit_tz_actual_question">Bilden togs i</string>
     <string name="edit_tz_actual_body">Där du var. Tiden skrivs om till lokal tid där, sommartid inräknad.</string>
     <string name="edit_tz_search">Sök stad, land eller förskjutning</string>
     <string name="edit_tz_device_zone">Enhetens tidszon</string>
-    <string name="edit_tz_suggested_zone">Föreslagen utifrån fotot</string>
+    <string name="edit_tz_suggested_zone">Föreslagen utifrån bilden</string>
     <string name="edit_tz_all_zones">Alla tidszoner</string>
     <string name="edit_tz_no_match">Ingen tidszon matchar sökningen.</string>
     <string name="edit_tz_next">Nästa</string>
@@ -736,43 +737,44 @@
     <string name="edit_tz_corrected">Rättad</string>
     <string name="edit_tz_preview_shift">Tiden flyttas %1$s</string>
     <string name="edit_tz_preview_same">Tiden förblir densamma</string>
-    <string name="edit_tz_preview_pick">Välj var fotot togs för att se den rättade tiden.</string>
-    <string name="edit_tz_preview_no_time">Fotot har inget fotodatum. Bara tidszonen registreras.</string>
+    <string name="edit_tz_preview_pick">Välj var bilden togs för att se den rättade tiden.</string>
+    <string name="edit_tz_preview_no_time">Bilden har inget fotodatum. Bara tidszonen registreras.</string>
     <string name="edit_tz_summer_time">sommartid</string>
     <string name="edit_tz_standard_time">normaltid</string>
     <string name="edit_tz_gap">Den tiden fanns inte i kamerans tidszon (klockan ställdes fram), så tiden direkt efter omställningen används.</string>
     <string name="edit_tz_overlap">Den tiden inträffade två gånger i kamerans tidszon (klockan ställdes tillbaka); den första används.</string>
 
     <string name="edit_location_title">Plats</string>
-    <string name="edit_location_current">Där fotot togs</string>
-    <string name="edit_location_none">Fotot har ingen plats</string>
+    <string name="edit_location_current">Där bilden togs</string>
+    <string name="edit_location_none">Bilden har ingen plats</string>
     <string name="edit_location_redacted">Platsfälten är tomma</string>
     <string name="edit_location_will_change">En ny plats sparas</string>
     <string name="edit_location_will_remove">Platsen tas bort</string>
     <string name="edit_location_change">Ändra plats</string>
     <string name="edit_location_add">Lägg till plats</string>
     <string name="edit_location_change_body">Välj på kartan, sök efter en plats eller klistra in koordinater</string>
-    <string name="edit_location_copy">Kopiera från ett annat foto</string>
-    <string name="edit_location_copy_body">Använd positionen som finns i ett annat foto</string>
-    <string name="edit_location_copy_reading">Läser det andra fotot</string>
-    <string name="edit_location_copied">Platsen kopierades från det andra fotot</string>
-    <string name="edit_location_copy_none">Det fotot har ingen plats. Om det kom via fotoväljaren, öppna filen i stället.</string>
-    <string name="edit_location_copy_removed">Det fotots plats har tagits bort, troligen av fotoväljaren. Öppna filen i stället för att läsa den.</string>
-    <string name="edit_location_copy_failed">Det gick inte att läsa det fotot.</string>
+    <string name="edit_location_copy">Kopiera från en annan bild</string>
+    <string name="edit_location_copy_body">Använd positionen som finns i en annan bild</string>
+    <string name="edit_location_copy_reading">Läser den andra bilden</string>
+    <string name="edit_location_copied">Platsen kopierades från den andra bilden</string>
+    <string name="edit_location_copy_none">Den bilden har ingen plats. Om den kom via bildväljaren, öppna filen i stället.</string>
+    <string name="edit_location_copy_removed">Den bildens plats har tagits bort, troligen av bildväljaren. Öppna filen i stället för att läsa den.</string>
+    <string name="edit_location_copy_failed">Det gick inte att läsa den bilden.</string>
     <string name="edit_location_copy_open_file">Öppna fil</string>
     <string name="edit_location_remove">Ta bort plats</string>
-    <string name="edit_location_remove_body">Ta bort GPS-data från fotot</string>
+    <string name="edit_location_remove_body">Ta bort GPS-data från bilden</string>
+    <string name="edit_location_remove_sidecar">Platsen kan inte tas bort ur den här filen. RAW-filer och andra filer som bara får en XMP-sidofil ändras aldrig, så platsen i dem finns kvar.</string>
     <string name="edit_location_remove_title">Ta bort platsen?</string>
     <string name="edit_location_remove_dialog_body">GPS-position, höjd och riktning tas bort från EXIF och XMP när du sparar.</string>
     <string name="edit_location_remove_places">Ta även bort ortnamn (stad, region, land)</string>
     <string name="edit_location_remove_confirm">Ta bort</string>
-    <string name="edit_location_altitude_above">%1$d m över havet</string>
+    <string name="edit_location_altitude_above">%1$d m ö.h.</string>
     <string name="edit_location_altitude_below">%1$d m under havet</string>
     <string name="edit_location_picker_title">Ändra plats</string>
     <string name="edit_location_search_hint">Sök efter en plats eller adress</string>
     <string name="edit_location_search_clear">Rensa sökningen</string>
     <string name="edit_location_searching">Söker</string>
-    <string name="edit_location_search_none">Inga platser hittades för \"%1$s\".</string>
+    <string name="edit_location_search_none">Inga platser hittades för ”%1$s”.</string>
     <string name="edit_location_search_offline">Platssökning och kartan är avstängda i offlineläge. Ange koordinater eller klistra in en kartlänk nedan.</string>
     <string name="edit_location_search_network">Platssökning kräver internetanslutning. Du kan fortfarande ange koordinater.</string>
     <string name="edit_location_search_server">Platssökningstjänsten svarade inte. Försök igen om en stund.</string>
@@ -807,7 +809,7 @@
     <string name="edit_fields_remove">Ta bort fält</string>
     <string name="edit_fields_revert">Ångra ändringen</string>
     <string name="edit_fields_length">%1$d/%2$d</string>
-    <string name="edit_fields_number_hint">Ett tal eller bråk, till exempel 2.8 eller 1/250</string>
+    <string name="edit_fields_number_hint">Ett tal eller bråk, till exempel 2,8 eller 1/250</string>
     <string name="edit_fields_date_hint">Datum och tid som %1$s</string>
     <string name="edit_fields_pick_date">Välj datum och tid</string>
     <string name="edit_fields_keyword_add">Lägg till nyckelord</string>
@@ -817,7 +819,7 @@
     <string name="edit_fields_none">Inga redigerbara fält.</string>
     <string name="edit_fields_unavailable">Att redigera enskilda fält finns inte i den här versionen av ExifLab ännu.</string>
     <string name="edit_error_empty">Ange ett värde</string>
-    <string name="edit_error_not_a_number">Ange ett tal, till exempel 2.8 eller 1/250</string>
+    <string name="edit_error_not_a_number">Ange ett tal, till exempel 2,8 eller 1/250</string>
     <string name="edit_error_out_of_range">Värdet ligger utanför intervallet</string>
     <string name="edit_error_out_of_range_between">Från %1$s till %2$s</string>
     <string name="edit_error_too_long">Texten är för lång</string>
@@ -842,31 +844,63 @@
     <string name="edit_review_nothing">Inga ändringar väntar.</string>
     <string name="edit_review_no_visible_changes">Filen har redan de här värdena, så inget synligt ändras.</string>
     <string name="edit_review_warnings_title">Bra att veta</string>
+    <string name="edit_review_sidecar_removals_title">Borttagna fält finns kvar i filen</string>
+    <string name="edit_review_sidecar_removals_body">Den här filen ändras aldrig; sidofilen sparar bara dina ändringar. EXIF- och IPTC-fält som är markerade Borttagen finns kvar i själva filen, och andra appar kan fortfarande visa dem.</string>
+    <string name="plan_warning_no_date_shift">Det finns inget fotodatum att flytta.</string>
+    <string name="plan_warning_no_date_convert">Det finns inget fotodatum att flytta till en annan tidszon.</string>
+    <string name="plan_warning_no_date_zone">Det finns inget fotodatum att ange tidszon för.</string>
+    <string name="plan_warning_other_offset">Bilden har redan en annan UTC-förskjutning, så tiden konverterades inte.</string>
+    <string name="plan_warning_latitude">Latituden %1$s ligger utanför −90 till 90 grader, så platsen ändrades inte.</string>
+    <string name="plan_warning_longitude">Longituden %1$s ligger utanför −180 till 180 grader, så platsen ändrades inte.</string>
+    <string name="plan_warning_altitude">En höjd på %1$s m är inte rimlig, så platsen ändrades inte.</string>
+    <string name="plan_warning_author_not_ascii_iptc">Upphovspersonen innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP och IPTC.</string>
+    <string name="plan_warning_author_not_ascii">Upphovspersonen innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP.</string>
+    <string name="plan_warning_copyright_not_ascii_iptc">Upphovsrätten innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP och IPTC.</string>
+    <string name="plan_warning_copyright_not_ascii">Upphovsrätten innehåller tecken som EXIF inte kan lagra, så den sparas bara i XMP.</string>
+    <plurals name="plan_warning_author_iptc_too_long">
+        <item quantity="one">Upphovspersonen är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+        <item quantity="other">Upphovspersonen är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+    </plurals>
+    <plurals name="plan_warning_copyright_iptc_too_long">
+        <item quantity="one">Upphovsrätten är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+        <item quantity="other">Upphovsrätten är längre än IPTC tillåter (%d byte), så den sparas inte i IPTC.</item>
+    </plurals>
     <string name="edit_review_done">Klar</string>
     <string name="edit_save_in_place">Spara</string>
     <string name="edit_save_copy">Spara som kopia</string>
     <string name="edit_save_sidecar">Spara i XMP-sidofil</string>
-    <string name="edit_dest_in_place_title">Sparas i det här fotot</string>
+    <string name="edit_dest_in_place_title">Sparas i den här bilden</string>
     <string name="edit_dest_in_place_body">Bara metadata skrivs om; bilddatan förblir byte för byte densamma. Originalet säkerhetskopieras först, så du kan ångra eller återställa det från Historik.</string>
     <string name="edit_dest_copy_title">Sparas som en ny kopia</string>
     <string name="edit_dest_copy_body">ExifLab kan inte ändra originalet härifrån; en ny kopia sparas med dina ändringar.</string>
-    <string name="edit_dest_open_original_hint">Foton som kommer den här vägen tappar ofta sin plats på vägen. För att redigera själva originalfilen, gå tillbaka och använd Öppna originalfil.</string>
+    <string name="edit_dest_open_original_hint">Bilder som kommer den här vägen tappar ofta sin plats på vägen. För att redigera själva originalfilen, gå tillbaka och använd Öppna originalfilen.</string>
     <string name="edit_dest_sidecar_title">Sparas i en XMP-sidofil</string>
-    <string name="edit_dest_raw_body">RAW-filer ändras aldrig. Dina ändringar hamnar i en XMP-fil bredvid fotot, som Lightroom, darktable och andra program läser.</string>
-    <string name="edit_dest_unsupported_body">ExifLab kan inte skriva %1$s-filer än, så dina ändringar hamnar i en XMP-fil bredvid fotot.</string>
+    <string name="edit_dest_raw_body">RAW-filer ändras aldrig. Dina ändringar hamnar i en XMP-fil bredvid bilden, som Lightroom, darktable och andra program läser.</string>
+    <string name="edit_dest_unsupported_body">ExifLab kan inte skriva %1$s-filer än, så dina ändringar hamnar i en XMP-fil bredvid bilden.</string>
     <string name="edit_saving_in_place">Sparar</string>
     <string name="edit_saving_copy">Sparar kopian</string>
     <string name="edit_saving_sidecar">Skriver sidofilen</string>
     <string name="edit_saving_body">Säkerhetskopierar, skriver och kontrollerar att bilddatan är oförändrad</string>
-    <string name="edit_saving_sidecar_body">Själva fotot rörs inte</string>
-    <string name="edit_saved_title">Sparat</string>
+    <string name="edit_saving_sidecar_body">Själva bilden rörs inte</string>
+    <string name="edit_saved_title">Sparad</string>
     <plurals name="edit_saved_skipped">
         <item quantity="one">%d ändring gick inte att lagra i den här filtypen:</item>
         <item quantity="other">%d ändringar gick inte att lagra i den här filtypen:</item>
     </plurals>
-    <string name="edit_failure_title">Inte sparat</string>
+    <plurals name="write_skip_iptc_unsupported">
+        <item quantity="one">%2$s-filer kan inte innehålla IPTC, så %1$d IPTC-ändring skrevs inte.</item>
+        <item quantity="other">%2$s-filer kan inte innehålla IPTC, så %1$d IPTC-ändringar skrevs inte.</item>
+    </plurals>
+    <string name="write_skip_this_file_type">Den här filtypen</string>
+    <string name="write_skip_heif_color_profile">Färgprofilen är en del av själva HEIF-bilden, så den behölls.</string>
+    <string name="write_skip_structural_tag">EXIF-taggen %1$s beskriver filens struktur och kan inte anges direkt.</string>
+    <string name="write_skip_iptc_invalid">IPTC %1$s är inte ett giltigt IPTC-fält, så det skrevs inte.</string>
+    <string name="write_skip_iptc_too_long">IPTC %1$s är längre än IPTC tillåter, så det skrevs inte.</string>
+    <string name="write_skip_maker_note_moved">MakerNote flyttades för att få plats. Kameratillverkarens egna verktyg kanske inte längre kan läsa allt i den.</string>
+    <string name="write_skip_exif_dropped">Skadad EXIF-data som inte gick att behålla utelämnades.</string>
+    <string name="edit_failure_title">Inte sparad</string>
     <string name="edit_failure_rolled_back">Filen återställdes exakt som den var.</string>
-    <string name="edit_failure_read_only">Fotot kan inte ändras där det ligger. Spara det som en kopia i stället.</string>
+    <string name="edit_failure_read_only">Bilden kan inte ändras där den ligger. Spara den som en kopia i stället.</string>
     <string name="edit_failure_use_sidecar">RAW-filer ändras aldrig. Spara i en XMP-sidofil i stället.</string>
     <string name="edit_failure_sidecar_dates">XMP-sidofilen har redan en tidpunkt för när bilden togs, som kan skilja sig från RAW-filens. En ändring utifrån RAW-filens tid skulle skriva över den, så inget sparades. Ange tiden i stället.</string>
     <string name="edit_failure_unsupported">ExifLab kan inte skriva den här filtypen. Spara i en XMP-sidofil i stället.</string>
@@ -878,10 +912,10 @@
     <string name="batch_notification_channel">Batchredigeringar</string>
     <string name="batch_notification_channel_description">Förlopp för batchredigeringar som körs i bakgrunden</string>
     <plurals name="batch_notification_progress">
-        <item quantity="one">%1$d av %2$d foto</item>
-        <item quantity="other">%1$d av %2$d foton</item>
+        <item quantity="one">%1$d av %2$d bild</item>
+        <item quantity="other">%1$d av %2$d bilder</item>
     </plurals>
-    <string name="batch_notification_cancelling">Stoppar när de pågående fotona är klara</string>
+    <string name="batch_notification_cancelling">Stoppar när de pågående bilderna är klara</string>
     <string name="batch_notification_finished">Batchredigeringen är klar</string>
     <string name="batch_notification_cancelled">Batchredigeringen avbröts</string>
     <string name="batch_cancel">Avbryt</string>
@@ -907,7 +941,7 @@
         <item quantity="one">%d markerad</item>
         <item quantity="other">%d markerade</item>
     </plurals>
-    <string name="selection_start">Markera foton</string>
+    <string name="selection_start">Markera bilder</string>
     <string name="selection_select">Markera</string>
     <string name="selection_open">Öppna</string>
     <string name="selection_select_all">Markera alla</string>
@@ -918,39 +952,40 @@
 
     <!-- Batch edits: actions -->
     <string name="batch_action_location">Ange plats</string>
-    <string name="batch_action_location_body">Ge alla foton samma plats</string>
-    <string name="batch_action_shift">Förskjut tid</string>
+    <string name="batch_action_location_body">Ge alla bilder samma plats</string>
+    <string name="batch_action_shift">Flytta tiden</string>
     <string name="batch_action_shift_body">Flytta alla datum lika mycket tidigare eller senare</string>
     <string name="batch_action_time_zone">Rätta tidszon</string>
     <string name="batch_action_time_zone_body">För en kameraklocka som var inställd på fel tidszon</string>
-    <string name="batch_action_author">Ange fotograf och upphovsrätt</string>
-    <string name="batch_action_author_body">Sätt ditt namn och din upphovsrätt på alla foton</string>
+    <string name="batch_action_author">Ange upphovsperson och upphovsrätt</string>
+    <string name="batch_action_author_body">Sätt ditt namn och din upphovsrätt på alla bilder</string>
     <string name="batch_action_strip">Ta bort metadata</string>
     <string name="batch_action_strip_body">Ta bort privata uppgifter innan du delar</string>
 
     <!-- Batch edits: editor -->
     <string name="batch_preview_button">Förhandsgranska ändringarna</string>
-    <string name="batch_location_none">Välj platsen som alla foton får</string>
-    <string name="batch_location_chosen">Alla foton får den här positionen</string>
-    <string name="batch_shift_sample">Förhandsvisningen visar %1$s. Alla foton flyttas lika mycket.</string>
-    <string name="batch_author_body">Sparas i EXIF, XMP och IPTC i alla foton.</string>
-    <string name="batch_author_keep">Lämna tomt för att behålla det varje foto har</string>
+    <string name="batch_location_none">Välj platsen som alla bilder får</string>
+    <string name="batch_location_chosen">Alla bilder får den här positionen</string>
+    <string name="batch_shift_sample">Förhandsvisningen visar %1$s. Alla bilder flyttas lika mycket.</string>
+    <string name="batch_author_body">Sparas i EXIF, XMP och IPTC i alla bilder.</string>
+    <string name="batch_discard_author_body">Upphovspersonen och upphovsrätten som du har skrivit har inte använts än. De försvinner.</string>
+    <string name="batch_author_keep">Lämna tomt för att behålla det som varje bild redan har</string>
     <string name="batch_strip_title">Vad som ska tas bort</string>
     <string name="batch_strip_body">RAW-filer ändras aldrig, så de hoppas över.</string>
     <string name="batch_strip_all">Allt utom orientering och färgprofil</string>
-    <string name="batch_strip_all_body">Tar bort all EXIF-, XMP- och IPTC-metadata. Orientering och färgprofil behålls eftersom de påverkar hur fotot ser ut.</string>
+    <string name="batch_strip_all_body">Tar bort all EXIF-, XMP- och IPTC-metadata. Orientering och färgprofil behålls eftersom de påverkar hur bilden ser ut.</string>
     <string name="batch_strip_location">Plats</string>
     <string name="batch_strip_location_body">GPS-position och ortnamn</string>
     <string name="batch_strip_device_ids">Serienummer</string>
-    <string name="batch_strip_device_ids_body">Serienummer för kamera och objektiv samt unika bild-id:n, som kan koppla foton till en viss kamera</string>
+    <string name="batch_strip_device_ids_body">Serienummer för kamera och objektiv samt unika bild-id:n, som kan koppla bilder till en viss kamera</string>
     <string name="batch_strip_names">Namn och upphovsrätt</string>
-    <string name="batch_strip_names_body">Fotograf, ägare, upphovsrätt och kontaktuppgifter</string>
+    <string name="batch_strip_names_body">Upphovsperson, ägare, upphovsrätt och kontaktuppgifter</string>
     <string name="batch_strip_people">Personer</string>
-    <string name="batch_strip_people_body">Ansiktsområden och namn på personer i fotot</string>
+    <string name="batch_strip_people_body">Ansiktsområden och namn på personer i bilden</string>
     <string name="batch_strip_device_info">Kamera och program</string>
-    <string name="batch_strip_device_info_body">Märke och modell på kamera och objektiv, och apparna som redigerade fotot</string>
+    <string name="batch_strip_device_info_body">Märke och modell på kamera och objektiv, och apparna som redigerade bilden</string>
     <string name="batch_strip_dates">Datum och tider</string>
-    <string name="batch_strip_dates_body">När fotot togs, digitaliserades och ändrades</string>
+    <string name="batch_strip_dates_body">När bilden togs, digitaliserades och ändrades</string>
     <string name="batch_strip_maker_notes">Tillverkarens anteckningar</string>
     <string name="batch_strip_maker_notes_body">Kameratillverkarens egna data, som ofta innehåller serienummer</string>
     <string name="batch_strip_thumbnail">Inbäddad miniatyr</string>
@@ -958,69 +993,69 @@
     <string name="batch_strip_edit_history">Redigeringshistorik</string>
     <string name="batch_strip_edit_history_body">Redigeringssteg och dokument-id:n från redigeringsappar</string>
     <string name="batch_missing_title">Den här batchen finns inte längre</string>
-    <string name="batch_missing_body">Den har redan startats eller så har urvalet gått ut. Markera fotona igen.</string>
+    <string name="batch_missing_body">Den har redan startats eller så har urvalet gått ut. Markera bilderna igen.</string>
 
     <!-- Batch edits: preview -->
     <string name="batch_preview_title">Förhandsgranskning</string>
     <plurals name="batch_checking">
-        <item quantity="one">Kontrollerar fotot: %1$d av %2$d</item>
-        <item quantity="other">Kontrollerar fotona: %1$d av %2$d</item>
+        <item quantity="one">Kontrollerar bilden: %1$d av %2$d</item>
+        <item quantity="other">Kontrollerar bilderna: %1$d av %2$d</item>
     </plurals>
-    <string name="batch_routes_title">Så sparas fotona</string>
+    <string name="batch_routes_title">Så sparas bilderna</string>
     <plurals name="batch_route_in_place">
-        <item quantity="one">%d foto redigeras på plats</item>
-        <item quantity="other">%d foton redigeras på plats</item>
+        <item quantity="one">%d bild redigeras på plats</item>
+        <item quantity="other">%d bilder redigeras på plats</item>
     </plurals>
     <string name="batch_route_in_place_body">Bara metadata skrivs om; bilddata förblir identiska byte för byte. Originalen säkerhetskopieras först.</string>
     <plurals name="batch_route_sidecar">
-        <item quantity="one">%d foto får en XMP-sidofil</item>
-        <item quantity="other">%d foton får XMP-sidofiler</item>
+        <item quantity="one">%d bild får en XMP-sidofil</item>
+        <item quantity="other">%d bilder får XMP-sidofiler</item>
     </plurals>
     <string name="batch_route_sidecar_body">RAW-filer och filtyper som ExifLab inte kan skriva om ändras aldrig. Ändringarna hamnar i en XMP-fil bredvid.</string>
     <plurals name="batch_route_copy">
-        <item quantity="one">%d skrivskyddat foto sparas som kopia</item>
-        <item quantity="other">%d skrivskyddade foton sparas som kopior</item>
+        <item quantity="one">%d skrivskyddad bild sparas som kopia</item>
+        <item quantity="other">%d skrivskyddade bilder sparas som kopior</item>
     </plurals>
     <string name="batch_route_copy_body">Kopiorna behåller originalnamnen och hamnar i mappen du valde. Originalen förblir som de är.</string>
     <plurals name="batch_route_skipped">
-        <item quantity="one">%d foto hoppas över</item>
-        <item quantity="other">%d foton hoppas över</item>
+        <item quantity="one">%d bild hoppas över</item>
+        <item quantity="other">%d bilder hoppas över</item>
     </plurals>
     <plurals name="batch_count_reason">
-        <item quantity="one">%1$d foto: %2$s</item>
-        <item quantity="other">%1$d foton: %2$s</item>
+        <item quantity="one">%1$d bild: %2$s</item>
+        <item quantity="other">%1$d bilder: %2$s</item>
     </plurals>
     <string name="batch_folder_title">Mapp för kopior</string>
     <plurals name="batch_folder_needed">
-        <item quantity="one">%d foto kan inte ändras där det ligger. Välj en mapp för en redigerad kopia, eller hoppa över det.</item>
-        <item quantity="other">%d foton kan inte ändras där de ligger. Välj en mapp för redigerade kopior, eller hoppa över dem.</item>
+        <item quantity="one">%d bild kan inte ändras där den ligger. Välj en mapp för en redigerad kopia, eller hoppa över den.</item>
+        <item quantity="other">%d bilder kan inte ändras där de ligger. Välj en mapp för redigerade kopior, eller hoppa över dem.</item>
     </plurals>
     <string name="batch_folder_choose">Välj mapp</string>
     <string name="batch_folder_change">Byt mapp</string>
     <string name="batch_folder_skip">Hoppa över dem i stället</string>
     <string name="batch_folder_chosen">Kopiorna hamnar i %1$s</string>
     <string name="batch_folder_unnamed">den valda mappen</string>
-    <string name="batch_folder_skipping">Ingen mapp vald, så de här fotona hoppas över.</string>
+    <string name="batch_folder_skipping">Ingen mapp vald, så de här bilderna hoppas över.</string>
     <string name="batch_folder_unavailable">ExifLab kan inte spara kopior i den mappen. Välj en annan.</string>
     <plurals name="batch_warning_no_date">
-        <item quantity="one">%d foto saknar fotodatum</item>
-        <item quantity="other">%d foton saknar fotodatum</item>
+        <item quantity="one">%d bild saknar fotodatum</item>
+        <item quantity="other">%d bilder saknar fotodatum</item>
     </plurals>
     <plurals name="batch_warning_other_zone">
         <item quantity="one">%d bild har redan en annan UTC-förskjutning och behåller sin tid</item>
         <item quantity="other">%d bilder har redan en annan UTC-förskjutning och behåller sin tid</item>
     </plurals>
     <plurals name="batch_warning_unreadable">
-        <item quantity="one">%d foto kan inte läsas och kommer att misslyckas</item>
-        <item quantity="other">%d foton kan inte läsas och kommer att misslyckas</item>
+        <item quantity="one">%d bild kan inte läsas och kommer att misslyckas</item>
+        <item quantity="other">%d bilder kan inte läsas och kommer att misslyckas</item>
     </plurals>
     <string name="batch_sample_title">Exempel</string>
     <string name="batch_sample_body">Ändringarna i %1$s</string>
-    <string name="batch_sample_waiting">Kontrollerar det första fotot</string>
-    <string name="batch_sample_none">Inget synligt ändras i de här fotona.</string>
+    <string name="batch_sample_waiting">Kontrollerar den första bilden</string>
+    <string name="batch_sample_none">Inget synligt ändras i de här bilderna.</string>
     <plurals name="batch_start">
-        <item quantity="one">Redigera %d foto</item>
-        <item quantity="other">Redigera %d foton</item>
+        <item quantity="one">Redigera %d bild</item>
+        <item quantity="other">Redigera %d bilder</item>
     </plurals>
     <string name="batch_start_nothing">Inget att spara</string>
     <string name="batch_start_failed">Batchen kunde inte startas.</string>
@@ -1034,10 +1069,10 @@
     <string name="batch_summary_title">Batchredigeringen är klar</string>
     <string name="batch_summary_cancelled_title">Batchredigeringen avbröts</string>
     <plurals name="batch_summary_written">
-        <item quantity="one">%1$d av %2$d foto skrivet</item>
-        <item quantity="other">%1$d av %2$d foton skrivna</item>
+        <item quantity="one">%1$d av %2$d bild skriven</item>
+        <item quantity="other">%1$d av %2$d bilder skrivna</item>
     </plurals>
-    <string name="batch_summary_history">Alla ändringar finns i Historik, där enskilda foton också kan återställas.</string>
+    <string name="batch_summary_history">Alla ändringar finns i Historik, där enskilda bilder också kan återställas.</string>
     <string name="batch_filter_all">Alla (%1$d)</string>
     <string name="batch_filter_status">%1$s (%2$d)</string>
     <string name="batch_restore_nothing">Inget att återställa</string>
@@ -1049,19 +1084,19 @@
     <string name="batch_status_skipped">Överhoppad</string>
     <string name="batch_status_failed">Misslyckades</string>
     <string name="batch_reason_nothing">inget att ändra</string>
-    <string name="batch_reason_read_only">skrivskyddat och ingen mapp för kopior</string>
+    <string name="batch_reason_read_only">skrivskyddad och ingen mapp för kopior</string>
     <string name="batch_reason_cannot_strip">metadata kan inte tas bort ur RAW och andra filer som bara får sidofiler</string>
     <string name="batch_reason_unsupported">ExifLab kan inte skriva den här filtypen</string>
     <string name="batch_reason_no_sidecar_place">ingen mapp för XMP-sidofilen</string>
-    <string name="batch_reason_cancelled">avbröts innan det var dess tur</string>
-    <string name="batch_reason_unreadable">fotot kunde inte läsas</string>
+    <string name="batch_reason_cancelled">avbröts innan den stod på tur</string>
+    <string name="batch_reason_unreadable">bilden kunde inte läsas</string>
     <string name="batch_reason_other_zone">har redan en annan UTC-förskjutning, så tiden behölls</string>
     <string name="batch_reason_sidecar_dates">dess XMP-sidofil har redan en tidpunkt för när bilden togs, så den behölls</string>
-    <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för det här fotot</string>
+    <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för den här bilden</string>
     <string name="batch_reason_folder_unavailable">kopian kunde inte skapas i den valda mappen</string>
 
     <!-- Home: batch edits -->
-    <string name="home_batch_title">Redigera många foton samtidigt</string>
-    <string name="home_batch_body">Öppna en mapp eller välj flera foton och håll sedan in ett foto för att markera fler. Ange plats, förskjut tider, lägg till ditt namn eller ta bort metadata för alla på en gång.</string>
+    <string name="home_batch_title">Redigera många bilder samtidigt</string>
+    <string name="home_batch_body">Öppna en mapp eller välj flera bilder och håll sedan in en bild för att markera fler. Ange plats, flytta tider, lägg till ditt namn eller ta bort metadata för alla på en gång.</string>
     <string name="home_batch_running">Batchredigering pågår</string>
 </resources>

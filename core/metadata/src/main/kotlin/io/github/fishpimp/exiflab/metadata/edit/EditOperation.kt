@@ -135,8 +135,8 @@ data class FieldDiff(
 data class EditPlan(
     val changes: MetadataChanges,
     val diff: List<FieldDiff>,
-    /** Problems the user should know about, e.g. "No capture date to shift". English. */
-    val warnings: List<String> = emptyList(),
+    /** Problems the user should know about, e.g. no capture date to shift. The app words them. */
+    val warnings: List<PlanWarning> = emptyList(),
     /**
      * True when the dates in [changes] were worked out from the photo's own dates (a shift, a
      * time zone fix, a UTC offset). Written to a sidecar that already records other dates (one
@@ -145,6 +145,51 @@ data class EditPlan(
      */
     val datesFromFile: Boolean = false,
 )
+
+/**
+ * Something about a plan the user should know. Each case carries what the app needs to word it
+ * in the user's language; the planner never produces display text.
+ */
+sealed interface PlanWarning {
+    /** The file has no capture date for [action] to work on, so nothing was changed. */
+    data class NoCaptureDate(val action: DateAction) : PlanWarning
+
+    /**
+     * A [EditOperation.ChangeTimeZone] left the photo alone: its capture time records a UTC
+     * offset other than the camera zone's, so it was not taken by a clock set to that zone.
+     */
+    data object OtherUtcOffset : PlanWarning
+
+    /** The latitude [value] is outside -90 to 90 degrees; the location was not changed. */
+    data class LatitudeOutOfRange(val value: Double) : PlanWarning
+
+    /** The longitude [value] is outside -180 to 180 degrees; the location was not changed. */
+    data class LongitudeOutOfRange(val value: Double) : PlanWarning
+
+    /** The altitude [value] (meters) is not plausible; the location was not changed. */
+    data class AltitudeImplausible(val value: Double) : PlanWarning
+
+    /** [field] has characters EXIF cannot store, so it is saved in XMP and, when [alsoIptc], IPTC only. */
+    data class NonAsciiField(val field: AuthorField, val alsoIptc: Boolean) : PlanWarning
+
+    /** [field] is longer than IPTC allows ([maxBytes] bytes), so it is not saved in IPTC. */
+    data class IptcTooLong(val field: AuthorField, val maxBytes: Int) : PlanWarning
+}
+
+/** The date operation a [PlanWarning.NoCaptureDate] concerns. */
+enum class DateAction {
+    /** [EditOperation.ShiftCaptureTime]. */
+    Shift,
+
+    /** [EditOperation.ChangeTimeZone]. */
+    Convert,
+
+    /** [EditOperation.SetUtcOffset]. */
+    SetZone,
+}
+
+/** The authorship fields of [EditOperation.SetAuthorship]. */
+enum class AuthorField { Artist, Copyright }
 
 /** Plans [EditOperation]s against a file's current metadata. Pure and deterministic. */
 interface ChangePlanner {

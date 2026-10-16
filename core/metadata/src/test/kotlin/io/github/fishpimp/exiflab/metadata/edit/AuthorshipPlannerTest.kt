@@ -55,8 +55,8 @@ class AuthorshipPlannerTest {
         assertThat(edited.iptc(80)).isEqualTo("Åsa Öberg")
         assertThat(edited.iptc(116)).isEqualTo("© Åsa Öberg")
         assertThat(edited.plan.warnings).containsExactly(
-            "The artist has characters EXIF cannot store; it is saved in XMP and IPTC only",
-            "The copyright has characters EXIF cannot store; it is saved in XMP and IPTC only",
+            PlanWarning.NonAsciiField(AuthorField.Artist, alsoIptc = true),
+            PlanWarning.NonAsciiField(AuthorField.Copyright, alsoIptc = true),
         )
         assertThat(edited.diff("Artist").kind).isEqualTo(FieldDiff.Kind.Removed)
     }
@@ -99,6 +99,23 @@ class AuthorshipPlannerTest {
         val edited = edit(fullJpeg(), EditOperation.SetAuthorship(long, null, changeCopyright = false))
         assertThat(edited.exif("exif-ifd0", 0x013B)).isEqualTo(long)
         assertThat(edited.iptc(80)).isNull()
-        assertThat(edited.plan.warnings).containsExactly("The artist is longer than IPTC allows (32 bytes); it is saved in EXIF and XMP only")
+        assertThat(edited.plan.warnings).containsExactly(PlanWarning.IptcTooLong(AuthorField.Artist, maxBytes = 32))
+    }
+
+    @Test fun longNonAsciiNamesAreSavedInXmpOnly() {
+        val long = "Åsa Öberg of the Very Long Family Name"
+        val edited = edit(fullJpeg(), EditOperation.SetAuthorship(long, null, changeCopyright = false))
+        assertThat(edited.exif("exif-ifd0", 0x013B)).isNull()
+        assertThat(edited.iptc(80)).isNull()
+        assertThat(edited.xmp("dc:creator[1]")).isEqualTo(long)
+        assertThat(edited.plan.warnings).containsExactly(
+            PlanWarning.NonAsciiField(AuthorField.Artist, alsoIptc = false),
+            PlanWarning.IptcTooLong(AuthorField.Artist, maxBytes = 32),
+        )
+    }
+
+    @Test fun pngNonAsciiNamesWarnWithoutIptc() {
+        val plan = plan(Containers.png(), EditOperation.SetAuthorship("Åsa Öberg", null, changeCopyright = false))
+        assertThat(plan.warnings).containsExactly(PlanWarning.NonAsciiField(AuthorField.Artist, alsoIptc = false))
     }
 }

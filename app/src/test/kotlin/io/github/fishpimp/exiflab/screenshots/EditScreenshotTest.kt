@@ -28,7 +28,11 @@ import io.github.fishpimp.exiflab.data.places.PlaceSearchState
 import io.github.fishpimp.exiflab.data.save.SavedEditNotices
 import io.github.fishpimp.exiflab.designsystem.theme.BrandPalette
 import io.github.fishpimp.exiflab.designsystem.theme.ThemeMode
+import io.github.fishpimp.exiflab.metadata.ImageFormat
+import io.github.fishpimp.exiflab.metadata.edit.AuthorField
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.ui.edit.EditActions
 import io.github.fishpimp.exiflab.ui.edit.EditContent
 import io.github.fishpimp.exiflab.ui.edit.EditUiState
@@ -47,6 +51,9 @@ import io.github.fishpimp.exiflab.ui.edit.time.ZoneCatalog
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.LocalMapAvailabilityOverride
 import io.github.fishpimp.exiflab.ui.map.MapAvailability
+import java.time.Duration
+import java.time.ZoneId
+import java.time.ZoneOffset
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import org.junit.Rule
@@ -55,9 +62,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
-import java.time.Duration
-import java.time.ZoneId
-import java.time.ZoneOffset
 
 /**
  * The metadata editor with fake planner, catalog and saver: the overview in several setups, its
@@ -79,7 +83,7 @@ class EditScreenshotTest {
     private fun viewModel(
         ref: PhotoRef,
         report: MetadataReport,
-        warnings: List<String> = emptyList(),
+        warnings: List<PlanWarning> = emptyList(),
         setUp: EditViewModel.() -> Unit = {},
     ): EditViewModel = EditViewModel(
         ref = ref,
@@ -194,6 +198,12 @@ class EditScreenshotTest {
         )
     }
 
+    /** A phone in landscape: too short for the stacked layout, so the panel sits beside the map and scrolls. */
+    @Test @Config(qualifiers = "w891dp-h411dp-land-xxhdpi")
+    fun location_picker_landscape_phone() = compose.snapshot("edit_location_landscape") {
+        LocationPicker(query = "", search = PlaceSearchState.Idle, availability = MapAvailability.Preview)
+    }
+
     @Test @Config(qualifiers = "w411dp-h891dp-xxhdpi")
     fun location_picker_invalid() = compose.snapshot("edit_location_invalid", palette = BrandPalette.Citrus) {
         LocationPicker(query = "", search = PlaceSearchState.Idle, availability = MapAvailability.Preview, coordinates = "https://maps.app.goo.gl/x1Y2", pin = null)
@@ -205,7 +215,7 @@ class EditScreenshotTest {
             viewModel(
                 FakeReports.phoneRef,
                 FakeReports.phoneJpeg,
-                warnings = listOf("Only EXIF dates were found; XMP has no CreateDate to shift."),
+                warnings = listOf(PlanWarning.NonAsciiField(AuthorField.Artist, alsoIptc = true)),
                 setUp = { typicalEdits(); openPage(EditorPage.Review) },
             ),
         )
@@ -248,7 +258,7 @@ class EditScreenshotTest {
         Editor(
             viewModel(FakeReports.pngRef, FakeReports.barePng) { openPage(EditorPage.Review) },
             override = {
-                it.copy(save = SaveState.SavedWithSkipped(EditMode.Copy, listOf("IPTC City: PNG files have no IPTC block", "XMP dc:subject: too long for a tEXt chunk"), null))
+                it.copy(save = SaveState.SavedWithSkipped(EditMode.Copy, listOf(WriteSkip.IptcUnsupported(ImageFormat.Png, 2), WriteSkip.MakerNoteMoved), null))
             },
         )
     }

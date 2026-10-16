@@ -111,7 +111,7 @@ class PdfReportScreenshotTest {
         canvas.scale(SCALE, SCALE)
         painter.drawPaper(canvas, spec.width, spec.height)
         val footer = layout.footer(builder.footerCredit(TODAY), builder.pageLabel(number, total))
-        painter.draw(canvas, page.ops + footer) { image -> if (image == PdfImage.Thumbnail) fakePhoto() else fakeMap() }
+        painter.draw(canvas, page.ops + footer) { image -> if (image == PdfImage.Thumbnail) fakePhoto() else fakeMap(spec.contentWidth) }
         val file = File("build/outputs/roborazzi/$name.png")
         file.parentFile?.mkdirs()
         file.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
@@ -127,17 +127,29 @@ class PdfReportScreenshotTest {
         return bitmap
     }
 
-    /** Flat land with a river, standing in for a map snapshot. */
-    private fun fakeMap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(1030, 380, Bitmap.Config.ARGB_8888)
+    /**
+     * Flat land with a river and streets, standing in for a map snapshot: the size the writer asks
+     * for (the content width by the map height, at 2 pixels per point). The painter adds the pin.
+     */
+    private fun fakeMap(contentWidth: Float): Bitmap {
+        val width = (contentWidth * 2f).toInt()
+        val height = (PdfReportLayout.MAP_HEIGHT * 2f).toInt()
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawColor(Color(0xFFEFF1EC).toArgb())
+        val street = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color(0xFFFFFFFF).toArgb()
+            strokeWidth = 10f
+            style = Paint.Style.STROKE
+        }
+        canvas.drawLine(0f, height * 0.62f, width.toFloat(), height * 0.48f, street)
+        canvas.drawLine(width * 0.42f, 0f, width * 0.58f, height.toFloat(), street)
         val water = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color(0xFFB9D3E6).toArgb()
             strokeWidth = 40f
             style = Paint.Style.STROKE
         }
-        canvas.drawLine(0f, 300f, 1030f, 120f, water)
+        canvas.drawLine(0f, height * 0.9f, width.toFloat(), height * 0.75f, water)
         return bitmap
     }
 

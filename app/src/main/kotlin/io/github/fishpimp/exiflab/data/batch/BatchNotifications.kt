@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.work.ForegroundInfo
 import io.github.fishpimp.exiflab.MainActivity
 import io.github.fishpimp.exiflab.R
+import io.github.fishpimp.exiflab.ui.batch.batchTitle
 
 /**
  * The batch notifications: a determinate progress notification (photo count, Cancel) while a
@@ -58,7 +59,7 @@ class BatchNotifications(private val context: Context) {
             .setSmallIcon(R.drawable.ic_notification_batch)
             .setContentTitle(context.getString(title))
             .setContentText(parts.joinToString(", "))
-            .setSubText(job.title.ifBlank { null })
+            .setSubText(job.title.ifBlank { null }?.let { context.batchTitle(it) })
             .setContentIntent(openJob(job.id))
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
@@ -74,7 +75,7 @@ class BatchNotifications(private val context: Context) {
         }
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification_batch)
-            .setContentTitle(job.title.ifBlank { context.getString(R.string.batch_notification_channel) })
+            .setContentTitle(job.title.ifBlank { null }?.let { context.batchTitle(it) } ?: context.getString(R.string.batch_notification_channel))
             .setContentText(text)
             .setProgress(progress.total.coerceAtLeast(1), progress.done, false)
             .setOngoing(true)

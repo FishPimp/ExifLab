@@ -100,6 +100,7 @@ fun LazyListScope.allFieldsItems(
     query: String,
     callbacks: FieldCallbacks,
     gutter: Dp,
+    sidecarOnly: Boolean = false,
 ) {
     item(key = "fields-header", contentType = "fields-header") {
         FieldsHeader(fields, query, callbacks, Modifier.padding(horizontal = gutter))
@@ -147,7 +148,7 @@ fun LazyListScope.allFieldsItems(
                     val open = editor?.fieldId == row.field.id
                     Column(Modifier.padding(horizontal = gutter - 8.dp)) {
                         if (open) {
-                            FieldEditorCard(row, editor!!, draft, callbacks)
+                            FieldEditorCard(row, editor!!, draft, callbacks, sidecarOnly)
                         } else {
                             FieldListRow(row, onClick = { callbacks.onEdit(row.field.id) })
                         }
@@ -250,7 +251,7 @@ private fun FieldListRow(row: FieldRow, onClick: () -> Unit) {
 
 /** The inline editor of one field: a type-aware input, its validation message and the actions. */
 @Composable
-private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, draft: String, callbacks: FieldCallbacks) {
+private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, draft: String, callbacks: FieldCallbacks, sidecarOnly: Boolean) {
     val field = row.field
     val error = editor.error?.let { validationMessage(it, field) }
     Surface(
@@ -280,7 +281,8 @@ private fun FieldEditorCard(row: FieldRow, editor: FieldEditor, draft: String, c
                     }
                 }
                 // Removing makes sense while the field will still have a value; an added field is undone instead.
-                if (row.current != null && (row.pending == null || row.pending.value != null)) {
+                // A sidecar can't take EXIF or IPTC out of the file itself, so it is not offered there.
+                if (row.current != null && (row.pending == null || row.pending.value != null) && !(sidecarOnly && field.group in FileOnlyGroups)) {
                     TextButton(
                         onClick = { callbacks.onRemove(field.id) },
                         colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),

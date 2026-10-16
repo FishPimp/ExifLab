@@ -12,9 +12,33 @@ data class WriteResult(
     val sourceImageDigest: String,
     /** Digest of the image data in the output. Always equal to [sourceImageDigest]. */
     val outputImageDigest: String,
-    /** Changes the container cannot hold (e.g. IPTC in PNG), in English, for logs and the diff preview. */
-    val skipped: List<String> = emptyList(),
+    /** Changes the container cannot hold (e.g. IPTC in PNG) and repairs made on the way. The app words them. */
+    val skipped: List<WriteSkip> = emptyList(),
 )
+
+/**
+ * A change a writer could not make, or damaged data it had to drop or move to rewrite a block.
+ * Each case carries what the app needs to word it in the user's language.
+ */
+sealed interface WriteSkip {
+    /** [container] has no place for IPTC-IIM, so [count] IPTC changes were not written. */
+    data class IptcUnsupported(val container: ImageFormat, val count: Int) : WriteSkip
+
+    /** A HEIF image's color profile is part of its image description, so it was kept. */
+    data object HeifColorProfileKept : WriteSkip
+
+    /** EXIF tag [tag] in [ifd] describes the file structure and cannot be set directly. */
+    data class StructuralTag(val ifd: ExifIfd, val tag: Int) : WriteSkip
+
+    /** IPTC dataset [record]:[dataset] is not a valid dataset, or ([tooLong]) its value is longer than IPTC allows. */
+    data class IptcDatasetRejected(val record: Int, val dataset: Int, val tooLong: Boolean) : WriteSkip
+
+    /** A MakerNote of unknown format was moved to make room; vendor tools may no longer read all of it. */
+    data object MakerNoteMoved : WriteSkip
+
+    /** Damaged or unreferenced EXIF data was dropped while rewriting the block. [detail] is English, for logs only. */
+    data class ExifDataDropped(val detail: String) : WriteSkip
+}
 
 /**
  * Rewrites the metadata of an image without touching its compressed image data. Implementations

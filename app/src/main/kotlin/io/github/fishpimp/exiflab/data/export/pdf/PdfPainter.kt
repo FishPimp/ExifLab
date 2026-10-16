@@ -8,8 +8,16 @@ import android.graphics.Path
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Typeface
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.withClip
+import io.github.fishpimp.exiflab.ui.map.drawLocationMark
+import io.github.fishpimp.exiflab.ui.map.mapPalette
+import androidx.compose.ui.graphics.Canvas as ComposeCanvas
 import io.github.fishpimp.exiflab.designsystem.R as DesignR
 
 /**
@@ -46,6 +54,7 @@ class PdfPainter(private val fonts: PdfFonts, private val palette: PdfPalette) :
     private val paints = HashMap<PdfTextStyle, Paint>()
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val stroke = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
+    private val mapPalette = mapPalette(palette.scheme, dark = false)
     private val imagePaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
     override fun width(text: String, style: PdfTextStyle): Float = paint(style).measureText(text)
@@ -77,6 +86,17 @@ class PdfPainter(private val fonts: PdfFonts, private val palette: PdfPalette) :
         }
     }
 
+    /**
+     * The app's location pin with its ring, the ring centered on ([x], [y]) and the pin's tip on
+     * it, in the report's primary color. Drawn as vector shapes (1 dp = 1 pt), so it stays sharp.
+     */
+    private fun drawMapPin(canvas: Canvas, x: Float, y: Float) {
+        val scope = CanvasDrawScope()
+        scope.draw(Density(1f), LayoutDirection.Ltr, ComposeCanvas(canvas), Size(canvas.width.toFloat(), canvas.height.toFloat())) {
+            drawLocationMark(Offset(x, y), mapPalette)
+        }
+    }
+
     /** Fills the page with the paper color; PdfDocument pages start transparent. */
     fun drawPaper(canvas: Canvas, width: Float, height: Float) {
         fill.color = palette.argb(PdfColor.Paper)
@@ -97,6 +117,7 @@ class PdfPainter(private val fonts: PdfFonts, private val palette: PdfPalette) :
                 val left = box.left + (box.width() - width) / 2f
                 val top = box.top + (box.height() - height) / 2f
                 drawBitmap(bitmap, Rect(0, 0, bitmap.width, bitmap.height), RectF(left, top, left + width, top + height), imagePaint)
+                if (op.locationMark) drawMapPin(this, left + width / 2f, top + height / 2f)
             }
         }
     }

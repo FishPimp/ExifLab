@@ -1,5 +1,6 @@
 package io.github.fishpimp.exiflab.ui.edit.time
 
+import android.icu.text.TimeZoneNames
 import java.time.Duration
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -58,10 +59,13 @@ data class TimeZoneCorrection(
     }
 }
 
-/** One selectable time zone, e.g. Europe/Stockholm: "Stockholm", "Europe", UTC+02:00 on the photo's date. */
+/** One selectable time zone, e.g. Europe/Stockholm: "Stockholm", "Sweden", UTC+02:00 on the photo's date. */
 data class ZoneChoice(
     val id: ZoneId,
-    /** The city or area part of the id, with underscores as spaces: "New York", "Buenos Aires". */
+    /**
+     * The city in the display language ("Köpenhamn" for Europe/Copenhagen in Swedish), or the city
+     * part of the id with underscores as spaces ("New York", "Buenos Aires") when it has no name.
+     */
     val city: String,
     /** The continent or ocean part: "Europe", "America/Argentina". Empty for offset-only zones. */
     val region: String,
@@ -69,7 +73,27 @@ data class ZoneChoice(
     val offset: ZoneOffset,
     /** The zone's localized name, e.g. "Central European Time" or "centraleuropeisk tid". */
     val displayName: String,
+    /** The zone's country in the display language ("Sverige"), empty when it has none. */
+    val country: String = "",
+    /** More words search matches: the English city and country, so "Copenhagen" and "Sweden" work in any language. */
+    val searchTerms: String = "",
 )
+
+/**
+ * Where a time zone is, from the platform's ICU data: its country and its city in a language.
+ * Null when unknown, and in plain JVM tests, where ICU is not available.
+ */
+internal object ZonePlaces {
+    /** The ISO country code of [id], e.g. "SE" for Europe/Stockholm; null when the zone has none ("001"). */
+    fun countryCode(id: String): String? =
+        runCatching { android.icu.util.TimeZone.getRegion(id) }.getOrNull()?.takeIf { it.length == 2 && it.all(Char::isLetter) }
+
+    fun names(locale: Locale): TimeZoneNames? = runCatching { TimeZoneNames.getInstance(locale) }.getOrNull()
+
+    /** The city of [id] in the language of [names], e.g. "Köpenhamn". */
+    fun city(names: TimeZoneNames?, id: String): String? =
+        names?.let { runCatching { it.getExemplarLocationName(id) }.getOrNull() }?.takeIf { it.isNotBlank() }
+}
 
 /**
  * Every region-based time zone, for pickers with search. Legacy aliases (US/Pacific, Etc/GMT+5,
@@ -79,27 +103,40 @@ object ZoneCatalog {
     private val regionPrefixes = setOf("Africa", "America", "Antarctica", "Arctic", "Asia", "Atlantic", "Australia", "Europe", "Indian", "Pacific")
 
     /** All zones sorted by offset at [at], then by city, with display names in [locale]. */
-    fun all(at: LocalDateTime, locale: Locale): List<ZoneChoice> =
-        ZoneId.getAvailableZoneIds()
+    fun all(at: LocalDateTime, locale: Locale): List<ZoneChoice> {
+        val names = ZonePlaces.names(locale)
+        return ZoneId.getAvailableZoneIds()
             .filter { id -> id.substringBefore('/') in regionPrefixes && id.contains('/') }
-            .map { id -> choice(ZoneId.of(id), at, locale) }
+            .map { id -> choice(ZoneId.of(id), at, locale, names) }
             .sortedWith(compareBy<ZoneChoice> { it.offset.totalSeconds }.thenBy { it.city })
+    }
 
-    fun choice(zone: ZoneId, at: LocalDateTime, locale: Locale): ZoneChoice {
+    fun choice(zone: ZoneId, at: LocalDateTime, locale: Locale, names: TimeZoneNames? = ZonePlaces.names(locale)): ZoneChoice {
         val id = zone.id
-        val city = id.substringAfterLast('/').replace('_', ' ')
+        if (zone is ZoneOffset) return ZoneChoice(zone, id, "", zone, zone.getDisplayName(TextStyle.FULL, locale))
+        val idCity = id.substringAfterLast('/').replace('_', ' ')
         val region = if (id.contains('/')) id.substringBeforeLast('/').replace('_', ' ') else ""
         val offset = zone.rules.getOffset(at)
         val dst = zone.rules.isDaylightSavings(at.atZone(zone).toInstant())
         val displayName = runCatching {
             java.util.TimeZone.getTimeZone(zone).getDisplayName(dst, java.util.TimeZone.LONG, locale)
         }.getOrNull()?.takeUnless { it.startsWith("GMT") } ?: zone.getDisplayName(TextStyle.FULL, locale)
-        return ZoneChoice(zone, if (zone is ZoneOffset) id else city, region, offset, displayName)
+        val country = ZonePlaces.countryCode(id)?.let { Locale.Builder().setRegion(it).build() }
+        return ZoneChoice(
+            id = zone,
+            city = ZonePlaces.city(names, id) ?: idCity,
+            region = region,
+            offset = offset,
+            displayName = displayName,
+            country = country?.getDisplayCountry(locale).orEmpty(),
+            searchTerms = listOfNotNull(idCity, country?.getDisplayCountry(Locale.ENGLISH)).joinToString(" "),
+        )
     }
 
     /**
-     * Zones matching [query] by city, region, id, localized name or offset ("+2", "UTC+05:30",
-     * "-3"), best matches first: city prefix, then any word prefix, then anywhere.
+     * Zones matching [query] by city, country, region, id, localized name or offset ("+2",
+     * "UTC+05:30", "-3"), best matches first: city prefix, then any word prefix, then anywhere.
+     * City and country match in the display language and in English.
      */
     fun search(zones: List<ZoneChoice>, query: String): List<ZoneChoice> {
         val text = query.trim()
@@ -108,7 +145,7 @@ object ZoneCatalog {
         val needle = normalize(text)
         return zones.mapNotNull { zone ->
             val city = normalize(zone.city)
-            val haystack = normalize("${zone.city} ${zone.region} ${zone.id.id} ${zone.displayName}")
+            val haystack = normalize("${zone.city} ${zone.country} ${zone.searchTerms} ${zone.region} ${zone.id.id} ${zone.displayName}")
             val rank = when {
                 offsetQuery != null && zone.offset == offsetQuery -> 0
                 city.startsWith(needle) -> 1

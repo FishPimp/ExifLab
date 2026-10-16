@@ -1,6 +1,7 @@
 package io.github.fishpimp.exiflab.metadata.write.tiff
 
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import java.util.IdentityHashMap
 
 /**
@@ -14,7 +15,7 @@ import java.util.IdentityHashMap
  * is too large is the MakerNote moved, with its offsets fixed for TIFF-relative IFD layouts.
  */
 internal object TiffSerializer {
-    fun serialize(document: TiffDocument, maxSize: Int, notes: MutableList<String>): ByteArray {
+    fun serialize(document: TiffDocument, maxSize: Int, notes: MutableList<WriteSkip>): ByteArray {
         val makerNote = document.makerNote
         val external = makerNote?.external.orEmpty()
         if (makerNote != null) {
@@ -26,7 +27,7 @@ internal object TiffSerializer {
             val pinned = Layout(document, kept, keepMakerNote = true).build()
             if (pinned.size <= maxSize) {
                 if (document.orphans.isNotEmpty()) {
-                    notes += "Dropped ${document.orphans.sumOf { it.bytes.size }} bytes of EXIF data that no tag refers to, to make room"
+                    notes += WriteSkip.ExifDataDropped("Dropped ${document.orphans.sumOf { it.bytes.size }} bytes of EXIF data that no tag refers to, to make room")
                 }
                 return pinned
             }
@@ -36,7 +37,7 @@ internal object TiffSerializer {
             throw UnsupportedEditException("The EXIF data would take ${packed.size} bytes, more than the $maxSize bytes this file format allows")
         }
         if (makerNote != null && makerNote.layout == MakerNoteLayout.Unknown) {
-            notes += "Moved a MakerNote of unknown format to make room; vendor tools may no longer read all of it"
+            notes += WriteSkip.MakerNoteMoved
         }
         return packed
     }

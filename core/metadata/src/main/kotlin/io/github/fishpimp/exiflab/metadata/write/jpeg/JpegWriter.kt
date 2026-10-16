@@ -10,6 +10,7 @@ import io.github.fishpimp.exiflab.metadata.write.EmbeddedExtras
 import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.bytesAt
 import io.github.fishpimp.exiflab.metadata.write.copyRange
 import io.github.fishpimp.exiflab.metadata.write.copyToEnd
@@ -68,7 +69,7 @@ internal class JpegWriter {
         }
     }
 
-    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<String>) {
+    fun write(source: SeekableSource, changes: MetadataChanges, out: OutputStream, skipped: MutableList<WriteSkip>) {
         val (segments, sosOffset) = scan(source)
         val items = segments.map<Segment, Item> { Item.Copy(it) }.toMutableList()
         val removeBlocks = changes.removeBlocks
@@ -229,7 +230,7 @@ internal class JpegWriter {
         else -> Kind.Other
     }
 
-    private fun replaceExif(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges, skipped: MutableList<String>) {
+    private fun replaceExif(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges, skipped: MutableList<WriteSkip>) {
         val primary = segments.firstOrNull { it.kind == Kind.Exif }
         val removeAll = MetadataBlock.Exif in changes.removeBlocks
         val original = if (primary == null || removeAll) null else primary.payload!!.let { TiffParser.parse(it.copyOfRange(minOf(EXIF_HEADER.size, it.size), it.size), skipped) }
@@ -323,7 +324,7 @@ internal class JpegWriter {
         return packet
     }
 
-    private fun replacePhotoshop(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges, skipped: MutableList<String>) {
+    private fun replacePhotoshop(items: MutableList<Item>, segments: List<Segment>, changes: MetadataChanges, skipped: MutableList<WriteSkip>) {
         val photoshop = segments.filter { it.kind == Kind.Photoshop }
         val resources = if (photoshop.isEmpty() || MetadataBlock.PhotoshopResources in changes.removeBlocks) {
             null

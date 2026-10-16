@@ -20,6 +20,8 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.FolderOff
 import androidx.compose.material.icons.rounded.HideImage
+import androidx.compose.material.icons.rounded.LocalLibrary
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -76,6 +79,7 @@ fun FolderScreen(
     onOpenFolder: (Route.Folder) -> Unit,
     onOpenPhoto: (PhotoRef) -> Unit,
     onBatchEdit: (Route.BatchEdit) -> Unit,
+    onOpenLibrary: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FolderViewModel = viewModel(factory = FolderViewModel.factory(route)),
     exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory),
@@ -102,6 +106,8 @@ fun FolderScreen(
             shareClean.open(selection.selectedIn(photos))
         },
         onExport = { exportViewModel.open(viewModel.selectedPhotos(), folderName = route.title) },
+        onRetry = viewModel::retry,
+        onOpenLibrary = onOpenLibrary,
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
@@ -122,6 +128,8 @@ fun FolderContent(
     onBatchAction: (BatchKind) -> Unit = {},
     onShareClean: (() -> Unit)? = null,
     onExport: () -> Unit = {},
+    onRetry: () -> Unit = {},
+    onOpenLibrary: () -> Unit = {},
     snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val listing = (state as? FolderUiState.Loaded)?.listing
@@ -142,7 +150,7 @@ fun FolderContent(
     ) { padding ->
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             when {
-                state is FolderUiState.Failed -> CenteredMessage { FolderError(state.error) }
+                state is FolderUiState.Failed -> CenteredMessage { FolderError(state.error, onRetry, onOpenLibrary) }
                 listing == null || (listing.isEmpty && listing.isLoading) -> FolderLoading(Modifier.align(Alignment.Center))
                 listing.isEmpty -> CenteredMessage {
                     EmptyState(
@@ -234,7 +242,14 @@ private fun FolderLoading(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun FolderError(error: PhotoAccessError) {
+private fun FolderError(error: PhotoAccessError, onRetry: () -> Unit, onOpenLibrary: () -> Unit) {
+    // Access is granted again from the Library; a moved folder has nothing to retry; anything
+    // else (an SD card briefly gone, a provider timeout) may work on a second try.
+    val action: Triple<String, ImageVector, () -> Unit>? = when (error) {
+        PhotoAccessError.PermissionDenied -> Triple(stringResource(R.string.folder_error_open_library), Icons.Rounded.LocalLibrary, onOpenLibrary)
+        PhotoAccessError.NotFound -> null
+        else -> Triple(stringResource(R.string.photo_retry), Icons.Rounded.Refresh, onRetry)
+    }
     EmptyState(
         icon = Icons.Rounded.FolderOff,
         shape = MaterialShapes.Cookie6Sided,
@@ -246,6 +261,9 @@ private fun FolderError(error: PhotoAccessError) {
                 else -> R.string.folder_error_read_body
             },
         ),
+        actionLabel = action?.first,
+        actionIcon = action?.second,
+        onAction = action?.third,
     )
 }
 

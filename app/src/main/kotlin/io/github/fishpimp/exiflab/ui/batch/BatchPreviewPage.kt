@@ -61,6 +61,7 @@ import io.github.fishpimp.exiflab.ui.edit.EditorBanner
 import io.github.fishpimp.exiflab.ui.edit.EditorCard
 import io.github.fishpimp.exiflab.ui.edit.durationText
 import io.github.fishpimp.exiflab.ui.edit.groupedDiff
+import io.github.fishpimp.exiflab.ui.edit.planWarningText
 import io.github.fishpimp.exiflab.ui.edit.zoneName
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.formatted
@@ -319,11 +320,14 @@ private fun FolderCard(count: Int, folder: CopyFolder?, actions: BatchEditAction
 private fun WarningsCard(preview: BatchPreview) {
     val lines = buildList {
         preview.warnings.forEach { warning ->
+            val other = warning.warning
             add(
-                when (warning.kind) {
-                    WarningCount.Kind.NoCaptureDate -> pluralStringResource(R.plurals.batch_warning_no_date, warning.count, warning.count)
-                    WarningCount.Kind.OtherTimeZone -> pluralStringResource(R.plurals.batch_warning_other_zone, warning.count, warning.count)
-                    WarningCount.Kind.Other -> pluralStringResource(R.plurals.batch_count_reason, warning.count, warning.count, warning.text.orEmpty())
+                when {
+                    warning.kind == WarningCount.Kind.OtherTimeZone ->
+                        pluralStringResource(R.plurals.batch_warning_other_zone, warning.count, warning.count)
+                    warning.kind == WarningCount.Kind.NoCaptureDate || other == null ->
+                        pluralStringResource(R.plurals.batch_warning_no_date, warning.count, warning.count)
+                    else -> pluralStringResource(R.plurals.batch_count_reason, warning.count, warning.count, planWarningText(other))
                 },
             )
         }

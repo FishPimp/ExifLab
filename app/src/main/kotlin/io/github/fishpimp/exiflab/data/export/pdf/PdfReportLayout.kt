@@ -239,7 +239,8 @@ class PdfReportLayout(
         val right = page.contentRight
         when (val map = block.map) {
             is PdfMap.Snapshot -> {
-                pages.add(PdfOp.Image(PdfImage.Map, left, top, right, top + MAP_HEIGHT, radius = 12f, placeholder = PdfColor.Panel))
+                // The snapshot is centered on the position, so the pin goes in the middle.
+                pages.add(PdfOp.Image(PdfImage.Map, left, top, right, top + MAP_HEIGHT, radius = 12f, placeholder = PdfColor.Panel, locationMark = true))
                 pages.y = top + MAP_HEIGHT + 3f
                 val credit = wrapper.wrap(map.attribution, PdfStyles.Small, page.contentWidth, maxLines = 1).first()
                 val creditWidth = measurer.width(credit, PdfStyles.Small)

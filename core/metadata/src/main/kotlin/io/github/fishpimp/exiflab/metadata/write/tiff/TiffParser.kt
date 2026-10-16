@@ -1,6 +1,7 @@
 package io.github.fishpimp.exiflab.metadata.write.tiff
 
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 
 /**
  * Parses an EXIF/TIFF block (either byte order) into editable IFDs. Every entry the writer does
@@ -8,7 +9,7 @@ import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
  * be carried over safely (values pointing outside the block, broken IFD links) are dropped and
  * described in [notes]; a block without a readable IFD0 throws [UnsupportedEditException].
  */
-internal class TiffParser private constructor(private val block: ByteArray, private val notes: MutableList<String>) {
+internal class TiffParser private constructor(private val block: ByteArray, private val notes: MutableList<WriteSkip>) {
     private val order: ByteOrder
     private val visited = HashSet<Long>()
 
@@ -34,7 +35,7 @@ internal class TiffParser private constructor(private val block: ByteArray, priv
             if (nextOffset == 0L) break
             val next = readIfd(nextOffset, "IFD$index", depth = 0)
             if (next == null) {
-                notes += "Dropped a damaged link to EXIF IFD$index"
+                notes += WriteSkip.ExifDataDropped("Dropped a damaged link to EXIF IFD$index")
                 break
             }
             current.next = next
@@ -119,14 +120,14 @@ internal class TiffParser private constructor(private val block: ByteArray, priv
         val tagName = "0x%04X".format(entry.tag)
         if (entry.typeSize == 0) return TiffEntry.Opaque(entry.tag, entry.type, entry.count, entry.field)
         if (!entry.inBounds || entry.byteSize > Int.MAX_VALUE) {
-            notes += "Dropped EXIF tag $tagName in $ifdName: its value lies outside the EXIF block"
+            notes += WriteSkip.ExifDataDropped("Dropped EXIF tag $tagName in $ifdName: its value lies outside the EXIF block")
             return null
         }
         if (entry.byteSize > 4) cover(entry.valueOffset, entry.byteSize)
         val isPointer = entry.tag in Tiff.IFD_POINTER_TAGS || entry.type == Tiff.IFD
         if (isPointer && (entry.type == Tiff.LONG || entry.type == Tiff.IFD) && entry.count in 1..MAX_SUB_IFDS) {
             val children = entry.values().mapNotNull { readIfd(it, "$ifdName/$tagName", depth + 1) }
-            if (children.size != entry.count.toInt()) notes += "Dropped a damaged sub-IFD of EXIF tag $tagName in $ifdName"
+            if (children.size != entry.count.toInt()) notes += WriteSkip.ExifDataDropped("Dropped a damaged sub-IFD of EXIF tag $tagName in $ifdName")
             return if (children.isEmpty()) null else TiffEntry.SubIfds(entry.tag, entry.type, children.toMutableList())
         }
         if (entry.isDataBlockOffsets) {
@@ -149,7 +150,7 @@ internal class TiffParser private constructor(private val block: ByteArray, priv
     private fun dataBlocks(offsets: RawEntry, lengths: RawEntry?, ifdName: String): TiffEntry? {
         val tagName = "0x%04X".format(offsets.tag)
         if (lengths == null || lengths.count != offsets.count || !lengths.inBounds || lengths.typeSize !in setOf(2, 4) || offsets.count > MAX_BLOCKS) {
-            notes += "Dropped EXIF tag $tagName in $ifdName: its data has no valid length"
+            notes += WriteSkip.ExifDataDropped("Dropped EXIF tag $tagName in $ifdName: its data has no valid length")
             return null
         }
         val starts = offsets.values()
@@ -159,11 +160,11 @@ internal class TiffParser private constructor(private val block: ByteArray, priv
         val blocks = starts.indices.map { i ->
             val start = starts[i]
             if (start < HEADER_SIZE || start >= block.size) {
-                notes += "Dropped EXIF tag $tagName in $ifdName: its data lies outside the EXIF block"
+                notes += WriteSkip.ExifDataDropped("Dropped EXIF tag $tagName in $ifdName: its data lies outside the EXIF block")
                 return null
             }
             val end = minOf(block.size.toLong(), start + sizes[i])
-            if (end < start + sizes[i]) notes += "Shortened the data of EXIF tag $tagName in $ifdName to the end of the EXIF block"
+            if (end < start + sizes[i]) notes += WriteSkip.ExifDataDropped("Shortened the data of EXIF tag $tagName in $ifdName to the end of the EXIF block")
             block.copyOfRange(start.toInt(), end.toInt())
         }
         return TiffEntry.DataBlocks(offsets.tag, lengths.tag, lengths.type, blocks)
@@ -182,7 +183,7 @@ internal class TiffParser private constructor(private val block: ByteArray, priv
     }
 
     companion object {
-        fun parse(block: ByteArray, notes: MutableList<String>): TiffDocument = TiffParser(block, notes).parse()
+        fun parse(block: ByteArray, notes: MutableList<WriteSkip>): TiffDocument = TiffParser(block, notes).parse()
 
         private const val HEADER_SIZE = 8
         private const val TIFF_MAGIC = 42

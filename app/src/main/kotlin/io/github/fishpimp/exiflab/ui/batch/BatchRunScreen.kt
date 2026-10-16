@@ -50,16 +50,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
-import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -73,7 +74,10 @@ import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
+import io.github.fishpimp.exiflab.ui.edit.writeSkipText
 import io.github.fishpimp.exiflab.ui.photo.breakableFileName
+import java.text.NumberFormat
+import java.util.Locale
 
 /**
  * A batch job: its progress while it runs (a wavy progress ring, counts, the file being written,
@@ -150,7 +154,7 @@ fun BatchRunContent(
             done -> stringResource(R.string.batch_summary_title)
             else -> stringResource(R.string.batch_run_title)
         },
-        subtitle = job?.title?.ifBlank { null },
+        subtitle = job?.title?.ifBlank { null }?.let { batchTitle(it) },
         onBack = actions.onBack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
@@ -203,7 +207,7 @@ private fun BatchProgressBody(state: BatchRunUiState, onCancel: () -> Unit) {
                 )
             }
             Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(32.dp)) {
-                Text("${(fraction * 100).toInt()}%", style = MaterialTheme.typography.displaySmall)
+                Text(percentText(fraction, LocalLocale.current.platformLocale), style = MaterialTheme.typography.displaySmall)
             }
         }
         Text(
@@ -406,10 +410,11 @@ private fun SummaryRow(item: BatchJobItem, onOpen: () -> Unit) {
                 if (reason != null) {
                     Text(reason, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                val notes = item.noteLines
-                if (notes.isNotEmpty()) {
+                val skips = remember(item.notes) { item.skips }
+                if (skips.isNotEmpty()) {
+                    val lines = skips.map { writeSkipText(it) }
                     Text(
-                        pluralStringResource(R.plurals.edit_saved_skipped, notes.size, notes.size) + "\n" + notes.joinToString("\n") { "• $it" },
+                        pluralStringResource(R.plurals.edit_saved_skipped, skips.size, skips.size) + "\n" + lines.joinToString("\n") { "• $it" },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -421,3 +426,7 @@ private fun SummaryRow(item: BatchJobItem, onOpen: () -> Unit) {
 }
 
 private val PROGRESS_SIZE = 200.dp
+
+/** "42%" in English, "42 %" in Swedish; rounded down, so it never reads 100 before the last photo is done. */
+internal fun percentText(fraction: Float, locale: Locale): String =
+    NumberFormat.getPercentInstance(locale).format((fraction * 100).toInt() / 100.0)

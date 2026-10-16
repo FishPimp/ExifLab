@@ -9,16 +9,18 @@ import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.batch.BatchOperation
 import io.github.fishpimp.exiflab.data.history.SaveError
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
+import io.github.fishpimp.exiflab.metadata.edit.AuthorField
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
+import io.github.fishpimp.exiflab.metadata.edit.PlanWarning
 import io.github.fishpimp.exiflab.metadata.edit.StripCategory
 import io.github.fishpimp.exiflab.metadata.model.DirectoryGroup
 import io.github.fishpimp.exiflab.metadata.model.GeoLocation
 import io.github.fishpimp.exiflab.ui.batch.BatchDraft
 import io.github.fishpimp.exiflab.ui.batch.BatchEditUiState
 import io.github.fishpimp.exiflab.ui.batch.BatchEditorPage
-import io.github.fishpimp.exiflab.ui.batch.DraftPhotos
 import io.github.fishpimp.exiflab.ui.batch.BatchPreview
 import io.github.fishpimp.exiflab.ui.batch.BatchRunUiState
+import io.github.fishpimp.exiflab.ui.batch.DraftPhotos
 import io.github.fishpimp.exiflab.ui.batch.SamplePlan
 import io.github.fishpimp.exiflab.ui.batch.WarningCount
 import io.github.fishpimp.exiflab.ui.edit.time.TimeShift
@@ -61,7 +63,7 @@ internal object FakeBatch {
             unchanged = 2,
             unreadable = 1,
             warnings = listOf(
-                WarningCount(WarningCount.Kind.Other, 3, "The latitude 91.2 is outside -90 to 90 degrees; the location was not changed"),
+                WarningCount(WarningCount.Kind.Other, 3, PlanWarning.NonAsciiField(AuthorField.Artist, alsoIptc = true)),
             ),
             sample = SamplePlan(
                 FakePhotos.photo("PXL_20260912_081455.jpg"),

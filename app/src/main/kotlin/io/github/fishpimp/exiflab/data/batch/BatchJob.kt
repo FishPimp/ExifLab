@@ -8,6 +8,7 @@ import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.SaveError
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 
 /** Life cycle of a [BatchJob]. */
 enum class BatchJobState {
@@ -136,8 +137,8 @@ enum class BatchItemReason {
  * @property recordId the History record of the save, once saved.
  * @property targetUri the copy or sidecar that was (or is being) written; for a copy it is set as
  *   soon as the empty document is created, so an interrupted run can clean it up.
- * @property notes for a written photo, the changes its file type could not hold, one per line
- *   (in English, from the writer); null when everything was stored.
+ * @property notes for a written photo, what the writer could not store or had to repair, as
+ *   [WriteSkipCodec] JSON; null when everything was stored.
  */
 @Entity(
     tableName = "batch_job_items",
@@ -166,8 +167,8 @@ data class BatchJobItem(
     val finishedAt: Long? = null,
     val notes: String? = null,
 ) {
-    /** The lines of [notes]. */
-    val noteLines: List<String> get() = notes?.lines()?.filter { it.isNotBlank() }.orEmpty()
+    /** The writer's notes, see [notes]. */
+    val skips: List<WriteSkip> get() = WriteSkipCodec.decode(notes)
 
     fun photoRef(): PhotoRef = PhotoRef(
         uri = photoUri,

@@ -13,6 +13,7 @@ import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import io.github.fishpimp.exiflab.appGraph
+import io.github.fishpimp.exiflab.data.settings.appLocalized
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,7 +31,7 @@ class BatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val graph = applicationContext.appGraph
         val job = graph.batchJobs.job(jobId) ?: return Result.success()
         if (job.state.isDone) return Result.success()
-        val notifications = BatchNotifications(applicationContext)
+        val notifications = BatchNotifications(applicationContext.appLocalized())
         try {
             setForeground(notifications.foregroundInfo(job, BatchProgress(job.total, 0, 0, 0)))
         } catch (e: CancellationException) {
@@ -61,7 +62,7 @@ class BatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
         val jobId = inputData.getString(KEY_JOB_ID).orEmpty()
         val job = applicationContext.appGraph.batchJobs.job(jobId)
             ?: BatchJob(id = jobId, state = BatchJobState.Queued, operationJson = null, title = "", total = 0, createdAt = 0)
-        return BatchNotifications(applicationContext).foregroundInfo(job, BatchProgress(job.total, 0, 0, 0))
+        return BatchNotifications(applicationContext.appLocalized()).foregroundInfo(job, BatchProgress(job.total, 0, 0, 0))
     }
 
     companion object {

@@ -1,5 +1,6 @@
 package io.github.fishpimp.exiflab.ui.batch
 
+import android.content.Context
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import io.github.fishpimp.exiflab.data.batch.BatchItemReason
 import io.github.fishpimp.exiflab.data.batch.BatchItemStatus
 import io.github.fishpimp.exiflab.data.batch.BatchJobItem
 import io.github.fishpimp.exiflab.data.batch.BatchKind
+import io.github.fishpimp.exiflab.data.batch.batchKindOfTitle
 import io.github.fishpimp.exiflab.data.history.SaveError
 import io.github.fishpimp.exiflab.metadata.edit.StripCategory
 import io.github.fishpimp.exiflab.ui.history.messageRes
@@ -57,6 +59,13 @@ val BatchKind.labelRes: Int
         BatchKind.Author -> R.string.batch_action_author
         BatchKind.Strip -> R.string.batch_action_strip
     }
+
+/** A batch's stored title in the app's language: its kind's name, or the text older versions stored. */
+@Composable
+fun batchTitle(stored: String): String = batchKindOfTitle(stored)?.let { stringResource(it.labelRes) } ?: stored
+
+/** [batchTitle] outside composition, e.g. for notifications. */
+fun Context.batchTitle(stored: String): String = batchKindOfTitle(stored)?.let { getString(it.labelRes) } ?: stored
 
 @get:StringRes
 val BatchKind.descriptionRes: Int

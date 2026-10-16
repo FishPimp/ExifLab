@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -36,6 +38,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.PhotoLibrary
 import androidx.compose.material.icons.rounded.Place
 import androidx.compose.material.icons.rounded.SearchOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.HorizontalDivider
@@ -48,13 +51,17 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -87,8 +94,8 @@ import io.github.fishpimp.exiflab.ui.format.LocationFormat
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.LocationMap
 import io.github.fishpimp.exiflab.ui.map.formatted
-import kotlinx.coroutines.launch
 import java.time.ZoneId
+import kotlinx.coroutines.launch
 
 /** Width of the editor's single column on large screens. */
 internal val BatchColumnMaxWidth = 720.dp
@@ -113,8 +120,6 @@ fun BatchEditScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
     val currentOnStarted by rememberUpdatedState(onStarted)
-    val title = stringResource(kind.labelRes)
-
     val pickPhoto = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let { viewModel.copyLocationFrom(it.toString()) }
     }
@@ -122,7 +127,7 @@ fun BatchEditScreen(
         viewModel.onCopyFolderPicked(uri?.toString())
     }
     // The job runs whatever the answer; the notification only adds progress outside the app.
-    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.start(title) }
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.start() }
 
     fun launchSafely(launch: () -> Unit) {
         try {
@@ -141,7 +146,11 @@ fun BatchEditScreen(
         }
     }
 
+    // Leaving the setup page drops what was typed for the author, so that asks first, like the editor.
+    var confirmDiscard by rememberSaveable { mutableStateOf(false) }
+    fun typedAuthor() = viewModel.artist.isNotBlank() || viewModel.copyright.isNotBlank()
     BackHandler(enabled = state.page != BatchEditorPage.Setup) { viewModel.back() }
+    BackHandler(enabled = state.page == BatchEditorPage.Setup && typedAuthor()) { confirmDiscard = true }
 
     BatchEditContent(
         state = state,
@@ -150,7 +159,11 @@ fun BatchEditScreen(
         placeQuery = viewModel.placeQuery,
         actions = remember(viewModel, onBack) {
             BatchEditActions(
-                onBack = { if (!viewModel.back()) onBack() },
+                onBack = {
+                    if (!viewModel.back()) {
+                        if (typedAuthor()) confirmDiscard = true else onBack()
+                    }
+                },
                 onShiftChange = viewModel::setShift,
                 onOpenLocationPicker = viewModel::openLocationPicker,
                 onSetLocation = viewModel::setLocation,
@@ -166,13 +179,30 @@ fun BatchEditScreen(
                 onStart = {
                     val needsAsk = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-                    if (needsAsk) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) else viewModel.start(title)
+                    if (needsAsk) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS) else viewModel.start()
                 },
             )
         },
         snackbarHostState = snackbarHostState,
         modifier = modifier,
     )
+
+    if (confirmDiscard) {
+        AlertDialog(
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text(stringResource(R.string.edit_discard_title)) },
+            text = { Text(stringResource(R.string.batch_discard_author_body)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmDiscard = false
+                        onBack()
+                    },
+                ) { Text(stringResource(R.string.edit_discard_confirm)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text(stringResource(R.string.edit_keep_editing)) } },
+        )
+    }
 }
 
 /** Everything the batch editor can ask its host to do. Defaults do nothing, for screenshot tests. */
@@ -269,7 +299,8 @@ private fun BatchSetupPage(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,
     ) { padding ->
-        Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
+        // The keyboard shrinks the page so the author fields scroll into view above it.
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding).imePadding(), contentAlignment = Alignment.TopCenter) {
             Column(
                 Modifier
                     .widthIn(max = BatchColumnMaxWidth)

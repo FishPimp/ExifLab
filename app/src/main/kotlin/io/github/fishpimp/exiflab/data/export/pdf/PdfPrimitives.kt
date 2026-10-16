@@ -108,6 +108,9 @@ sealed interface PdfOp {
     /**
      * [image] fitted inside the box (aspect kept, centered). When the image is missing the painter
      * draws [placeholder] there instead.
+     *
+     * @property locationMark draw the location pin and its ring at the image's center, for a map
+     *   centered on the photo's position; left out when the image is missing.
      */
     data class Image(
         val image: PdfImage,
@@ -117,6 +120,7 @@ sealed interface PdfOp {
         val bottom: Float,
         val radius: Float,
         val placeholder: PdfColor = PdfColor.PanelStrong,
+        val locationMark: Boolean = false,
     ) : PdfOp
 }
 

@@ -1,11 +1,17 @@
 package io.github.fishpimp.exiflab.ui.selection
 
 import androidx.compose.runtime.Immutable
+import io.github.fishpimp.exiflab.data.batch.BatchJobRepository
+import io.github.fishpimp.exiflab.data.batch.BatchJobState
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Multi-select in a photo grid, by photo URI. [active] is selection mode: taps toggle instead of
@@ -78,3 +84,14 @@ fun PhotoSelectionHolder.actions(allUris: () -> Collection<String>) = SelectionA
     onExit = { update { it.exit() } },
     onDragRange = { base, range -> update { it.withRange(base, range) } },
 )
+
+/**
+ * Keeps the selection while the editor of batch draft [draftId] is open, so backing out of it (to
+ * pick another action, say) keeps the photos selected, and leaves selection mode once the batch
+ * starts. Nothing changes when the draft is deleted. Cancel the returned job when another draft
+ * replaces this one.
+ */
+fun CoroutineScope.exitSelectionWhenStarted(holder: PhotoSelectionHolder, jobs: BatchJobRepository, draftId: String): Job = launch {
+    val job = jobs.observeJob(draftId).first { it == null || it.state != BatchJobState.Draft }
+    if (job != null) holder.update { it.exit() }
+}

@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,9 +21,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Apartment
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Clear
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.CloudOff
+import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.LocationCity
@@ -31,9 +35,7 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.SignalWifiOff
 import androidx.compose.material.icons.rounded.Signpost
 import androidx.compose.material.icons.rounded.Star
-import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Terrain
-import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -58,6 +60,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -66,6 +69,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.min
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.data.places.Place
 import io.github.fishpimp.exiflab.data.places.PlaceKind
@@ -76,6 +80,7 @@ import io.github.fishpimp.exiflab.metadata.model.GeoLocation
 import io.github.fishpimp.exiflab.ui.map.LatLng
 import io.github.fishpimp.exiflab.ui.map.LocationMap
 import io.github.fishpimp.exiflab.ui.map.formatted
+import java.text.NumberFormat
 import java.util.Locale
 
 /** What the picker holds: the pin and the text of the coordinate and altitude fields. */
@@ -96,10 +101,11 @@ fun LocationPicker(
     onClose: () -> Unit,
 ) {
     val start = initial?.let { LatLng(it.latitude, it.longitude) }
+    val locale = LocalLocale.current.platformLocale
     var latitude by rememberSaveable { mutableStateOf(start?.latitude) }
     var longitude by rememberSaveable { mutableStateOf(start?.longitude) }
     var coordinates by rememberSaveable { mutableStateOf(start?.formatted(COORDINATE_DECIMALS).orEmpty()) }
-    var altitude by rememberSaveable { mutableStateOf(initial?.altitudeMeters?.let { formatAltitude(it) }.orEmpty()) }
+    var altitude by rememberSaveable { mutableStateOf(initial?.altitudeMeters?.let { formatAltitude(it, locale) }.orEmpty()) }
     val pin = if (latitude != null && longitude != null) LatLng(latitude!!, longitude!!) else null
 
     fun movePin(to: LatLng, text: String = to.formatted(COORDINATE_DECIMALS)) {
@@ -124,7 +130,7 @@ fun LocationPicker(
             if (parsed != null) {
                 latitude = parsed.latLng.latitude
                 longitude = parsed.latLng.longitude
-                parsed.altitudeMeters?.let { altitude = formatAltitude(it) }
+                parsed.altitudeMeters?.let { altitude = formatAltitude(it, locale) }
             }
         },
         onAltitudeChange = { altitude = it },
@@ -167,17 +173,21 @@ fun LocationPickerContent(
         },
         containerColor = MaterialTheme.colorScheme.surface,
     ) { padding ->
-        BoxWithConstraints(Modifier.fillMaxSize().padding(padding)) {
-            val wide = maxWidth >= 840.dp
+        // The bar's insets are consumed here, so the keyboard padding below adds only what the keyboard covers beyond them.
+        BoxWithConstraints(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+            // Landscape phones are too short for the stacked layout, so they get the side-by-side one too.
+            // Measured without the keyboard, so opening it never switches layouts under a focused field.
+            val wide = maxWidth >= 840.dp || maxWidth > maxHeight
+            val sideWidth = min(420.dp, maxWidth / 2)
             val searchField: @Composable (Modifier) -> Unit = { m -> SearchField(query, onQueryChange, m) }
             val results: @Composable (Modifier) -> Unit = { m -> SearchResults(query, search, onPlacePicked, m) }
             val entryPanel: @Composable (Modifier) -> Unit = { m ->
                 EntryPanel(draft, coordinateError, altitudeInvalid, onCoordinatesChange, onAltitudeChange, onConfirm, m)
             }
             if (wide) {
-                Row(Modifier.fillMaxSize()) {
+                Row(Modifier.fillMaxSize().imePadding()) {
                     Column(
-                        Modifier.width(420.dp).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
+                        Modifier.width(sideWidth).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         searchField(Modifier)
@@ -187,15 +197,17 @@ fun LocationPickerContent(
                     PickerMap(draft.pin, onMapPick, Modifier.weight(1f).fillMaxSize())
                 }
             } else {
-                Column(Modifier.fillMaxSize()) {
+                Column(Modifier.fillMaxSize().imePadding()) {
                     searchField(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 12.dp))
                     // Results float over the map, so the map keeps its size while typing.
                     Box(Modifier.weight(1f).fillMaxWidth()) {
                         PickerMap(draft.pin, onMapPick, Modifier.fillMaxSize())
                         results(Modifier.padding(12.dp))
                     }
+                    // Measured before the map, so when the keyboard leaves little room the map gives way
+                    // and the panel scrolls instead of pushing the fields and the button off screen.
                     Surface(color = MaterialTheme.colorScheme.surfaceContainer) {
-                        entryPanel(Modifier.navigationBarsPadding().padding(16.dp))
+                        entryPanel(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(16.dp))
                     }
                 }
             }
@@ -397,6 +409,11 @@ private val CoordinateError.messageRes: Int
 fun parseAltitude(text: String): Double? =
     text.trim().replace(',', '.').replace('−', '-').takeIf { it.isNotEmpty() }?.toDoubleOrNull()?.takeIf { it.isFinite() && it in -1_000.0..100_000.0 }
 
-private fun formatAltitude(meters: Double): String = String.format(Locale.ROOT, "%.1f", meters).removeSuffix(".0")
+/** "12,5" in Swedish, "12.5" in English, "12" for whole meters; [parseAltitude] reads all of them back. */
+internal fun formatAltitude(meters: Double, locale: Locale): String =
+    NumberFormat.getNumberInstance(locale).apply {
+        isGroupingUsed = false
+        maximumFractionDigits = 1
+    }.format(meters)
 
 private const val COORDINATE_DECIMALS = 6

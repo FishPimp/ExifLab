@@ -3,13 +3,6 @@ package io.github.fishpimp.exiflab.ui.map
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.material3.ColorScheme
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Canvas
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import io.github.fishpimp.exiflab.data.network.NetworkMonitor
 import io.github.fishpimp.exiflab.data.network.OfflineMode
 import kotlinx.coroutines.Dispatchers
@@ -26,8 +19,8 @@ import org.maplibre.android.geometry.LatLng as MapLibreLatLng
 enum class MapSnapshotAvailability { Available, Offline, Unsupported }
 
 /**
- * Still map images for exports, drawn by MapLibre's snapshotter with the app's map style, colors
- * and pin. Tiles come through the app's allowlisted HTTP client like every other map, so nothing
+ * Still map images for exports, drawn by MapLibre's snapshotter with the app's map style and
+ * colors. Tiles come through the app's allowlisted HTTP client like every other map, so nothing
  * is fetched while offline mode is on.
  */
 class MapSnapshots(
@@ -43,8 +36,9 @@ class MapSnapshots(
     }
 
     /**
-     * A [width] by [height] (in points or dp) light map centered on the position, with the pin, at
-     * [pixelRatio] pixels per unit. Null when it fails or takes longer than [timeoutMillis].
+     * A [width] by [height] (in points or dp) light map centered on the position, at [pixelRatio]
+     * pixels per unit, without a pin: the PDF draws it on top as vector shapes. Null when it fails
+     * or takes longer than [timeoutMillis].
      */
     suspend fun snapshot(
         latitude: Double,
@@ -57,7 +51,7 @@ class MapSnapshots(
     ): Bitmap? {
         if (availability() != MapSnapshotAvailability.Available) return null
         val palette = mapPalette(scheme, dark = false)
-        val bitmap = withTimeoutOrNull(timeoutMillis) {
+        return withTimeoutOrNull(timeoutMillis) {
             withContext(Dispatchers.Main) {
                 suspendCancellableCoroutine<Bitmap?> { continuation ->
                     val options = MapSnapshotter.Options(width, height)
@@ -86,13 +80,7 @@ class MapSnapshots(
                     )
                 }
             }
-        } ?: return null
-        // The camera is centered on the position, so the pin goes in the middle.
-        val density = Density(pixelRatio)
-        CanvasDrawScope().draw(density, LayoutDirection.Ltr, Canvas(bitmap.asImageBitmap()), Size(bitmap.width.toFloat(), bitmap.height.toFloat())) {
-            drawLocationMark(Offset(size.width / 2f, size.height / 2f), palette)
         }
-        return bitmap
     }
 
     private companion object {

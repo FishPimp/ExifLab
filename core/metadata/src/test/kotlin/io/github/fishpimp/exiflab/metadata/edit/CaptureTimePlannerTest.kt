@@ -194,7 +194,7 @@ class CaptureTimePlannerTest {
 
     @Test fun shiftWithoutAnyDateWarnsAndChangesNothing() {
         val plan = plan(jpeg(exif = null), EditOperation.ShiftCaptureTime(Duration.ofHours(1)))
-        assertThat(plan.warnings).containsExactly("There is no capture date to shift")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.Shift))
         assertThat(plan.changes.isEmpty).isTrue()
         assertThat(plan.diff).isEmpty()
         assertThat(plan(fullJpeg(), EditOperation.ShiftCaptureTime(Duration.ZERO)).changes.isEmpty).isTrue()
@@ -281,14 +281,14 @@ class CaptureTimePlannerTest {
         val phone = dated("2026:06:14 18:00:00", offset = "+09:00", xmp = mapOf("xmp:CreateDate" to "2026-06-14T18:00:00"))
         val plan = plan(phone, EditOperation.ChangeTimeZone(stockholm, tokyo))
         assertThat(plan.changes.isEmpty).isTrue()
-        assertThat(plan.warnings).containsExactly(DefaultChangePlanner.OTHER_ZONE_WARNING)
+        assertThat(plan.warnings).containsExactly(PlanWarning.OtherUtcOffset)
 
         // Running the fix twice does not move the photos again.
         val once = edit(dated("2026:06:14 11:00:00"), EditOperation.ChangeTimeZone(stockholm, tokyo))
         assertThat(once.exif("exif-subifd", 0x9003)).isEqualTo("2026:06:14 18:00:00")
         val twice = EditFixtures.planner.plan(once.after, listOf(EditOperation.ChangeTimeZone(stockholm, tokyo)))
         assertThat(twice.changes.isEmpty).isTrue()
-        assertThat(twice.warnings).containsExactly(DefaultChangePlanner.OTHER_ZONE_WARNING)
+        assertThat(twice.warnings).containsExactly(PlanWarning.OtherUtcOffset)
 
         // An offset that is the camera zone's (winter or summer time) is converted as usual.
         val camera = edit(dated("2026:06:14 11:00:00", offset = "+02:00"), EditOperation.ChangeTimeZone(stockholm, tokyo))
@@ -329,7 +329,7 @@ class CaptureTimePlannerTest {
 
     @Test fun timeZoneChangeWithoutDatesWarns() {
         val plan = plan(jpeg(exif = null), EditOperation.ChangeTimeZone(tokyo, stockholm))
-        assertThat(plan.warnings).containsExactly("There is no capture date to convert")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.Convert))
         assertThat(plan.changes.isEmpty).isTrue()
     }
 
@@ -357,7 +357,7 @@ class CaptureTimePlannerTest {
 
     @Test fun setUtcOffsetWithoutDatesWarns() {
         val plan = plan(jpeg(exif = null), EditOperation.SetUtcOffset(ZoneOffset.UTC))
-        assertThat(plan.warnings).containsExactly("There is no capture date to set the time zone for")
+        assertThat(plan.warnings).containsExactly(PlanWarning.NoCaptureDate(DateAction.SetZone))
         assertThat(plan.changes.isEmpty).isTrue()
     }
 

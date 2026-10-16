@@ -208,7 +208,7 @@ class TagCatalogTest {
             val normalized = valid(id, input)
             assertWithMessage(id).that(normalized).isNotNull()
             val edited = edit(source, catalog.operationFor(field, input))
-            assertWithMessage("$id warnings").that(edited.plan.warnings.filterNot { "EXIF cannot store" in it }).isEmpty()
+            assertWithMessage("$id warnings").that(edited.plan.warnings.filterNot { it is PlanWarning.NonAsciiField }).isEmpty()
             assertWithMessage(id).that(catalog.currentValue(field, edited.after)).isEqualTo(normalized)
             assertWithMessage("$id diff").that(edited.plan.diff).isNotEmpty()
 

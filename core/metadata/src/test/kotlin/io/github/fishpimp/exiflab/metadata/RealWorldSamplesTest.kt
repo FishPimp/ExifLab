@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.MetadataWriting
 import io.github.fishpimp.exiflab.metadata.write.WriteFixtures.tagValues
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import io.github.fishpimp.exiflab.metadata.write.XmpArrayKind
 import io.github.fishpimp.exiflab.metadata.write.XmpChange
 import java.io.ByteArrayOutputStream
@@ -128,7 +129,7 @@ class RealWorldSamplesTest {
         listOf("$label: ${e.message}")
     }
 
-    private fun writeTo(source: ImageSource, changes: MetadataChanges): Pair<ByteArray, List<String>> {
+    private fun writeTo(source: ImageSource, changes: MetadataChanges): Pair<ByteArray, List<WriteSkip>> {
         val out = ByteArrayOutputStream()
         val result = MetadataWriting.writer.write(source, changes, out)
         val bytes = out.toByteArray()

@@ -245,7 +245,7 @@ private fun ZoneRow(zone: ZoneChoice, selected: Boolean, onClick: () -> Unit) {
         Column(Modifier.weight(1f)) {
             Text(zone.city, style = MaterialTheme.typography.bodyLarge)
             Text(
-                listOf(zone.displayName, zone.region).filter { it.isNotBlank() }.joinToString(" · "),
+                listOf(zone.displayName, zone.country.ifBlank { zone.region }).filter { it.isNotBlank() }.joinToString(" · "),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

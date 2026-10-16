@@ -23,11 +23,12 @@ import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.MetadataWriter
 import io.github.fishpimp.exiflab.metadata.write.SidecarWriter
 import io.github.fishpimp.exiflab.metadata.write.WriteResult
-import kotlinx.coroutines.Dispatchers
+import io.github.fishpimp.exiflab.metadata.write.WriteSkip
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
 import java.util.concurrent.atomic.AtomicInteger
+import kotlinx.coroutines.Dispatchers
 
 /** Thrown by [FaultyDocuments] to simulate the process dying; nothing in the pipeline catches it. */
 class SimulatedCrash : Error("Simulated crash")
@@ -122,7 +123,7 @@ class FakeWriter : MetadataWriter {
             failWith?.let { throw it }
             val bytes = source.open().use(InputStream::readBytes) + "|edited".toByteArray()
             output.write(bytes)
-            return WriteResult(ImageFormat.Jpeg, bytes.size.toLong(), "digest", "digest", skipped = listOf("IPTC"))
+            return WriteResult(ImageFormat.Jpeg, bytes.size.toLong(), "digest", "digest", skipped = listOf(WriteSkip.IptcUnsupported(ImageFormat.Png, 1)))
         } finally {
             active.decrementAndGet()
         }

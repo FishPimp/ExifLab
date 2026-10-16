@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteItem
 import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import androidx.window.core.layout.WindowSizeClass
 import io.github.fishpimp.exiflab.appGraph
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.ui.batch.BatchEditScreen
@@ -51,7 +53,8 @@ import io.github.fishpimp.exiflab.ui.settings.SettingsScreen
  *   initial screen, so a share opens directly on the photo; later ones are pushed on Home.
  * @param onExternalOpenHandled called once [externalOpen] is on the back stack.
  * @param onExitSharedPhotos called on back from shared photos, to return to the sharing app.
- * @param openBatchJob a batch job to show (its notification was tapped); pushed on Home.
+ * @param openBatchJob a batch job to show (its notification was tapped): the tab already showing
+ *   its run screen, else pushed on Home.
  * @param onBatchJobOpened called once [openBatchJob] is on the back stack.
  */
 @Composable
@@ -78,6 +81,19 @@ fun ExifLabApp(
     var sharedEntryDepth by rememberSaveable { mutableStateOf(initialOpen?.let { 2 }) }
     var handledOpenId by rememberSaveable { mutableStateOf(initialOpen?.id) }
 
+    // The edit open beside History's list on expanded windows. Unfolding turns edits opened as
+    // their own screens into this selection; folding opens it as a screen again (HistoryScreen).
+    var historySelection by rememberSaveable { mutableStateOf<String?>(null) }
+    val expanded = currentWindowAdaptiveInfo().windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND)
+    val historyStack = backStacks.getValue(TopLevelDestination.History)
+    LaunchedEffect(expanded, historyStack.lastOrNull()) {
+        val details = historyStack.drop(1)
+        if (expanded && details.isNotEmpty() && details.all { it is Route.HistoryDetail }) {
+            historySelection = (details.last() as Route.HistoryDetail).recordId
+            while (historyStack.size > 1) historyStack.removeAt(historyStack.lastIndex)
+        }
+    }
+
     LaunchedEffect(externalOpen) {
         val open = externalOpen ?: return@LaunchedEffect
         if (open.id != handledOpenId) {
@@ -103,9 +119,14 @@ fun ExifLabApp(
 
     LaunchedEffect(openBatchJob) {
         val jobId = openBatchJob ?: return@LaunchedEffect
-        val home = backStacks.getValue(TopLevelDestination.Home)
-        if ((home.lastOrNull() as? Route.BatchRun)?.jobId != jobId) home.add(Route.BatchRun(jobId))
-        currentTab = TopLevelDestination.Home
+        // A batch started from a folder already shows its run screen on that tab; go there.
+        val showing = backStacks.entries.firstOrNull { (_, stack) -> (stack.lastOrNull() as? Route.BatchRun)?.jobId == jobId }?.key
+        if (showing != null) {
+            currentTab = showing
+        } else {
+            backStacks.getValue(TopLevelDestination.Home).add(Route.BatchRun(jobId))
+            currentTab = TopLevelDestination.Home
+        }
         onBatchJobOpened(jobId)
     }
 
@@ -134,7 +155,12 @@ fun ExifLabApp(
         }
         entry<Route.Library> { LibraryScreen(onOpenFolder = ::navigate) }
         entry<Route.History> {
-            HistoryScreen(onOpenRecord = { navigate(Route.HistoryDetail(it)) }, onOpenPhoto = ::openPhoto)
+            HistoryScreen(
+                onOpenRecord = { navigate(Route.HistoryDetail(it)) },
+                onOpenPhoto = ::openPhoto,
+                selectedId = historySelection,
+                onSelect = { historySelection = it },
+            )
         }
         entry<Route.HistoryDetail> { route ->
             HistoryDetailScreen(
@@ -153,7 +179,19 @@ fun ExifLabApp(
         entry<Route.Privacy> { PrivacyScreen(onBack = ::back) }
         entry<Route.Licenses> { LicensesScreen(onBack = ::back) }
         entry<Route.Folder> { route ->
-            FolderScreen(route = route, onBack = ::back, onOpenFolder = ::navigate, onOpenPhoto = ::openPhoto, onBatchEdit = ::navigate)
+            FolderScreen(
+                route = route,
+                onBack = ::back,
+                onOpenFolder = ::navigate,
+                onOpenPhoto = ::openPhoto,
+                onBatchEdit = ::navigate,
+                onOpenLibrary = {
+                    // Access is granted again from the Library's folder cards.
+                    val stack = backStacks.getValue(TopLevelDestination.Library)
+                    while (stack.size > 1) stack.removeAt(stack.lastIndex)
+                    currentTab = TopLevelDestination.Library
+                },
+            )
         }
         entry<Route.Selection> { route ->
             SelectionScreen(refs = route.refs, onBack = ::back, onOpenPhoto = ::openPhoto, onBatchEdit = ::navigate)
@@ -235,8 +273,14 @@ fun ExifLabApp(
             }
         },
     ) {
+        // Back from shared photos returns to the sharing app, so Home under them is left out:
+        // with nothing behind, predictive back previews that app instead of a screen never reached.
+        val entries = entriesByTab.getValue(currentTab).let { entries ->
+            val depth = sharedEntryDepth
+            if (currentTab == TopLevelDestination.Home && depth != null && entries.size >= depth) entries.drop(depth - 1) else entries
+        }
         NavDisplay(
-            entries = entriesByTab.getValue(currentTab),
+            entries = entries,
             onBack = ::back,
         )
     }

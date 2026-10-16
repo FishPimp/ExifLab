@@ -46,6 +46,13 @@ class BatchScreenshotTest {
     @Test @Config(qualifiers = "w411dp-h1800dp-xxhdpi", fontScale = 2.0f)
     fun selection_folder_large_font() = compose.snapshot("batch_select_folder_font200") { FolderSelection() }
 
+    /** A 360dp phone: the actions that don't fit move into More options. */
+    @Test @Config(qualifiers = "w360dp-h780dp-xxhdpi")
+    fun selection_folder_narrow() = compose.snapshot("batch_select_folder_w360") { FolderSelection(onShareClean = {}) }
+
+    @Test @Config(qualifiers = "w360dp-h1400dp-xxhdpi", fontScale = 2.0f)
+    fun selection_folder_narrow_large_font() = compose.snapshot("batch_select_folder_w360_font200") { FolderSelection(onShareClean = {}) }
+
     @Test @Config(qualifiers = "w1280dp-h800dp-land-xhdpi")
     fun selection_folder_tablet() = compose.snapshot("batch_select_folder_tablet", palette = BrandPalette.Moss) { FolderSelection() }
 
@@ -118,8 +125,9 @@ class BatchScreenshotTest {
     fun summary_tablet() = compose.snapshot("batch_summary_tablet", palette = BrandPalette.Moss) { Run(FakeBatch.summary) }
 
     @Composable
-    private fun FolderSelection() = WithFakeThumbnails {
+    private fun FolderSelection(onShareClean: (() -> Unit)? = null) = WithFakeThumbnails {
         FolderContent(
+            onShareClean = onShareClean,
             title = "Camera",
             state = FolderUiState.Loaded(FakePhotos.listing),
             onBack = {},

@@ -9,6 +9,7 @@ import io.github.fishpimp.exiflab.data.batch.BatchJobState
 import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.batch.BatchOperation
 import io.github.fishpimp.exiflab.data.batch.BatchPhotos
+import io.github.fishpimp.exiflab.data.batch.storedTitle
 import io.github.fishpimp.exiflab.data.history.EditHistoryDatabase
 import io.github.fishpimp.exiflab.data.places.PlaceSearchState
 import io.github.fishpimp.exiflab.metadata.ImageFormat
@@ -95,13 +96,13 @@ class BatchEditViewModelTest {
         vm.awaitState { it.copyFolder != null }
         val events = java.util.concurrent.CopyOnWriteArrayList<BatchEditEvent>()
         scope.launch { vm.events.collect { events += it } }
-        vm.start("Set author")
+        vm.start()
         withTimeout(10_000) { while (events.isEmpty()) kotlinx.coroutines.delay(10) }
 
         assertThat(events).containsExactly(BatchEditEvent.Started(id))
         val job = jobs.job(id)!!
         assertThat(job.state).isEqualTo(BatchJobState.Queued)
-        assertThat(job.title).isEqualTo("Set author")
+        assertThat(job.title).isEqualTo(BatchKind.Author.storedTitle)
         assertThat(job.copyFolderUri).isEqualTo("content://tree/out/document")
         assertThat(job.operation).isEqualTo(vm.operation())
         assertThat(enqueued).containsExactly(id)

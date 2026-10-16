@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.metadata.write
 import com.google.common.truth.Truth.assertThat
 import io.github.fishpimp.exiflab.metadata.ByteArrayImageSource
 import io.github.fishpimp.exiflab.metadata.CorruptImageException
+import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.fixtures.Containers
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos.tag
@@ -152,7 +153,7 @@ class WebpWriterTest {
         val trailer = Random(5).nextBytes(101)
         val source = Containers.webp(8, 8, exif = tiff) + trailer
         val written = write(source, MetadataChanges(iptc = listOf(IptcChange.Set(2, 120, listOf("x"))), exif = listOf(ascii(ExifIfd.Primary, Photos.MAKE, "M"))))
-        assertThat(written.result.skipped.single()).contains("IPTC")
+        assertThat(written.result.skipped).containsExactly(WriteSkip.IptcUnsupported(ImageFormat.WebP, 1))
         assertThat(written.bytes.copyOfRange(written.bytes.size - trailer.size, written.bytes.size)).isEqualTo(trailer)
     }
 
