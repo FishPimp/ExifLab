@@ -96,6 +96,7 @@ fun SettingsScreen(
         onBackupRetention = viewModel::setBackupRetention,
         onSidecarNaming = viewModel::setSidecarNaming,
         onDeleteAllBackups = viewModel::deleteAllBackups,
+        onClearHistory = viewModel::clearHistory,
         onOpenPrivacy = onOpenPrivacy,
         onOpenLicenses = onOpenLicenses,
         modifier = modifier,
@@ -119,6 +120,7 @@ fun SettingsContent(
     onOpenPrivacy: () -> Unit,
     onOpenLicenses: () -> Unit,
     modifier: Modifier = Modifier,
+    onClearHistory: () -> Unit = {},
 ) {
     val dynamicSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     ScreenScaffold(title = stringResource(R.string.nav_settings), modifier = modifier) { padding ->
@@ -214,6 +216,7 @@ fun SettingsContent(
                     onBackupRetention = onBackupRetention,
                     onSidecarNaming = onSidecarNaming,
                     onDeleteAllBackups = onDeleteAllBackups,
+                    onClearHistory = onClearHistory,
                 )
                 item { SectionHeader(stringResource(R.string.settings_section_about)) }
                 item {

@@ -271,6 +271,26 @@ class PhotoSaverTest {
     }
 
     @Test
+    fun `restoring an earlier edit marks the later ones it undid as restored`() = runBlocking<Unit> {
+        val ref = h.photo("IMG_0014.jpg", ORIGINAL)
+        val other = h.photo("IMG_0015.jpg", ORIGINAL)
+        val saver = h.saver()
+        val first = saver.save(ref, changes, diff, SaveTarget.InPlace) as SaveOutcome.Saved
+        val second = saver.save(ref, changes, diff, SaveTarget.InPlace) as SaveOutcome.Saved
+        val elsewhere = saver.save(other, changes, diff, SaveTarget.InPlace) as SaveOutcome.Saved
+
+        saver.restoreOriginal(first.recordId) as SaveOutcome.Saved
+
+        assertThat(h.fileOf(ref.uri).readBytes()).isEqualTo(ORIGINAL)
+        assertThat(h.dao.record(first.recordId)!!.state).isEqualTo(EditState.Restored)
+        // The second edit is gone from the file too, so History must not offer to restore it.
+        val later = h.dao.record(second.recordId)!!
+        assertThat(later.state).isEqualTo(EditState.Restored)
+        assertThat(later.canRestore).isFalse()
+        assertThat(h.dao.record(elsewhere.recordId)!!.state).isEqualTo(EditState.Committed)
+    }
+
+    @Test
     fun `restore refuses a backup that no longer matches its hash`() = runBlocking<Unit> {
         val ref = h.photo("IMG_0012.jpg", ORIGINAL)
         val saver = h.saver()
@@ -346,6 +366,18 @@ class PhotoSaverTest {
         assertThat(existing.readText()).isEqualTo("<xmp><old/></xmp>")
         val record = h.dao.record(outcome.recordId)!!
         assertThat(h.store.file(record.backupPath!!).readText()).isEqualTo("<old/>")
+    }
+
+    @Test
+    fun `an existing sidecar named in upper case is the one updated`() = runBlocking<Unit> {
+        val raw = h.photo("IMG_1235.CR3", ORIGINAL)
+        val existing = h.photos.resolve("IMG_1235.XMP").apply { writeText("<old/>") }
+
+        val outcome = h.saver().save(raw, changes, diff, SaveTarget.Sidecar()) as SaveOutcome.Saved
+
+        assertThat(h.fileOf(outcome.targetUri).name).isEqualTo("IMG_1235.XMP")
+        assertThat(existing.readText()).isEqualTo("<xmp><old/></xmp>")
+        assertThat(h.photos.list()!!.filter { it.startsWith("IMG_1235") }).containsExactly("IMG_1235.CR3", "IMG_1235.XMP")
     }
 
     @Test

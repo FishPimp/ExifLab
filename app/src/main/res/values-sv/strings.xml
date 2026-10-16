@@ -306,7 +306,7 @@
     <string name="history_action_delete_backup">Radera säkerhetskopian</string>
     <string name="history_action_view_edit">Visa den redigeringen</string>
     <string name="history_restore_title">Återställa originalet?</string>
-    <string name="history_restore_body">%1$s återställs exakt som den var före den här redigeringen. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</string>
+    <string name="history_restore_body">%1$s återställs exakt som den var före den här redigeringen, så senare ändringar av den, även från andra appar, tas också bort. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</string>
     <string name="history_undo_restore_title">Ångra återställningen?</string>
     <string name="history_undo_restore_body">%1$s blir som den var före återställningen. Den nuvarande versionen säkerhetskopieras först.</string>
     <string name="history_delete_backup_title">Radera säkerhetskopian?</string>
@@ -376,6 +376,11 @@
     <string name="settings_backup_delete_all_title">Radera alla säkerhetskopior?</string>
     <string name="settings_backup_delete_all_confirm">Det frigör %1$s. Du kan inte längre återställa originalen till bilder som du redan har redigerat. Säkerhetskopior för pågående sparningar behålls.</string>
     <string name="settings_backup_delete_all_action">Radera alla</string>
+    <string name="settings_history_clear">Rensa redigeringshistoriken</string>
+    <string name="settings_history_clear_body">Historiken sparar värdena som varje redigering ändrade, till exempel en plats som du tog bort. Den raderas tillsammans med säkerhetskopiorna, eller nu.</string>
+    <string name="settings_history_clear_title">Rensa redigeringshistoriken?</string>
+    <string name="settings_history_clear_confirm">Alla avslutade redigeringar tas bort från historiken, med värdena de ändrade, och alla säkerhetskopior raderas. Du kan inte längre återställa originalen till bilder som du redan har redigerat. Pågående sparningar behålls.</string>
+    <string name="settings_history_clear_action">Rensa</string>
 
     <string name="palette_lagoon">Lagun</string>
     <string name="palette_citrus">Citrus</string>
@@ -399,7 +404,7 @@
     <string name="privacy_files_title">Bara filerna du väljer</string>
     <string name="privacy_files_body">ExifLab kan bara öppna bilder som du väljer, bilder som delas till appen och mappar som du ger åtkomst till. Du kan ta bort mappåtkomsten när som helst.</string>
     <string name="privacy_backups_title">Säkerhetskopior stannar på enheten</string>
-    <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen.</string>
+    <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen. Historiken, som sparar värdena en redigering ändrade, försvinner med redigeringens säkerhetskopia, och du kan rensa den i Inställningar.</string>
     <string name="privacy_permissions_title">Behörigheter</string>
     <string name="privacy_permissions_body">Bilder och mappar öppnas via systemets bildväljare och mappåtkomst. Aviseringar visar förloppet för batchredigeringar. Internet används bara för kartor och platssökning, och nätverksstatus bara för att se om du är ansluten. ExifLab ber aldrig om din plats.</string>
 
@@ -882,6 +887,10 @@
     <plurals name="batch_count_written">
         <item quantity="one">%d skriven</item>
         <item quantity="other">%d skrivna</item>
+    </plurals>
+    <plurals name="batch_count_with_notes">
+        <item quantity="one">%d med ändringar som filtypen inte kunde lagra</item>
+        <item quantity="other">%d med ändringar som filtypen inte kunde lagra</item>
     </plurals>
     <plurals name="batch_count_skipped">
         <item quantity="one">%d överhoppad</item>

@@ -1,6 +1,7 @@
 package io.github.fishpimp.exiflab.data.backup
 
 import com.google.common.truth.Truth.assertThat
+import io.github.fishpimp.exiflab.data.history.EditBatch
 import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.EditRecord
 import io.github.fishpimp.exiflab.data.history.EditState
@@ -57,7 +58,7 @@ class BackupManagerTest {
     }
 
     @Test
-    fun `prune deletes expired backups and forgets them in the journal`() = runBlocking<Unit> {
+    fun `prune deletes expired backups and the history of those edits`() = runBlocking<Unit> {
         recordWithBackup("old", ageDays = 40)
         recordWithBackup("new", ageDays = 2)
 
@@ -65,8 +66,8 @@ class BackupManagerTest {
 
         assertThat(result.deletedFiles).isEqualTo(1)
         assertThat(result.freedBytes).isEqualTo(100)
-        assertThat(h.dao.record("old")!!.backupPath).isNull()
-        assertThat(h.dao.record("old")!!.canRestore).isFalse()
+        // The record held the values the edit changed; it goes with its backup.
+        assertThat(h.dao.record("old")).isNull()
         assertThat(h.dao.record("new")!!.backupPath).isNotNull()
         assertThat(h.store.files().map { it.path }).containsExactly("new.bak")
         assertThat(h.store.usedBytes.value).isEqualTo(100)
@@ -123,6 +124,50 @@ class BackupManagerTest {
         assertThat(h.dao.record("done")!!.backupPath).isNull()
         assertThat(h.dao.record("damaged")!!.backupPath).isNull()
         assertThat(h.dao.record("pending")!!.backupPath).isEqualTo("pending.bak")
+    }
+
+    @Test
+    fun `history older than the retention goes once nothing can be restored from it`() = runBlocking<Unit> {
+        h.dao.insertBatch(EditBatch(id = "old-batch", title = "Remove location", createdAt = now - TimeUnit.DAYS.toMillis(60), total = 1))
+        h.dao.insertBatch(EditBatch(id = "kept-batch", title = "Set author", createdAt = now - TimeUnit.DAYS.toMillis(60), total = 1))
+        recordWithBackup("old-copy", ageDays = 60)
+        h.dao.updateRecord(h.dao.record("old-copy")!!.copy(backupPath = null, mode = EditMode.Copy, batchId = "old-batch"))
+        recordWithBackup("recent-copy", ageDays = 3)
+        h.dao.updateRecord(h.dao.record("recent-copy")!!.copy(backupPath = null, mode = EditMode.Copy))
+        recordWithBackup("damaged", ageDays = 60, state = EditState.Failed, error = SaveError.RollbackFailed)
+        h.dao.updateRecord(h.dao.record("damaged")!!.copy(backupPath = null, batchId = "kept-batch"))
+        recordWithBackup("pending", ageDays = 60, state = EditState.Pending)
+
+        manager().prune()
+
+        assertThat(h.dao.record("old-copy")).isNull()
+        assertThat(h.dao.record("recent-copy")).isNotNull()
+        assertThat(h.dao.record("damaged")).isNotNull()
+        assertThat(h.dao.record("pending")).isNotNull()
+        assertThat(h.dao.batch("old-batch")).isNull()
+        assertThat(h.dao.batch("kept-batch")).isNotNull()
+
+        // Kept forever while the backups are.
+        retention = BackupRetention.Forever
+        recordWithBackup("ancient-copy", ageDays = 900)
+        h.dao.updateRecord(h.dao.record("ancient-copy")!!.copy(backupPath = null, mode = EditMode.Copy))
+        manager().prune()
+        assertThat(h.dao.record("ancient-copy")).isNotNull()
+    }
+
+    @Test
+    fun `clearing history deletes every finished edit and its backup`() = runBlocking<Unit> {
+        h.dao.insertBatch(EditBatch(id = "batch", title = "Remove location", createdAt = now - TimeUnit.DAYS.toMillis(1), total = 1))
+        recordWithBackup("done", ageDays = 1)
+        h.dao.updateRecord(h.dao.record("done")!!.copy(batchId = "batch"))
+        recordWithBackup("pending", ageDays = 0, state = EditState.Pending)
+
+        manager().clearHistory()
+
+        assertThat(h.dao.record("done")).isNull()
+        assertThat(h.dao.batch("batch")).isNull()
+        assertThat(h.dao.record("pending")).isNotNull()
+        assertThat(h.store.files().map { it.path }).containsExactly("pending.bak")
     }
 
     @Test

@@ -87,7 +87,8 @@ class PhotoSaver(
     /**
      * Writes the backup of [recordId] back to its target, through the same journaled, verified
      * pipeline. The target's current state is backed up first, so the restore is itself a record
-     * that can be restored (undone). On success [recordId] becomes [EditState.Restored].
+     * that can be restored (undone). On success [recordId] becomes [EditState.Restored], and so
+     * do later edits of the same file, which the restore undid too.
      */
     suspend fun restoreOriginal(recordId: String, batchId: String? = null): SaveOutcome = withContext(ioDispatcher) {
         val photoUri = dao.record(recordId)?.photoUri ?: return@withContext SaveOutcome.Rejected(SaveRejection.NotFound)
@@ -334,13 +335,26 @@ class PhotoSaver(
             if (after != expected) return@withContext rollback(journal, SaveError.VerificationFailed)
 
             val committed = journal.record.copy(state = EditState.Committed, completedAt = clock())
-            val restored = restores?.let { dao.record(it.id) }?.copy(state = EditState.Restored, completedAt = clock())
-            dao.updateRecords(committed, restored)
+            dao.updateRecords(committed, restores?.let { undoneBy(committed, it) }.orEmpty())
             countBatch(committed, success = true)
             SaveOutcome.Saved(committed.id, committed.mode, destination)
         } finally {
             temp.delete()
         }
+    }
+
+    /**
+     * The records the committed restore [restore] undid, marked [EditState.Restored]: [restored]
+     * itself and every later committed edit of the same file, whose changes the restore took out
+     * as well (History would otherwise show them in effect, and restoring one would bring back
+     * what this restore removed).
+     */
+    private suspend fun undoneBy(restore: EditRecord, restored: EditRecord): List<EditRecord> {
+        val now = clock()
+        val original = dao.record(restored.id) ?: return emptyList()
+        val later = dao.laterCommittedRecords(original.destinationUri, original.createdAt, restore.id)
+            .filter { it.id != original.id && it.createdAt < restore.createdAt }
+        return (listOf(original) + later).map { it.copy(state = EditState.Restored, completedAt = now) }
     }
 
     /** Nothing was changed: the record fails and its backup, now pointless, is deleted. */
@@ -398,8 +412,7 @@ class PhotoSaver(
             now == null -> finishRecovered(record, EditState.Failed, SaveError.RecoveryFailed)
             record.newSha256 != null && now.sha256 == record.newSha256 -> {
                 val committed = record.copy(state = EditState.Committed, completedAt = clock())
-                val restored = record.restoresRecordId?.let { dao.record(it) }?.copy(state = EditState.Restored, completedAt = clock())
-                dao.updateRecords(committed, restored)
+                dao.updateRecords(committed, record.restoresRecordId?.let { dao.record(it) }?.let { undoneBy(committed, it) }.orEmpty())
                 countBatch(committed, success = true)
             }
             now == pre -> finishRecovered(record, EditState.RolledBack, SaveError.Interrupted)

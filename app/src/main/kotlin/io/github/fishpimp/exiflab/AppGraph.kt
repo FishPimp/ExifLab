@@ -2,8 +2,10 @@ package io.github.fishpimp.exiflab
 
 import android.content.ContentResolver
 import android.content.Context
+import androidx.core.net.toUri
 import coil3.ImageLoader
 import io.github.fishpimp.exiflab.data.backup.BackupManager
+import io.github.fishpimp.exiflab.data.batch.BatchInputStore
 import io.github.fishpimp.exiflab.data.batch.BatchJobDao
 import io.github.fishpimp.exiflab.data.batch.BatchJobRepository
 import io.github.fishpimp.exiflab.data.batch.BatchRunner
@@ -62,6 +64,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import java.io.FileNotFoundException
 
 /**
  * Manual dependency container. One instance lives in [ExifLabApplication]; screens reach it
@@ -186,7 +189,14 @@ class AppGraph(context: Context) {
     private val batchScheduler: BatchScheduling by lazy { WorkManagerBatchScheduler(appContext) }
 
     /** Drafts, starting, cancelling and observing batch edits. */
-    val batchJobs: BatchJobRepository by lazy { BatchJobRepository(dao = { batchJobDao }, scheduler = batchScheduler) }
+    val batchJobs: BatchJobRepository by lazy { BatchJobRepository(dao = { batchJobDao }, scheduler = batchScheduler, inputs = batchInputs) }
+
+    /** Private copies of shared photos while their batch job runs. */
+    private val batchInputs: BatchInputStore by lazy {
+        BatchInputStore(appContext.filesDir.resolve(BatchInputStore.DIRECTORY_NAME)) { uri ->
+            appContext.contentResolver.openInputStream(uri.toUri()) ?: throw FileNotFoundException()
+        }
+    }
 
     /** What the background worker runs; see [BatchRunner]. */
     val batchRunner: BatchRunner by lazy {
@@ -198,6 +208,7 @@ class AppGraph(context: Context) {
             },
             readReport = { ref -> withContext(Dispatchers.IO) { metadataReader.read(photoRepository.imageSource(ref)) } },
             planner = { Editing.planner },
+            inputs = batchInputs,
         )
     }
 

@@ -7,6 +7,7 @@ import io.github.fishpimp.exiflab.data.history.EditHistoryDatabase
 import io.github.fishpimp.exiflab.data.history.EditMode
 import io.github.fishpimp.exiflab.data.history.EditState
 import io.github.fishpimp.exiflab.data.history.SaveError
+import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
@@ -18,13 +19,17 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 /** The batch worker's logic with a real (in-memory) job table and a fake save pipeline. */
 @RunWith(RobolectricTestRunner::class)
 class BatchRunnerTest {
+    @get:Rule val folder = TemporaryFolder()
+
     private lateinit var database: EditHistoryDatabase
     private lateinit var dao: BatchJobDao
     private var nextId = 0
@@ -109,6 +114,19 @@ class BatchRunnerTest {
         assertThat(destinations.created).contains("content://fake/tree/out/document/out/e.RAF.xmp")
         // The unreadable photo is counted by the runner; the journaled failure by the pipeline.
         assertThat(saving.failedCount).isEqualTo(2)
+    }
+
+    @Test
+    fun `what a file type could not hold is kept with the photo`() = runBlocking<Unit> {
+        val id = startedJob(listOf(BatchPhotos.folder("notes.jpg"), BatchPhotos.folder("a.jpg")))
+
+        runner(FakeBatchSaving()).run(id)
+
+        val items = dao.items(id).associateBy { it.displayName }
+        assertThat(items.getValue("notes.jpg").status).isEqualTo(BatchItemStatus.Saved)
+        assertThat(items.getValue("notes.jpg").noteLines).containsExactly("IPTC", "MakerNote moved").inOrder()
+        assertThat(items.getValue("a.jpg").notes).isNull()
+        assertThat(dao.countWithNotes(id)).isEqualTo(1)
     }
 
     @Test
@@ -244,6 +262,41 @@ class BatchRunnerTest {
         val resumed = runner(FakeBatchSaving()).run(id)!!
         assertThat(resumed.state).isEqualTo(BatchJobState.Finished)
         assertThat(statuses(id).values.toSet()).containsExactly(BatchItemStatus.Saved)
+    }
+
+    @Test
+    fun `shared photos are copied privately when the job starts, and the copies go when they are done`() = runBlocking<Unit> {
+        val inputs = BatchInputStore(folder.root.resolve("batch-inputs")) { uri ->
+            if (uri.endsWith("gone.jpg")) throw java.io.FileNotFoundException() else "bytes of $uri".byteInputStream()
+        }
+        val shared = BatchPhotos.picker("IMG_0007.jpg").copy(uri = "content://gallery/IMG_0007.jpg", origin = PhotoOrigin.Share)
+        val gone = BatchPhotos.picker("gone.jpg").copy(uri = "content://gallery/gone.jpg", origin = PhotoOrigin.Share)
+        val repository = BatchJobRepository(dao = { dao }, scheduler = {}, inputs = inputs, newId = { "job-shared" })
+        val id = repository.createDraft(listOf(BatchPhotos.folder("a.jpg"), shared, gone))
+
+        assertThat(repository.start(id, author, "Batch", "content://fake/tree/out/document/out")).isTrue()
+
+        val items = dao.items(id).associateBy { it.displayName }
+        val staged = items.getValue("IMG_0007.jpg").photoUri
+        assertThat(inputs.isStaged(staged)).isTrue()
+        assertThat(java.io.File(staged.removePrefix("file://")).readText()).isEqualTo("bytes of content://gallery/IMG_0007.jpg")
+        // Folder photos stay where they are; a shared photo that cannot be copied keeps its URI.
+        assertThat(items.getValue("a.jpg").photoUri).isEqualTo("content://fake/tree/t/document/a.jpg")
+        assertThat(items.getValue("gone.jpg").photoUri).isEqualTo("content://gallery/gone.jpg")
+
+        val saving = FakeBatchSaving()
+        BatchRunner(
+            jobs = dao,
+            saving = saving,
+            newDestinations = { FakeDestinations() },
+            readReport = { ref -> BatchPhotos.report(ref) },
+            planner = { BatchFakePlanner() },
+            inputs = inputs,
+        ).run(id)
+
+        assertThat(saving.saves.map { it.first.uri }).contains(staged)
+        assertThat(statuses(id)["IMG_0007.jpg"]).isEqualTo(BatchItemStatus.Copy)
+        assertThat(folder.root.resolve("batch-inputs").walkTopDown().filter { it.isFile }.toList()).isEmpty()
     }
 
     @Test

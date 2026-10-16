@@ -124,7 +124,7 @@ class EditHistoryDaoTest {
         dao.insertRecord(record("edit", 1))
         dao.insertRecord(record("restore", 2, state = EditState.Pending))
 
-        dao.updateRecords(dao.record("restore")!!.copy(state = EditState.Committed), dao.record("edit")!!.copy(state = EditState.Restored))
+        dao.updateRecords(dao.record("restore")!!.copy(state = EditState.Committed), listOf(dao.record("edit")!!.copy(state = EditState.Restored)))
 
         assertThat(dao.record("restore")!!.state).isEqualTo(EditState.Committed)
         assertThat(dao.record("edit")!!.state).isEqualTo(EditState.Restored)

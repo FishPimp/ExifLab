@@ -58,8 +58,11 @@ interface BatchDestinations {
     fun deleteIfEmpty(uri: String)
 }
 
-/** Counts of a running job, for the notification and the worker's progress. */
-data class BatchProgress(val total: Int, val done: Int, val failed: Int, val skipped: Int) {
+/**
+ * Counts of a running job, for the notification and the worker's progress. [withNotes] counts
+ * written photos whose file type could not hold every change.
+ */
+data class BatchProgress(val total: Int, val done: Int, val failed: Int, val skipped: Int, val withNotes: Int = 0) {
     companion object {
         fun of(total: Int, counts: List<BatchStatusCount>): BatchProgress {
             val byStatus = counts.associate { it.status to it.count }
@@ -88,6 +91,8 @@ class BatchRunner(
     private val newDestinations: () -> BatchDestinations,
     private val readReport: suspend (PhotoRef) -> MetadataReport,
     private val planner: () -> ChangePlanner,
+    /** The private copies of shared photos; each is deleted once its photo is done, see [BatchInputStore]. */
+    private val inputs: BatchInputStore? = null,
     private val concurrency: Int = DEFAULT_CONCURRENCY,
     private val clock: () -> Long = System::currentTimeMillis,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -138,6 +143,7 @@ class BatchRunner(
             if (skipped > 0) saving.countCancelled(batchId, skipped)
         }
         jobs.finish(jobId, if (cancelled) BatchJobState.Cancelled else BatchJobState.Finished, now)
+        inputs?.let { withContext(ioDispatcher) { it.releaseJob(jobId) } }
         onProgress(progress(job))
         return jobs.job(jobId)
     }
@@ -200,6 +206,7 @@ class BatchRunner(
             ItemResult.failed(BatchItemReason.SaveFailed, SaveError.Unknown)
         }
         jobs.updateItem(result.applyTo(running, clock()))
+        inputs?.let { withContext(ioDispatcher) { it.release(item.photoUri) } }
     }
 
     private suspend fun outcomeFor(
@@ -289,7 +296,12 @@ class BatchRunner(
     }
 
     private suspend fun resultOf(outcome: SaveOutcome, batchId: String): ItemResult = when (outcome) {
-        is SaveOutcome.Saved -> ItemResult(BatchItemStatus.of(outcome.mode), recordId = outcome.recordId, targetUri = outcome.targetUri)
+        is SaveOutcome.Saved -> ItemResult(
+            BatchItemStatus.of(outcome.mode),
+            recordId = outcome.recordId,
+            targetUri = outcome.targetUri,
+            notes = outcome.skipped.takeIf { it.isNotEmpty() }?.joinToString("\n"),
+        )
         is SaveOutcome.RolledBack -> ItemResult.failed(BatchItemReason.SaveFailed, outcome.error, outcome.recordId)
         is SaveOutcome.Failed -> {
             if (outcome.recordId == null) saving.countFailed(batchId)
@@ -312,6 +324,7 @@ class BatchRunner(
         val saveError: SaveError? = null,
         val recordId: String? = null,
         val targetUri: String? = null,
+        val notes: String? = null,
     ) {
         fun applyTo(item: BatchJobItem, now: Long) = item.copy(
             status = status,
@@ -320,6 +333,7 @@ class BatchRunner(
             recordId = recordId,
             targetUri = targetUri,
             finishedAt = now,
+            notes = notes,
         )
 
         companion object {

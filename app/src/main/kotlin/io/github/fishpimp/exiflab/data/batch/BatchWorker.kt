@@ -51,7 +51,8 @@ class BatchWorker(context: Context, params: WorkerParameters) : CoroutineWorker(
             }
         } ?: return Result.success()
         if (ended.state.isDone) {
-            notifications.showFinished(ended, BatchProgress.of(ended.total, graph.batchJobDao.counts(jobId)))
+            val counts = BatchProgress.of(ended.total, graph.batchJobDao.counts(jobId))
+            notifications.showFinished(ended, counts.copy(withNotes = graph.batchJobDao.countWithNotes(jobId)))
         }
         return Result.success()
     }

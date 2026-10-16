@@ -310,6 +310,13 @@ private fun Totals(state: BatchRunUiState, actions: BatchRunActions, onRestore: 
                 modifier = Modifier.semantics { heading() },
             )
             CountChips(state, includeRunning = false)
+            val withNotes = state.items.count { it.notes != null }
+            if (withNotes > 0) {
+                Text(
+                    pluralStringResource(R.plurals.batch_count_with_notes, withNotes, withNotes),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (state.canRestore || state.restoring) {
                     OutlinedButton(onClick = onRestore, enabled = !state.restoring, modifier = Modifier.heightIn(min = 48.dp)) {
@@ -368,7 +375,7 @@ private fun Filters(state: BatchRunUiState, onFilter: (BatchItemStatus?) -> Unit
     }
 }
 
-/** One photo: thumbnail, name, outcome chip and, for skipped or failed photos, why. */
+/** One photo: thumbnail, name, outcome chip and, for skipped or failed photos, why; for written ones, what did not fit. */
 @Composable
 private fun SummaryRow(item: BatchJobItem, onOpen: () -> Unit) {
     val ref = remember(item.photoUri) { item.photoRef() }
@@ -398,6 +405,14 @@ private fun SummaryRow(item: BatchJobItem, onOpen: () -> Unit) {
                 BatchStatusChip(item.status)
                 if (reason != null) {
                     Text(reason, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                val notes = item.noteLines
+                if (notes.isNotEmpty()) {
+                    Text(
+                        pluralStringResource(R.plurals.edit_saved_skipped, notes.size, notes.size) + "\n" + notes.joinToString("\n") { "• $it" },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
         }

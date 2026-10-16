@@ -75,7 +75,7 @@ internal class BatchFakePlanner : ChangePlanner {
 
 /**
  * The save pipeline as the runner sees it. Writes nothing; photos named "fail*" fail after
- * journaling. Tracks how many saves run at once.
+ * journaling, and "notes*" are saved with writer notes. Tracks how many saves run at once.
  */
 internal class FakeBatchSaving(
     private val writable: Set<ImageFormat> = setOf(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP),
@@ -122,7 +122,8 @@ internal class FakeBatchSaving(
                 failedCount++
                 return SaveOutcome.Failed(record.id, SaveError.WriteFailed)
             }
-            return SaveOutcome.Saved(record.id, mode, destination)
+            val skipped = if (ref.displayName.orEmpty().startsWith("notes")) listOf("IPTC", "MakerNote moved") else emptyList()
+            return SaveOutcome.Saved(record.id, mode, destination, skipped)
         } finally {
             active.decrementAndGet()
         }
