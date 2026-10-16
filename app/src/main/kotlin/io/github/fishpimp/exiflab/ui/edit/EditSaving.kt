@@ -29,7 +29,7 @@ class PhotoSaverEditSaving(private val saver: () -> PhotoSaver, private val engi
     override fun canWrite(format: ImageFormat): Boolean = engine().canWrite(format)
 
     override suspend fun save(ref: PhotoRef, plan: EditPlan, target: SaveTarget): SaveOutcome =
-        saver().save(ref = ref, changes = plan.changes, diff = plan.diff, target = target)
+        saver().save(ref = ref, changes = plan.changes, diff = plan.diff, target = target, datesFromFile = plan.datesFromFile)
 
     override suspend fun undo(recordId: String): SaveOutcome = saver().restoreOriginal(recordId)
 }

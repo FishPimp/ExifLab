@@ -38,6 +38,15 @@ class CaptureTimePlannerTest {
             iptc = iptc,
         ) { ascii(Photos.DATE_TIME, exifDate) }
 
+    @Test fun plansSayWhenTheirDatesComeFromTheFile() {
+        val photo = dated("2024:05:01 14:03:22")
+        assertThat(edit(photo, EditOperation.ShiftCaptureTime(Duration.ofHours(1))).plan.datesFromFile).isTrue()
+        assertThat(edit(photo, EditOperation.ChangeTimeZone(stockholm, tokyo)).plan.datesFromFile).isTrue()
+        assertThat(edit(photo, EditOperation.SetUtcOffset(ZoneOffset.ofHours(2))).plan.datesFromFile).isTrue()
+        val set = EditOperation.SetCaptureTime(LocalDateTime.of(2026, 6, 14, 17, 42, 7), null, alsoModifyDate = false)
+        assertThat(edit(photo, set).plan.datesFromFile).isFalse()
+    }
+
     // ---- SetCaptureTime ----
 
     @Test fun setCaptureTimeWritesEveryDateCopyWithOffsets() {

@@ -22,6 +22,21 @@ class SidecarWriterTest {
 
     private fun XMPMeta.text(namespace: String, name: String): String? = getPropertyString(namespace, name)
 
+    @Test fun tellsWhetherASidecarRecordsACaptureDate() {
+        fun packet(body: String) = (
+            "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
+                "<rdf:Description rdf:about=\"\" xmlns:exif=\"http://ns.adobe.com/exif/1.0/\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\" " +
+                "xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\" $body/></rdf:RDF></x:xmpmeta>"
+            ).toByteArray()
+
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("exif:DateTimeOriginal=\"2024-05-01T11:00:00\""))).isTrue()
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("xmp:CreateDate=\"2024-05-01T11:00:00\""))).isTrue()
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("crs:Exposure2012=\"+0.50\""))).isFalse()
+        assertThat(XmpSidecarWriter.recordsCaptureDate("  \n".toByteArray())).isFalse()
+        // Unreadable: assume it does, rather than overwrite what may be there.
+        assertThat(XmpSidecarWriter.recordsCaptureDate("<x:xmpmeta".toByteArray())).isTrue()
+    }
+
     @Test fun mapsExifChangesToXmp() {
         val (text, meta) = sidecar(
             null,

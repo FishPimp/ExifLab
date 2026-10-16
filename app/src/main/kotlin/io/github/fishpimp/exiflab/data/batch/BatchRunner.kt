@@ -311,6 +311,7 @@ class BatchRunner(
         is SaveOutcome.Rejected -> when (outcome.reason) {
             SaveRejection.ReadOnly -> ItemResult.skipped(BatchItemReason.ReadOnly)
             SaveRejection.UnsupportedFormat, SaveRejection.UseSidecar -> ItemResult.skipped(BatchItemReason.UnsupportedFormat)
+            SaveRejection.SidecarHasDates -> ItemResult.skipped(BatchItemReason.SidecarHasDates)
             SaveRejection.NotRestorable, SaveRejection.NotFound -> {
                 saving.countFailed(batchId)
                 ItemResult.failed(BatchItemReason.SaveFailed, SaveError.Unknown)

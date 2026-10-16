@@ -33,7 +33,9 @@ class DefaultChangePlanner : ChangePlanner {
         val state = WorkingMetadata(report)
         val steps = PlanSteps(state)
         for (operation in operations) steps.apply(operation)
-        return EditPlan(state.changes(), state.diff(), state.warnings.distinct())
+        val relative = operations.any { it is EditOperation.ShiftCaptureTime || it is EditOperation.ChangeTimeZone || it is EditOperation.SetUtcOffset }
+        val changes = state.changes()
+        return EditPlan(changes, state.diff(), state.warnings.distinct(), datesFromFile = relative && !changes.isEmpty)
     }
 
     companion object {

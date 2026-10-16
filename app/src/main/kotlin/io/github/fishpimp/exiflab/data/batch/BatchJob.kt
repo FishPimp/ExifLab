@@ -124,6 +124,9 @@ enum class BatchItemReason {
 
     /** Fix time zone: the photo records a UTC offset other than the camera zone's, so its time is already right. */
     AlreadyHasOtherZone,
+
+    /** A relative date change for a photo whose sidecar records its own capture date, see [io.github.fishpimp.exiflab.data.save.SaveRejection.SidecarHasDates]. */
+    SidecarHasDates,
 }
 
 /**

@@ -868,6 +868,7 @@
     <string name="edit_failure_rolled_back">Filen återställdes exakt som den var.</string>
     <string name="edit_failure_read_only">Fotot kan inte ändras där det ligger. Spara det som en kopia i stället.</string>
     <string name="edit_failure_use_sidecar">RAW-filer ändras aldrig. Spara i en XMP-sidofil i stället.</string>
+    <string name="edit_failure_sidecar_dates">XMP-sidofilen har redan en tidpunkt för när bilden togs, som kan skilja sig från RAW-filens. En ändring utifrån RAW-filens tid skulle skriva över den, så inget sparades. Ange tiden i stället.</string>
     <string name="edit_failure_unsupported">ExifLab kan inte skriva den här filtypen. Spara i en XMP-sidofil i stället.</string>
     <string name="edit_failure_no_destination">Ingen plats valdes för sidofilen, så inget sparades.</string>
     <string name="edit_failure_no_plan">Det finns inget färdigt att spara än.</string>
@@ -1055,6 +1056,7 @@
     <string name="batch_reason_cancelled">avbröts innan det var dess tur</string>
     <string name="batch_reason_unreadable">fotot kunde inte läsas</string>
     <string name="batch_reason_other_zone">har redan en annan UTC-förskjutning, så tiden behölls</string>
+    <string name="batch_reason_sidecar_dates">dess XMP-sidofil har redan en tidpunkt för när bilden togs, så den behölls</string>
     <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för det här fotot</string>
     <string name="batch_reason_folder_unavailable">kopian kunde inte skapas i den valda mappen</string>
 

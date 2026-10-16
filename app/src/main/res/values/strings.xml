@@ -885,6 +885,7 @@
     <string name="edit_failure_rolled_back">The file was put back exactly as it was.</string>
     <string name="edit_failure_read_only">This photo can\'t be changed where it is. Save it as a copy instead.</string>
     <string name="edit_failure_use_sidecar">RAW files are never changed. Save to an XMP sidecar instead.</string>
+    <string name="edit_failure_sidecar_dates">The XMP sidecar already holds a capture time, which can differ from the RAW file\'s. Changing it from the RAW file\'s time would overwrite it, so nothing was saved. Set the time instead.</string>
     <string name="edit_failure_unsupported">ExifLab can\'t write this file type. Save to an XMP sidecar instead.</string>
     <string name="edit_failure_no_destination">No place was chosen for the sidecar, so nothing was saved.</string>
     <string name="edit_failure_no_plan">There is nothing ready to save yet.</string>
@@ -1072,6 +1073,7 @@
     <string name="batch_reason_cancelled">cancelled before its turn</string>
     <string name="batch_reason_unreadable">the photo couldn\'t be read</string>
     <string name="batch_reason_other_zone">already records a different UTC offset, so its time was kept</string>
+    <string name="batch_reason_sidecar_dates">its XMP sidecar already holds a capture time, so it was kept</string>
     <string name="batch_reason_plan_failed">the change couldn\'t be prepared for this photo</string>
     <string name="batch_reason_folder_unavailable">the copy couldn\'t be created in the chosen folder</string>
 

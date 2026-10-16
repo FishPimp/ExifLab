@@ -354,6 +354,7 @@ private fun FailureBanner(failure: SaveFailure, onDismiss: () -> Unit) {
                 SaveRejection.UseSidecar -> R.string.edit_failure_use_sidecar
                 SaveRejection.UnsupportedFormat -> R.string.edit_failure_unsupported
                 SaveRejection.NotRestorable, SaveRejection.NotFound -> R.string.history_error_unknown
+                SaveRejection.SidecarHasDates -> R.string.edit_failure_sidecar_dates
             },
         )
         SaveFailure.NoDestination -> stringResource(R.string.edit_failure_no_destination)

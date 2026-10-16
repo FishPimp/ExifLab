@@ -17,6 +17,7 @@ import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.write.ImageDataMismatchException
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.XmpSidecarWriter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -64,7 +65,10 @@ class PhotoSaver(
     /**
      * Applies [changes] to [ref] and writes the result to [target], journaled in History with
      * [diff] (what the user sees changing) and [summary] (defaults to the changed field names).
-     * With a [batchId] the batch's success and failure counts are updated.
+     * With a [batchId] the batch's success and failure counts are updated. [datesFromFile] says
+     * the changes' dates were worked out from the photo's own (see
+     * [io.github.fishpimp.exiflab.metadata.edit.EditPlan.datesFromFile]); a sidecar that records
+     * its own capture date then rejects the save with [SaveRejection.SidecarHasDates].
      */
     suspend fun save(
         ref: PhotoRef,
@@ -73,8 +77,9 @@ class PhotoSaver(
         target: SaveTarget,
         batchId: String? = null,
         summary: String? = null,
+        datesFromFile: Boolean = false,
     ): SaveOutcome = withContext(ioDispatcher) {
-        val draft = Draft(ref, diff, summary ?: summarize(diff), batchId)
+        val draft = Draft(ref, diff, summary ?: summarize(diff), batchId, datesFromFile)
         val outcome = when (target) {
             SaveTarget.InPlace -> saveInPlace(draft, changes)
             is SaveTarget.Copy -> saveCopy(draft, changes, target.destinationUri)
@@ -194,10 +199,15 @@ class PhotoSaver(
         val ref = draft.ref
         val name = sidecarNaming().sidecarName(ref.displayName?.takeIf { it.isNotBlank() } ?: DEFAULT_PHOTO_NAME)
         return withPhotoLock(ref.uri) {
-            val target = destinationUri ?: run {
-                val parent = ref.parentDocumentUri ?: return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
+            val parent = ref.parentDocumentUri
+            val existing = destinationUri ?: parent?.let { runCatching { documents.findChild(it, name) }.getOrNull() }
+            if (draft.datesFromFile && existing != null && sidecarRecordsDates(existing)) {
+                return@withPhotoLock SaveOutcome.Rejected(SaveRejection.SidecarHasDates)
+            }
+            val target = existing ?: run {
+                parent ?: return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
                 try {
-                    documents.findChild(parent, name) ?: documents.createChild(parent, name, SIDECAR_MIME_TYPE)
+                    documents.createChild(parent, name, SIDECAR_MIME_TYPE)
                 } catch (_: Exception) {
                     // A read-only folder or a provider without create support: let the user pick a place.
                     return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
@@ -211,6 +221,19 @@ class PhotoSaver(
                 NewContent.Written
             }
         }
+    }
+
+    /** True when the sidecar at [uri] records a capture date; a missing or empty one does not. */
+    private fun sidecarRecordsDates(uri: String): Boolean {
+        val bytes = try {
+            documents.openInput(uri).use { it.readBytes() }
+        } catch (_: FileNotFoundException) {
+            return false
+        } catch (_: Exception) {
+            // Unreadable now: the journaled save reports that properly.
+            return false
+        }
+        return XmpSidecarWriter.recordsCaptureDate(bytes)
     }
 
     private suspend fun restoreLocked(recordId: String, batchId: String?): SaveOutcome {
@@ -495,7 +518,7 @@ class PhotoSaver(
         }
     }
 
-    private class Draft(val ref: PhotoRef, val diff: List<FieldDiff>, val summary: String, val batchId: String?)
+    private class Draft(val ref: PhotoRef, val diff: List<FieldDiff>, val summary: String, val batchId: String?, val datesFromFile: Boolean)
 
     private enum class NewContent { Written, Absent }
 

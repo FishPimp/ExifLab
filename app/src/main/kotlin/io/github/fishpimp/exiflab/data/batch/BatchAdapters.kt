@@ -28,7 +28,7 @@ class PhotoSaverBatchSaving(
     override suspend fun startBatch(title: String, total: Int): String = saver().startBatch(title, total)
 
     override suspend fun save(ref: PhotoRef, plan: EditPlan, target: SaveTarget, batchId: String): SaveOutcome =
-        saver().save(ref = ref, changes = plan.changes, diff = plan.diff, target = target, batchId = batchId)
+        saver().save(ref = ref, changes = plan.changes, diff = plan.diff, target = target, batchId = batchId, datesFromFile = plan.datesFromFile)
 
     override suspend fun recoverInterrupted() {
         saver().recoverInterrupted()

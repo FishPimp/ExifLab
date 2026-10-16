@@ -438,7 +438,7 @@ class EditViewModel(
                     SaveRejection.ReadOnly -> SaveOptions(listOf(SaveMode.Copy), SaveReason.ReadOnly)
                     SaveRejection.UseSidecar -> SaveOptions(listOf(SaveMode.Sidecar), SaveReason.Raw)
                     SaveRejection.UnsupportedFormat -> SaveOptions(listOf(SaveMode.Sidecar), SaveReason.UnsupportedFormat)
-                    SaveRejection.NotRestorable, SaveRejection.NotFound -> null
+                    SaveRejection.NotRestorable, SaveRejection.NotFound, SaveRejection.SidecarHasDates -> null
                 }
                 local.update { it.copy(save = SaveState.Failed(SaveFailure.Rejected(outcome.reason)), saveOptionsOverride = override ?: it.saveOptionsOverride) }
             }

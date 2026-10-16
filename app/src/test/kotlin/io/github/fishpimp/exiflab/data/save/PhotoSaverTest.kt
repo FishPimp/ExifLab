@@ -369,6 +369,24 @@ class PhotoSaverTest {
     }
 
     @Test
+    fun `dates worked out from the RAW file do not replace a sidecar's own capture time`() = runBlocking<Unit> {
+        val raw = h.photo("IMG_1236.CR3", ORIGINAL)
+        val corrected = "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
+            "<rdf:Description rdf:about=\"\" xmlns:exif=\"http://ns.adobe.com/exif/1.0/\" exif:DateTimeOriginal=\"2024-05-01T11:00:00\"/>" +
+            "</rdf:RDF></x:xmpmeta>"
+        val sidecar = h.photos.resolve("IMG_1236.xmp").apply { writeText(corrected) }
+
+        val shifted = h.saver().save(raw, changes, diff, SaveTarget.Sidecar(), datesFromFile = true)
+
+        assertThat(shifted).isEqualTo(SaveOutcome.Rejected(SaveRejection.SidecarHasDates))
+        assertThat(sidecar.readText()).isEqualTo(corrected)
+        // Setting values outright is fine, and so is a shift when the sidecar has no capture time.
+        assertThat(h.saver().save(raw, changes, diff, SaveTarget.Sidecar())).isInstanceOf(SaveOutcome.Saved::class.java)
+        val other = h.photo("IMG_1237.CR3", ORIGINAL)
+        assertThat(h.saver().save(other, changes, diff, SaveTarget.Sidecar(), datesFromFile = true)).isInstanceOf(SaveOutcome.Saved::class.java)
+    }
+
+    @Test
     fun `an existing sidecar named in upper case is the one updated`() = runBlocking<Unit> {
         val raw = h.photo("IMG_1235.CR3", ORIGINAL)
         val existing = h.photos.resolve("IMG_1235.XMP").apply { writeText("<old/>") }
