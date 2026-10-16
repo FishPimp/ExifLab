@@ -7,7 +7,8 @@ View, edit and clean the metadata in your photos on Android, without anything le
 - No ads, analytics or tracking. The internet is only used for map tiles and place search.
 - English and Swedish, light and dark themes, Material 3 Expressive design.
 
-See [docs/ROADMAP.md](docs/ROADMAP.md) for milestones and design decisions.
+See [docs/ROADMAP.md](docs/ROADMAP.md) for milestones and design decisions, and
+[docs/DEVICE_TESTING.md](docs/DEVICE_TESTING.md) for what to check on a real phone.
 
 ## Building
 
