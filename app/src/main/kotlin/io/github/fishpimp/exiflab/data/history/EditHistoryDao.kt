@@ -101,6 +101,17 @@ interface EditHistoryDao {
     )
     suspend fun deleteEmptyBatchesBefore(before: Long): Int
 
+    /**
+     * Files History may still write to: the photos and sidecars of edits that are saving, in
+     * effect or failed half-way (restoring them needs access). Copies never need it again.
+     */
+    @Query(
+        "SELECT photoUri FROM edit_records WHERE mode != 'Copy' AND state IN ('Pending', 'Committed', 'Failed') " +
+            "UNION SELECT targetUri FROM edit_records WHERE targetUri IS NOT NULL AND mode != 'Copy' " +
+            "AND state IN ('Pending', 'Committed', 'Failed')",
+    )
+    suspend fun urisHistoryMayWrite(): List<String>
+
     @Query("UPDATE edit_batches SET succeeded = succeeded + 1 WHERE id = :batchId")
     suspend fun countSucceeded(batchId: String)
 

@@ -7,6 +7,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.update
@@ -35,6 +36,9 @@ class RecentPhotosRepository(
             items.filter { grants.canRead(it.uri) }
         }
         .flowOn(ioDispatcher)
+
+    /** The URIs of every stored recent photo, accessible or not. */
+    suspend fun storedUris(): Set<String> = store.items.first().mapTo(HashSet()) { it.uri }
 
     /** Re-checks access, e.g. when the app returns to the foreground after settings changed. */
     fun refresh() {

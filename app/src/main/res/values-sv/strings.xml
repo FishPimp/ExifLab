@@ -400,7 +400,7 @@
     <string name="privacy_network_body">Bara två funktioner går ut på nätet, och bara medan du använder dem. Det här är de enda servrar som ExifLab någonsin kontaktar, och förfrågningarna innehåller ett kartområde eller din söktext, aldrig dina bilder eller deras metadata.</string>
     <string name="privacy_network_tiles">Kartbilder från OpenFreeMap, med data från OpenStreetMap, när en karta visas</string>
     <string name="privacy_network_search">Platssökning från Photon (Komoot), när du söker efter en plats</string>
-    <string name="privacy_network_offline">Offlineläget i Inställningar stänger av båda.</string>
+    <string name="privacy_network_offline">Offlineläget i Inställningar stänger av båda. Kartbilder som du har visat sparas på enheten i upp till 30 dagar så att kartor laddas snabbare. Sökningar sparas aldrig.</string>
     <string name="privacy_files_title">Bara filerna du väljer</string>
     <string name="privacy_files_body">ExifLab kan bara öppna bilder som du väljer, bilder som delas till appen och mappar som du ger åtkomst till. Du kan ta bort mappåtkomsten när som helst.</string>
     <string name="privacy_backups_title">Säkerhetskopior stannar på enheten</string>

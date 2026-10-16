@@ -574,7 +574,7 @@ class EditViewModel(
                     notices = graph.savedEditNotices,
                     resolveCopy = { uri -> photos.resolve(uri.toUri(), PhotoOrigin.Document) },
                     readOtherPhoto = { uri ->
-                        val other = photos.resolve(uri.toUri(), PhotoOrigin.Picker)
+                        val other = photos.resolve(uri.toUri(), PhotoOrigin.Picker, persist = false)
                         withContext(Dispatchers.IO) { reader.read(photos.imageSource(other)) }
                     },
                     searchPlaces = { queries -> graph.placeSearchRepository.searchAsYouType(queries) },

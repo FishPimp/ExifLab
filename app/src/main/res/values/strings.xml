@@ -412,7 +412,7 @@
     <string name="privacy_network_body">Only two features go online, and only while you use them. These are the only servers ExifLab ever contacts, and requests carry a map area or your search text, never your photos or their metadata.</string>
     <string name="privacy_network_tiles">Map tiles from OpenFreeMap, with OpenStreetMap data, when a map is shown</string>
     <string name="privacy_network_search">Place search by Photon (Komoot), when you search for a place</string>
-    <string name="privacy_network_offline">Offline mode in Settings turns both off.</string>
+    <string name="privacy_network_offline">Offline mode in Settings turns both off. Map tiles you viewed stay on the device for up to 30 days so maps load faster. Searches are never stored.</string>
     <string name="privacy_files_title">Only the files you choose</string>
     <string name="privacy_files_body">ExifLab can only open photos you pick, photos shared to it, and folders you grant access to. You can remove folder access at any time.</string>
     <string name="privacy_backups_title">Backups stay on your device</string>
