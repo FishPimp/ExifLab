@@ -75,6 +75,7 @@ import io.github.fishpimp.exiflab.data.history.EditState
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.designsystem.component.EmptyState
 import io.github.fishpimp.exiflab.designsystem.component.SectionHeader
+import io.github.fishpimp.exiflab.ui.batch.batchTitle
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.ScreenScaffold
 import io.github.fishpimp.exiflab.ui.components.isLargeFontScale
@@ -364,7 +365,8 @@ private fun HistoryBatchCard(
     onRestoreAll: () -> Unit,
 ) {
     val batch = item.batch
-    val title = if (batch.restoresBatchId != null) stringResource(R.string.history_batch_restore_of, batch.title) else batch.title
+    val name = batchTitle(batch.title)
+    val title = if (batch.restoresBatchId != null) stringResource(R.string.history_batch_restore_of, name) else name
     val stateText = stringResource(if (expanded) R.string.history_batch_expanded else R.string.history_batch_collapsed)
     val toggleLabel = stringResource(if (expanded) R.string.history_batch_hide else R.string.history_batch_show)
     val restoring = state.restoringBatchId == batch.id

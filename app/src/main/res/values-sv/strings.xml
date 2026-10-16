@@ -955,6 +955,7 @@
     <string name="batch_location_chosen">Alla bilder får den här positionen</string>
     <string name="batch_shift_sample">Förhandsvisningen visar %1$s. Alla bilder flyttas lika mycket.</string>
     <string name="batch_author_body">Sparas i EXIF, XMP och IPTC i alla bilder.</string>
+    <string name="batch_discard_author_body">Upphovspersonen och upphovsrätten som du har skrivit har inte använts än. De försvinner.</string>
     <string name="batch_author_keep">Lämna tomt för att behålla det som varje bild redan har</string>
     <string name="batch_strip_title">Vad som ska tas bort</string>
     <string name="batch_strip_body">RAW-filer ändras aldrig, så de hoppas över.</string>

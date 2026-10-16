@@ -153,7 +153,7 @@ fun BatchRunContent(
             done -> stringResource(R.string.batch_summary_title)
             else -> stringResource(R.string.batch_run_title)
         },
-        subtitle = job?.title?.ifBlank { null },
+        subtitle = job?.title?.ifBlank { null }?.let { batchTitle(it) },
         onBack = actions.onBack,
         snackbarHost = { SnackbarHost(snackbarHostState) },
         modifier = modifier,

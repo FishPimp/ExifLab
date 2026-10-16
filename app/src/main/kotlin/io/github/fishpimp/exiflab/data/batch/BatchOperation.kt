@@ -12,6 +12,15 @@ import java.time.ZoneId
 enum class BatchKind { Location, ShiftTime, TimeZone, Author, Strip }
 
 /**
+ * The language-independent title a batch is stored under, in its job and in History, so it is
+ * shown in the app's current language instead of the one it was started in.
+ */
+val BatchKind.storedTitle: String get() = "batch-kind:$name"
+
+/** The kind a stored batch title stands for; null for the text older versions stored. */
+fun batchKindOfTitle(title: String): BatchKind? = BatchKind.entries.firstOrNull { it.storedTitle == title }
+
+/**
  * What a batch does to every photo, stored with the [BatchJob] as JSON so an interrupted job can
  * resume with exactly the same edit. Each maps to one [EditOperation] that the planner plans
  * against every photo's own metadata.

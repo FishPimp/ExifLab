@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.data.export.MetadataExporter
 import io.github.fishpimp.exiflab.data.export.PdfExport
 import io.github.fishpimp.exiflab.data.export.ReportReader
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import io.github.fishpimp.exiflab.data.settings.appLocalized
 import io.github.fishpimp.exiflab.metadata.model.GeoLocation
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
@@ -86,13 +87,15 @@ class PdfReportWriter(
         output: OutputStream,
         onProgress: (ExportProgress) -> Unit,
     ): ExportResult {
-        val painter = PdfPainter(PdfFonts.load(context), palette)
+        // A fresh context per report, in the app's language (Android 10-12 need it applied).
+        val localized = context.appLocalized()
+        val painter = PdfPainter(PdfFonts.load(localized), palette)
         val job = Job(
             settings = settings,
             palette = palette,
             painter = painter,
             layout = PdfReportLayout(painter),
-            builder = PdfSectionBuilder(context, settings),
+            builder = PdfSectionBuilder(localized, settings),
             exportedOn = today(),
             mapMode = if (settings.includeMap) mapMode() else PdfMapMode.Off,
         )

@@ -18,6 +18,7 @@ import io.github.fishpimp.exiflab.data.batch.BatchJobRepository
 import io.github.fishpimp.exiflab.data.batch.BatchJobState
 import io.github.fishpimp.exiflab.data.batch.BatchKind
 import io.github.fishpimp.exiflab.data.batch.BatchOperation
+import io.github.fishpimp.exiflab.data.batch.storedTitle
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.places.PlaceSearchState
@@ -298,14 +299,17 @@ class BatchEditViewModel(
     /** Skips read-only photos instead of copying them. */
     fun clearCopyFolder() = local.update { it.copy(copyFolder = null) }
 
-    /** Starts the job in the background with [title] (shown in History and the notification). */
-    fun start(title: String) {
+    /**
+     * Starts the job in the background. Its title (shown in History and the notification) is the
+     * kind's [storedTitle], so it follows the app language.
+     */
+    fun start() {
         val operation = operation() ?: return
         if (local.value.starting) return
         local.update { it.copy(starting = true) }
         viewModelScope.launch {
             val started = try {
-                jobs.start(jobId, operation, title, local.value.copyFolder?.uri)
+                jobs.start(jobId, operation, kind.storedTitle, local.value.copyFolder?.uri)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

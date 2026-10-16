@@ -63,6 +63,7 @@ import io.github.fishpimp.exiflab.data.photos.PhotoFormats
 import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.designsystem.component.ShapeIcon
+import io.github.fishpimp.exiflab.ui.batch.batchTitle
 import io.github.fishpimp.exiflab.ui.components.messageRes
 import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanHomeCard
 import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
@@ -288,7 +289,7 @@ private fun ActiveBatchCard(batch: ActiveBatch, onClick: () -> Unit, modifier: M
                 Text(stringResource(R.string.home_batch_running), style = MaterialTheme.typography.titleMedium)
                 Text(
                     listOf(
-                        batch.title,
+                        batchTitle(batch.title),
                         pluralStringResource(R.plurals.batch_notification_progress, batch.total, batch.done, batch.total),
                     ).filter { it.isNotBlank() }.joinToString(" · "),
                     style = MaterialTheme.typography.bodyMedium,

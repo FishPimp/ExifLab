@@ -972,6 +972,7 @@
     <string name="batch_location_chosen">Every photo gets this position</string>
     <string name="batch_shift_sample">The preview shows %1$s. Every photo moves by the same amount.</string>
     <string name="batch_author_body">Saved to EXIF, XMP and IPTC in every photo.</string>
+    <string name="batch_discard_author_body">The author and copyright you typed have not been used yet. They will be lost.</string>
     <string name="batch_author_keep">Leave empty to keep what each photo has</string>
     <string name="batch_strip_title">What to remove</string>
     <string name="batch_strip_body">RAW files are never changed, so they are skipped.</string>
