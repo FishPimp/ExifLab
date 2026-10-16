@@ -111,6 +111,8 @@ class ShareCleanViewModel(
     private val choices: ShareCleanChoices,
     private val readReport: suspend (PhotoRef) -> MetadataReport,
     private val resolve: suspend (List<Uri>) -> OpenResult,
+    /** Resolves the streams of a share intent, without the URIs only ExifLab's own access could read. */
+    private val resolveShared: suspend (List<Uri>) -> OpenResult = resolve,
 ) : ViewModel() {
     private val _state = MutableStateFlow(ShareCleanUiState())
     val state: StateFlow<ShareCleanUiState> = _state.asStateFlow()
@@ -163,11 +165,16 @@ class ShareCleanViewModel(
         }
     }
 
-    /** Resolves picked or shared [uris] and opens the sheet for them. They are read once, now; access is not kept. */
-    fun openUris(uris: List<Uri>) {
+    /** Resolves picked [uris] and opens the sheet for them. They are read once, now; access is not kept. */
+    fun openUris(uris: List<Uri>) = openWith(resolve, uris)
+
+    /** Like [openUris], for the streams another app shared with ExifLab. */
+    fun openShared(uris: List<Uri>) = openWith(resolveShared, uris)
+
+    private fun openWith(resolver: suspend (List<Uri>) -> OpenResult, uris: List<Uri>) {
         if (uris.isEmpty()) return
         viewModelScope.launch {
-            when (val result = resolve(uris)) {
+            when (val result = resolver(uris)) {
                 is OpenResult.Opened -> open(result.refs)
                 is OpenResult.Failed -> _events.send(ShareCleanEvent.OpenFailed(result.error))
             }
@@ -247,6 +254,7 @@ class ShareCleanViewModel(
                     readReport = { ref -> withContext(Dispatchers.IO) { graph.metadataReader.read(graph.photoRepository.imageSource(ref)) } },
                     // Resolved as shared photos: ExifLab only needs to read them once, now.
                     resolve = { uris -> graph.photoRepository.open(uris, PhotoOrigin.Share) },
+                    resolveShared = { uris -> graph.photoRepository.openShared(uris) },
                 )
             }
         }

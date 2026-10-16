@@ -484,6 +484,7 @@
     <string name="share_clean_reason_unsupported_unknown">Den här filtypen kan inte rensas</string>
     <string name="share_clean_reason_unreadable">Bilden kunde inte läsas</string>
     <string name="share_clean_reason_write_failed">Den rensade kopian kunde inte göras</string>
+    <string name="share_clean_reason_embedded_extras">Innehåller en video eller annan data utöver bilden som inte kan utelämnas, så den delas inte</string>
     <string name="share_clean_reason_still_contains">Innehöll fortfarande %1$s efter rensningen, så den delas inte</string>
     <plurals name="share_clean_too_many">
         <item quantity="one">Dela rensad tar %1$d bild åt gången. Markera färre för att fortsätta.</item>

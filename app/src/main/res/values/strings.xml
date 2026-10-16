@@ -496,6 +496,7 @@
     <string name="share_clean_reason_unsupported_unknown">This file type can\'t be cleaned</string>
     <string name="share_clean_reason_unreadable">The photo couldn\'t be read</string>
     <string name="share_clean_reason_write_failed">The cleaned copy couldn\'t be made</string>
+    <string name="share_clean_reason_embedded_extras">Holds a video or other data besides the photo that can\'t be left out, so it isn\'t shared</string>
     <string name="share_clean_reason_still_contains">Still contained %1$s after cleaning, so it isn\'t shared</string>
     <plurals name="share_clean_too_many">
         <item quantity="one">Share clean takes %1$d photo at a time. Select fewer to continue.</item>

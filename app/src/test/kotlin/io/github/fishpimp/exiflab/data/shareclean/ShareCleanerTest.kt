@@ -120,7 +120,9 @@ class ShareCleanerTest {
 
         assertThat(result.refusals).isEmpty()
         val copy = result.files.single()
-        assertThat(copy.file.name).isEqualTo("DSCF0001.JPG")
+        // "DSCF" names the camera maker, so the copy gets a neutral name.
+        assertThat(copy.file.name).isEqualTo("photo-1.jpg")
+        assertThat(copy.sourceName).isEqualTo("DSCF0001.JPG")
         assertThat(copy.file.parentFile!!.parentFile).isEqualTo(store.root)
         assertThat(copy.mimeType).isEqualTo("image/jpeg")
         val bytes = copy.file.readBytes()
@@ -204,7 +206,7 @@ class ShareCleanerTest {
         val shared = clean(listOf(ref), ShareCleanChoice(ShareCleanPreset.LocationOnly), cleaner(reader = rawAwareReader, previews = extractor))
         val copy = shared.files.single()
         assertThat(copy.fromRawPreview).isTrue()
-        assertThat(copy.file.name).isEqualTo("DSC_0001.jpg")
+        assertThat(copy.file.name).isEqualTo("photo-1.jpg")
         assertThat(copy.mimeType).isEqualTo("image/jpeg")
         val report = read(copy.file.readBytes(), copy.file.name)
         assertThat(report.sensitiveFindings).isEmpty()
@@ -239,9 +241,52 @@ class ShareCleanerTest {
         }
 
         assertThat(result.files.map { it.sourceName }).containsExactly("a.jpg", "b.png").inOrder()
+        // Location only: the names say nothing about the location, so they stay.
+        assertThat(result.files.map { it.file.name }).containsExactly("a.jpg", "b.png").inOrder()
         assertThat(result.refusals.single().name).isEqualTo("notes.txt")
         assertThat(result.refusals.single().reason).isInstanceOf(RefusalReason.Unsupported::class.java)
         assertThat(progress).containsExactly(1 to 3, 2 to 3, 3 to 3).inOrder()
+    }
+
+    @Test
+    fun `copies are renamed when dates or device details go`() {
+        val original = privatePhoto(Bitmap.CompressFormat.JPEG, "PXL_20260612_174207123.jpg")
+        val photos = listOf(photo("PXL_20260612_174207123.jpg", original), photo("20260612_174210.png", privatePhoto(Bitmap.CompressFormat.PNG, "b.png"), "image/png"))
+
+        val dates = clean(photos, ShareCleanChoice(ShareCleanPreset.Custom, custom = setOf(StripCategory.Dates)))
+        assertThat(dates.files.map { it.file.name }).containsExactly("photo-1.jpg", "photo-2.png").inOrder()
+        assertThat(dates.files.map { it.sourceName }).containsExactly("PXL_20260612_174207123.jpg", "20260612_174210.png").inOrder()
+
+        val everything = clean(photos.take(1), ShareCleanChoice(ShareCleanPreset.Everything))
+        assertThat(everything.files.single().file.name).isEqualTo("photo-1.jpg")
+    }
+
+    @Test
+    fun `a Motion Photo is shared as its still image, without the video after it`() {
+        val still = privatePhoto(Bitmap.CompressFormat.JPEG, "PXL_1.MP.jpg")
+        // An MP4 appended after the JPEG's end, as Pixel and Samsung Motion Photos do; it can carry its own location.
+        val video = byteArrayOf(0, 0, 0, 24) + "ftypmp42".toByteArray() + ByteArray(12) { 1 } + "udta\u00A9xyz+59.3293+018.0686/".toByteArray()
+        val original = still + video
+
+        val result = clean(listOf(photo("PXL_1.MP.jpg", original)), ShareCleanChoice(ShareCleanPreset.LocationOnly))
+
+        assertThat(result.refusals).isEmpty()
+        val bytes = result.files.single().file.readBytes()
+        assertThat(bytes.size).isLessThan(still.size)
+        assertThat(String(bytes, Charsets.ISO_8859_1)).doesNotContain("ftypmp42")
+        assertThat(digest(bytes, "a.jpg")).isEqualTo(digest(still, "a.jpg"))
+        assertThat(read(bytes, "a.jpg").locationStatus).isNotEqualTo(LocationStatus.Present)
+    }
+
+    @Test
+    fun `a photo with extra data the writer cannot leave out is refused`() {
+        val webp = encode(Bitmap.CompressFormat.WEBP_LOSSY) + "SEFT trailer: Image_UTC_Data 1781278927000".toByteArray()
+
+        val result = clean(listOf(photo("IMG_3.webp", webp, "image/webp")), ShareCleanChoice(ShareCleanPreset.LocationOnly))
+
+        assertThat(result.files).isEmpty()
+        assertThat(result.refusals.single().reason).isEqualTo(RefusalReason.EmbeddedExtras)
+        assertThat(store.root.walkTopDown().filter { it.isFile }.toList()).isEmpty()
     }
 
     @Test

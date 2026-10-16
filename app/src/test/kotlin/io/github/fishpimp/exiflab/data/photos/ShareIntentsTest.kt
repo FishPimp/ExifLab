@@ -47,6 +47,20 @@ class ShareIntentsTest {
     }
 
     @Test
+    fun `shared URIs only ExifLab's own access could read are dropped`() {
+        val authority = "com.android.externalstorage.documents"
+        val tree = DocumentsContract.buildTreeDocumentUri(authority, "primary:DCIM")
+        val insideTree = DocumentsContract.buildDocumentUriUsingTree(tree, "primary:DCIM/Camera/IMG_1.jpg")
+        val ownCopy = "content://io.github.fishpimp.exiflab.shareclean/shared/1/photo-1.jpg".toUri()
+        val pickedEarlier = "content://media/picker/0/com.android.providers.media.photopicker/media/41".toUri()
+        val grants = GrantSnapshot(readable = setOf(tree.toString(), pickedEarlier.toString()), writable = setOf(tree.toString()))
+
+        val kept = listOf(first, insideTree, ownCopy, pickedEarlier, second).withoutOwnAccess("io.github.fishpimp.exiflab", grants)
+
+        assertThat(kept).containsExactly(first, second).inOrder()
+    }
+
+    @Test
     fun `grant snapshot covers documents inside a granted tree`() {
         val authority = "com.android.externalstorage.documents"
         val tree = DocumentsContract.buildTreeDocumentUri(authority, "primary:DCIM")

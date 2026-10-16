@@ -65,7 +65,10 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
 import io.github.fishpimp.exiflab.R
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
 import io.github.fishpimp.exiflab.data.shareclean.Refusal
@@ -111,14 +114,19 @@ fun ShareCleanSheetHost(
     val context = LocalContext.current
     val currentOnShared by rememberUpdatedState(onShared)
     val currentOnOpenFailed by rememberUpdatedState(onOpenFailed)
-    LaunchedEffect(viewModel) {
-        viewModel.events.collect { event ->
-            when (event) {
-                is ShareCleanEvent.Share -> {
-                    context.startCleanShare(event.files)
-                    currentOnShared()
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    // Only while started: a chooser launched from the background is blocked without an error, so a
+    // share that finishes while the user is in another app waits in the channel until they return.
+    LaunchedEffect(viewModel, lifecycle) {
+        lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            viewModel.events.collect { event ->
+                when (event) {
+                    is ShareCleanEvent.Share -> {
+                        context.startCleanShare(event.files)
+                        currentOnShared()
+                    }
+                    is ShareCleanEvent.OpenFailed -> currentOnOpenFailed(event.error)
                 }
-                is ShareCleanEvent.OpenFailed -> currentOnOpenFailed(event.error)
             }
         }
     }

@@ -54,7 +54,7 @@ class ShareCleanActivity : AppCompatActivity() {
                 finish()
                 return
             }
-            viewModel.openUris(uris)
+            viewModel.openShared(uris)
         }
 
         val settingsState: StateFlow<AppSettings?> = appGraph.settingsRepository.settings

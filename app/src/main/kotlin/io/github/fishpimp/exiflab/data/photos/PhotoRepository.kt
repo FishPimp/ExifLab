@@ -84,6 +84,19 @@ class PhotoRepository(
         return if (refs.isNotEmpty()) OpenResult.Opened(refs) else OpenResult.Failed(firstError ?: PhotoAccessError.NotFound)
     }
 
+    /**
+     * Opens photos another app shared with ExifLab (an intent's streams), see [open]. URIs the
+     * sender could only make ExifLab read with ExifLab's own access are left out first, see
+     * [withoutOwnAccess]; when nothing is left the result is [PhotoAccessError.PermissionDenied].
+     */
+    suspend fun openShared(uris: List<Uri>): OpenResult {
+        val allowed = withContext(ioDispatcher) {
+            uris.withoutOwnAccess(appContext.packageName, GrantSnapshot.read(resolver))
+        }
+        if (allowed.isEmpty()) return OpenResult.Failed(PhotoAccessError.PermissionDenied)
+        return open(allowed, PhotoOrigin.Share)
+    }
+
     /** A re-openable byte source for the metadata engine, backed by the provider. */
     fun imageSource(ref: PhotoRef): ImageSource =
         ContentImageSource(resolver, ref.uri.toUri(), ref.displayName, ref.size)
