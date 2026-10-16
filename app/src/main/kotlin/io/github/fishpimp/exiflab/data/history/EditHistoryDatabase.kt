@@ -17,7 +17,7 @@ import io.github.fishpimp.exiflab.data.batch.BatchJobItem
  */
 @Database(
     entities = [EditBatch::class, EditRecord::class, BatchJob::class, BatchJobItem::class],
-    version = 2,
+    version = 3,
     exportSchema = true,
 )
 abstract class EditHistoryDatabase : RoomDatabase() {
@@ -60,5 +60,12 @@ object EditHistoryMigrations {
         }
     }
 
-    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2)
+    /** Version 3 keeps the writer's notes for batch photos written without every change (`notes`). */
+    val MIGRATION_2_3: Migration = object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `batch_job_items` ADD COLUMN `notes` TEXT")
+        }
+    }
+
+    val ALL: Array<Migration> = arrayOf(MIGRATION_1_2, MIGRATION_2_3)
 }

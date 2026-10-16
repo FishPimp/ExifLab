@@ -2,8 +2,10 @@ package io.github.fishpimp.exiflab
 
 import android.content.ContentResolver
 import android.content.Context
+import androidx.core.net.toUri
 import coil3.ImageLoader
 import io.github.fishpimp.exiflab.data.backup.BackupManager
+import io.github.fishpimp.exiflab.data.batch.BatchInputStore
 import io.github.fishpimp.exiflab.data.batch.BatchJobDao
 import io.github.fishpimp.exiflab.data.batch.BatchJobRepository
 import io.github.fishpimp.exiflab.data.batch.BatchRunner
@@ -22,6 +24,7 @@ import io.github.fishpimp.exiflab.data.network.NetworkPolicy
 import io.github.fishpimp.exiflab.data.network.OfflineMode
 import io.github.fishpimp.exiflab.data.network.createHttpClient
 import io.github.fishpimp.exiflab.data.network.exifLabUserAgent
+import io.github.fishpimp.exiflab.data.photos.GrantJanitor
 import io.github.fishpimp.exiflab.data.photos.GrantSnapshot
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.data.photos.PhotoRepository
@@ -62,6 +65,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import java.io.FileNotFoundException
 
 /**
  * Manual dependency container. One instance lives in [ExifLabApplication]; screens reach it
@@ -89,7 +93,8 @@ class AppGraph(context: Context) {
         createHttpClient(
             policy = NetworkPolicy(isOffline = offlineMode::currentBlocking),
             userAgent = exifLabUserAgent(BuildConfig.VERSION_NAME),
-            cacheDirectory = appContext.cacheDir.resolve(HTTP_CACHE_DIRECTORY),
+            // No disk cache: MapLibre keeps its own (see MapRuntime), and URLs hold map areas and searches.
+            cacheDirectory = null,
         )
     }
 
@@ -186,7 +191,14 @@ class AppGraph(context: Context) {
     private val batchScheduler: BatchScheduling by lazy { WorkManagerBatchScheduler(appContext) }
 
     /** Drafts, starting, cancelling and observing batch edits. */
-    val batchJobs: BatchJobRepository by lazy { BatchJobRepository(dao = { batchJobDao }, scheduler = batchScheduler) }
+    val batchJobs: BatchJobRepository by lazy { BatchJobRepository(dao = { batchJobDao }, scheduler = batchScheduler, inputs = batchInputs) }
+
+    /** Private copies of shared photos while their batch job runs. */
+    private val batchInputs: BatchInputStore by lazy {
+        BatchInputStore(appContext.filesDir.resolve(BatchInputStore.DIRECTORY_NAME)) { uri ->
+            appContext.contentResolver.openInputStream(uri.toUri()) ?: throw FileNotFoundException()
+        }
+    }
 
     /** What the background worker runs; see [BatchRunner]. */
     val batchRunner: BatchRunner by lazy {
@@ -198,6 +210,7 @@ class AppGraph(context: Context) {
             },
             readReport = { ref -> withContext(Dispatchers.IO) { metadataReader.read(photoRepository.imageSource(ref)) } },
             planner = { Editing.planner },
+            inputs = batchInputs,
         )
     }
 
@@ -245,6 +258,8 @@ class AppGraph(context: Context) {
     fun startMaintenance() {
         // Shared copies older than a day have been picked up by now.
         appScope.launch(Dispatchers.IO) { sharedFilesStore.deleteOlderThan() }
+        // The HTTP cache earlier versions kept, with tile and search URLs in it.
+        appScope.launch(Dispatchers.IO) { runCatching { appContext.cacheDir.resolve(LEGACY_HTTP_CACHE_DIRECTORY).deleteRecursively() } }
         appScope.launch(Dispatchers.IO) {
             val hasHistory = appContext.getDatabasePath(EditHistoryDatabase.NAME).exists()
             val hasBackups = appContext.filesDir.resolve(BackupStore.DIRECTORY_NAME).exists()
@@ -253,6 +268,25 @@ class AppGraph(context: Context) {
             if (hasHistory) runCatching { batchJobs.resumeUnfinished() }
             runCatching { backupManager.prune() }
         }
+        appScope.launch(Dispatchers.IO) { runCatching { tidyGrants() } }
+    }
+
+    /**
+     * Takes the library folders' grants again and releases persisted grants nothing needs, so
+     * picker photos and batch copy folders do not pile up until Android drops the folders' grants;
+     * see [GrantJanitor]. Any failure releases nothing.
+     */
+    private suspend fun tidyGrants() {
+        folderRepository.refreshGrants()
+        val libraryTrees = folderRepository.grantedTreeUris()
+        val needed = buildSet {
+            addAll(recentPhotosRepository.storedUris())
+            if (appContext.getDatabasePath(EditHistoryDatabase.NAME).exists()) {
+                addAll(editHistoryDao.urisHistoryMayWrite())
+                addAll(batchJobDao.urisOfUnfinishedJobs())
+            }
+        }
+        GrantJanitor.releaseUnneeded(appContext.contentResolver, libraryTrees, needed, System.currentTimeMillis())
     }
 
     /**
@@ -267,7 +301,7 @@ class AppGraph(context: Context) {
     }
 }
 
-private const val HTTP_CACHE_DIRECTORY = "http"
+private const val LEGACY_HTTP_CACHE_DIRECTORY = "http"
 private const val SAVE_TEMP_DIRECTORY = "saving"
 private const val PRUNE_DELAY_MS = 2_000L
 

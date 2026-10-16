@@ -92,6 +92,17 @@ interface BatchJobDao {
     @Query("SELECT status, COUNT(*) AS count FROM batch_job_items WHERE jobId = :jobId GROUP BY status")
     suspend fun counts(jobId: String): List<BatchStatusCount>
 
+    /** The photos and copy folders of jobs that have not ended, drafts included: they still need their grants. */
+    @Query(
+        "SELECT photoUri FROM batch_job_items WHERE jobId IN (SELECT id FROM batch_jobs WHERE state IN ('Draft', 'Queued', 'Running')) " +
+            "UNION SELECT copyFolderUri FROM batch_jobs WHERE copyFolderUri IS NOT NULL AND state IN ('Draft', 'Queued', 'Running')",
+    )
+    suspend fun urisOfUnfinishedJobs(): List<String>
+
+    /** Written photos whose file type could not hold every change. */
+    @Query("SELECT COUNT(*) FROM batch_job_items WHERE jobId = :jobId AND notes IS NOT NULL")
+    suspend fun countWithNotes(jobId: String): Int
+
     /** Skips every item that has not started; returns how many. */
     @Query(
         "UPDATE batch_job_items SET status = 'Skipped', reason = :reason, finishedAt = :now " +

@@ -25,7 +25,7 @@ import org.robolectric.RobolectricTestRunner
 import java.io.File
 
 /**
- * Upgrades a database created exactly as the exported version 1 schema describes. Room validates
+ * Upgrades databases created exactly as the exported version 1 and 2 schemas describe. Room validates
  * every table against the entities after migrating, so a migration that does not produce the
  * current schema fails here; History written by version 1 must survive.
  */
@@ -38,7 +38,7 @@ class EditHistoryMigrationTest {
     }
 
     @Test
-    fun `version 1 history migrates to version 2 with the batch job tables`() = runBlocking<Unit> {
+    fun `version 1 history migrates to the current version with the batch job tables`() = runBlocking<Unit> {
         createVersion1()
 
         val database = Room.databaseBuilder(context, EditHistoryDatabase::class.java, NAME)
@@ -51,7 +51,7 @@ class EditHistoryMigrationTest {
             assertThat(record!!.state).isEqualTo(EditState.Committed)
             assertThat(record.batchId).isEqualTo("b1")
             assertThat(database.dao().batch("b1")!!.succeeded).isEqualTo(1)
-            assertThat(database.openHelper.readableDatabase.version).isEqualTo(2)
+            assertThat(database.openHelper.readableDatabase.version).isEqualTo(3)
 
             // The new tables work, and deleting a job takes its items along.
             val ref = PhotoRef("content://p/1", "a.jpg", "image/jpeg", 1, 1, PhotoOrigin.Folder, writable = true)
@@ -67,9 +67,53 @@ class EditHistoryMigrationTest {
         }
     }
 
-    /** Builds the version 1 tables from the checked-in schema and adds a batch with one record. */
-    private fun createVersion1() {
-        val schema = Json.parseToJsonElement(File("schemas/${EditHistoryDatabase::class.java.name}/1.json").readText())
+    @Test
+    fun `version 2 batch items migrate to version 3 without notes`() = runBlocking<Unit> {
+        createSchema(2) { db ->
+            db.insertOrThrow(
+                "batch_jobs",
+                null,
+                ContentValues().apply {
+                    put("id", "j1")
+                    put("state", "Finished")
+                    put("title", "Set author")
+                    put("total", 1)
+                    put("createdAt", 1L)
+                    put("cancelRequested", 0)
+                },
+            )
+            db.insertOrThrow(
+                "batch_job_items",
+                null,
+                ContentValues().apply {
+                    put("jobId", "j1")
+                    put("position", 0)
+                    put("photoUri", "content://p/1")
+                    put("origin", "Folder")
+                    put("writable", 1)
+                    put("status", "Saved")
+                },
+            )
+        }
+
+        val database = Room.databaseBuilder(context, EditHistoryDatabase::class.java, NAME)
+            .addMigrations(*EditHistoryMigrations.ALL)
+            .allowMainThreadQueries()
+            .build()
+        try {
+            val item = database.batchJobs().items("j1").single()
+            assertThat(item.status).isEqualTo(BatchItemStatus.Saved)
+            assertThat(item.notes).isNull()
+            database.batchJobs().updateItem(item.copy(notes = "IPTC"))
+            assertThat(database.batchJobs().countWithNotes("j1")).isEqualTo(1)
+        } finally {
+            database.close()
+        }
+    }
+
+    /** Builds the tables of schema [version] from its checked-in export, then lets [fill] add rows. */
+    private fun createSchema(version: Int, fill: (SQLiteDatabase) -> Unit) {
+        val schema = Json.parseToJsonElement(File("schemas/${EditHistoryDatabase::class.java.name}/$version.json").readText())
             .jsonObject.getValue("database").jsonObject
         val db = SQLiteDatabase.openOrCreateDatabase(context.getDatabasePath(NAME).apply { parentFile?.mkdirs() }, null)
         try {
@@ -81,45 +125,50 @@ class EditHistoryMigrationTest {
                 }
             }
             schema.getValue("setupQueries").jsonArray.forEach { db.execSQL(it.jsonPrimitive.content) }
-            db.insertOrThrow(
-                "edit_batches",
-                null,
-                ContentValues().apply {
-                    put("id", "b1")
-                    put("title", "Set location")
-                    put("createdAt", 1L)
-                    put("total", 1)
-                    put("succeeded", 1)
-                    put("failed", 0)
-                    put("cancelled", 0)
-                },
-            )
-            db.insertOrThrow(
-                "edit_records",
-                null,
-                ContentValues().apply {
-                    put("id", "r1")
-                    put("batchId", "b1")
-                    put("photoUri", "content://p/1")
-                    put("displayName", "a.jpg")
-                    put("mimeType", "image/jpeg")
-                    put("photoOrigin", "Folder")
-                    put("mode", "InPlace")
-                    put("state", "Committed")
-                    put("backupPath", "r1.bak")
-                    put("originalSize", 10L)
-                    put("originalSha256", "abc")
-                    put("newSha256", "def")
-                    put("diffJson", "[]")
-                    put("summary", "GPS Latitude")
-                    put("createdAt", 1L)
-                    put("completedAt", 2L)
-                },
-            )
-            db.version = 1
+            fill(db)
+            db.version = version
         } finally {
             db.close()
         }
+    }
+
+    /** Builds the version 1 tables from the checked-in schema and adds a batch with one record. */
+    private fun createVersion1() = createSchema(1) { db ->
+        db.insertOrThrow(
+            "edit_batches",
+            null,
+            ContentValues().apply {
+                put("id", "b1")
+                put("title", "Set location")
+                put("createdAt", 1L)
+                put("total", 1)
+                put("succeeded", 1)
+                put("failed", 0)
+                put("cancelled", 0)
+            },
+        )
+        db.insertOrThrow(
+            "edit_records",
+            null,
+            ContentValues().apply {
+                put("id", "r1")
+                put("batchId", "b1")
+                put("photoUri", "content://p/1")
+                put("displayName", "a.jpg")
+                put("mimeType", "image/jpeg")
+                put("photoOrigin", "Folder")
+                put("mode", "InPlace")
+                put("state", "Committed")
+                put("backupPath", "r1.bak")
+                put("originalSize", 10L)
+                put("originalSha256", "abc")
+                put("newSha256", "def")
+                put("diffJson", "[]")
+                put("summary", "GPS Latitude")
+                put("createdAt", 1L)
+                put("completedAt", 2L)
+            },
+        )
     }
 
     private companion object {

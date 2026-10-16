@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,9 +9,29 @@ plugins {
     alias(libs.plugins.room)
 }
 
+/**
+ * Release signing for personal installs: keystore.properties in the project root (never checked
+ * in) names a keystore with storeFile, storePassword, keyAlias and keyPassword. Without it, release
+ * builds are signed with the debug key, so `assembleRelease` still yields an installable APK.
+ */
+val releaseKeystore: Properties? = rootProject.file("keystore.properties").takeIf { it.isFile }?.let { file ->
+    Properties().apply { file.inputStream().use(::load) }
+}
+
 android {
     namespace = "io.github.fishpimp.exiflab"
     compileSdk = 37
+
+    signingConfigs {
+        if (releaseKeystore != null) {
+            create("release") {
+                storeFile = rootProject.file(releaseKeystore.getProperty("storeFile"))
+                storePassword = releaseKeystore.getProperty("storePassword")
+                keyAlias = releaseKeystore.getProperty("keyAlias")
+                keyPassword = releaseKeystore.getProperty("keyPassword")
+            }
+        }
+    }
 
     defaultConfig {
         applicationId = "io.github.fishpimp.exiflab"
@@ -34,6 +56,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
     }
 

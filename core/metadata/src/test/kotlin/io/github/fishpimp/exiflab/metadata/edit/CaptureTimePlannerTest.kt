@@ -38,6 +38,15 @@ class CaptureTimePlannerTest {
             iptc = iptc,
         ) { ascii(Photos.DATE_TIME, exifDate) }
 
+    @Test fun plansSayWhenTheirDatesComeFromTheFile() {
+        val photo = dated("2024:05:01 14:03:22")
+        assertThat(edit(photo, EditOperation.ShiftCaptureTime(Duration.ofHours(1))).plan.datesFromFile).isTrue()
+        assertThat(edit(photo, EditOperation.ChangeTimeZone(stockholm, tokyo)).plan.datesFromFile).isTrue()
+        assertThat(edit(photo, EditOperation.SetUtcOffset(ZoneOffset.ofHours(2))).plan.datesFromFile).isTrue()
+        val set = EditOperation.SetCaptureTime(LocalDateTime.of(2026, 6, 14, 17, 42, 7), null, alsoModifyDate = false)
+        assertThat(edit(photo, set).plan.datesFromFile).isFalse()
+    }
+
     // ---- SetCaptureTime ----
 
     @Test fun setCaptureTimeWritesEveryDateCopyWithOffsets() {
@@ -265,6 +274,57 @@ class CaptureTimePlannerTest {
         val edited = edit(dated("2026:03:29 02:30:00"), EditOperation.ChangeTimeZone(stockholm, ZoneId.of("UTC")))
         assertThat(edited.exif("exif-subifd", 0x9003)).isEqualTo("2026:03:29 01:30:00")
         assertThat(edited.exif("exif-subifd", 0x9011)).isEqualTo("+00:00")
+    }
+
+    @Test fun photosThatRecordAnotherOffsetAreNotConverted() {
+        // A phone photo in the same trip folder already says 18:00 at +09:00: it is right as it is.
+        val phone = dated("2026:06:14 18:00:00", offset = "+09:00", xmp = mapOf("xmp:CreateDate" to "2026-06-14T18:00:00"))
+        val plan = plan(phone, EditOperation.ChangeTimeZone(stockholm, tokyo))
+        assertThat(plan.changes.isEmpty).isTrue()
+        assertThat(plan.warnings).containsExactly(DefaultChangePlanner.OTHER_ZONE_WARNING)
+
+        // Running the fix twice does not move the photos again.
+        val once = edit(dated("2026:06:14 11:00:00"), EditOperation.ChangeTimeZone(stockholm, tokyo))
+        assertThat(once.exif("exif-subifd", 0x9003)).isEqualTo("2026:06:14 18:00:00")
+        val twice = EditFixtures.planner.plan(once.after, listOf(EditOperation.ChangeTimeZone(stockholm, tokyo)))
+        assertThat(twice.changes.isEmpty).isTrue()
+        assertThat(twice.warnings).containsExactly(DefaultChangePlanner.OTHER_ZONE_WARNING)
+
+        // An offset that is the camera zone's (winter or summer time) is converted as usual.
+        val camera = edit(dated("2026:06:14 11:00:00", offset = "+02:00"), EditOperation.ChangeTimeZone(stockholm, tokyo))
+        assertThat(camera.exif("exif-subifd", 0x9003)).isEqualTo("2026:06:14 18:00:00")
+        assertThat(camera.plan.warnings).isEmpty()
+    }
+
+    @Test fun xmpDatesInUtcAreConvertedByTheirInstant() {
+        val berlin = ZoneId.of("Europe/Berlin")
+        // Taken at 10:00 in Berlin (+02:00); the XMP copy was written in UTC.
+        val source = dated("2026:06:01 10:00:00", xmp = mapOf("xmp:CreateDate" to "2026-06-01T08:00:00Z"))
+        val edited = edit(source, EditOperation.ChangeTimeZone(berlin, tokyo))
+        assertThat(edited.exif("exif-subifd", 0x9003)).isEqualTo("2026:06:01 17:00:00")
+        assertThat(edited.exif("exif-subifd", 0x9011)).isEqualTo("+09:00")
+        assertThat(edited.xmp("xmp:CreateDate")).isEqualTo("2026-06-01T17:00:00+09:00")
+    }
+
+    @Test fun settingTheCaptureTimeDoesNotLabelLocalTimeAsUtc() {
+        val time = LocalDateTime.of(2026, 6, 1, 15, 0)
+        val withOffset = edit(
+            dated("2026:06:01 10:00:00", offset = "+02:00", xmp = mapOf("xmp:CreateDate" to "2026-06-01T08:00:00Z")),
+            EditOperation.SetCaptureTime(time, offset = null),
+        )
+        assertThat(withOffset.xmp("xmp:CreateDate")).isEqualTo("2026-06-01T15:00:00+02:00")
+        val withoutOffset = edit(
+            dated("2026:06:01 10:00:00", xmp = mapOf("xmp:CreateDate" to "2026-06-01T08:00:00Z")),
+            EditOperation.SetCaptureTime(time, offset = null),
+        )
+        assertThat(withoutOffset.xmp("xmp:CreateDate")).isEqualTo("2026-06-01T15:00:00")
+        // Setting the offset of a UTC value keeps its instant.
+        val offset = edit(
+            dated("2026:06:01 10:00:00", xmp = mapOf("xmp:CreateDate" to "2026-06-01T08:00:00Z")),
+            EditOperation.SetUtcOffset(ZoneOffset.ofHours(2)),
+        )
+        assertThat(offset.xmp("xmp:CreateDate")).isEqualTo("2026-06-01T10:00:00+02:00")
+        assertThat(offset.exif("exif-subifd", 0x9011)).isEqualTo("+02:00")
     }
 
     @Test fun timeZoneChangeWithoutDatesWarns() {

@@ -6,3 +6,12 @@
 -keepclassmembers class * extends com.drew.metadata.Directory {
     public <init>();
 }
+
+# Release builds log nothing below errors, including from libraries: log lines can carry file
+# names, URIs or metadata values, and ExifLab keeps those on the device.
+-assumenosideeffects class android.util.Log {
+    public static int v(...);
+    public static int d(...);
+    public static int i(...);
+    public static int w(...);
+}

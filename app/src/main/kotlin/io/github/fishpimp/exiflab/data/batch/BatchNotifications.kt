@@ -47,8 +47,9 @@ class BatchNotifications(private val context: Context) {
     fun showFinished(job: BatchJob, progress: BatchProgress) {
         manager.cancel(progressId(job.id))
         val written = progress.done - progress.failed - progress.skipped
-        val parts = listOf(
+        val parts = listOfNotNull(
             context.resources.getQuantityString(R.plurals.batch_count_written, written, written),
+            progress.withNotes.takeIf { it > 0 }?.let { context.resources.getQuantityString(R.plurals.batch_count_with_notes, it, it) },
             context.resources.getQuantityString(R.plurals.batch_count_skipped, progress.skipped, progress.skipped),
             context.resources.getQuantityString(R.plurals.batch_count_failed, progress.failed, progress.failed),
         )

@@ -14,8 +14,10 @@ import io.github.fishpimp.exiflab.metadata.edit.StripCategory
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.write.ExifChange
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
+import io.github.fishpimp.exiflab.metadata.write.EmbeddedExtras
 import io.github.fishpimp.exiflab.metadata.write.ExifValue
 import io.github.fishpimp.exiflab.metadata.write.ImageDataMismatchException
+import io.github.fishpimp.exiflab.metadata.write.MetadataBlock
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.MetadataWriter
 import kotlinx.coroutines.CancellationException
@@ -57,6 +59,12 @@ sealed interface RefusalReason {
 
     /** Reading the cleaned copy back still found [kinds] that should have been removed. */
     data class StillContains(val kinds: List<MetadataKind>) : RefusalReason
+
+    /**
+     * The file carries data besides its image that cannot be left out of a copy of this type,
+     * such as a Motion Photo video box in a HEIC file, see [EmbeddedExtras].
+     */
+    data object EmbeddedExtras : RefusalReason
 }
 
 data class Refusal(val name: String, val reason: RefusalReason) : CleanOutcome
@@ -78,6 +86,12 @@ fun interface ShareCleaning {
  * metadata and written losslessly into the [store] by the metadata writer, which verifies that
  * the image data is byte-identical. The copy is then read back, and refused (deleted, never
  * shared) when anything the chosen categories cover is still found in it.
+ *
+ * A copy is the primary image only: a Motion Photo's video, vendor trailers and MPF secondary
+ * images can hold their own location and dates where the reader does not look, so they are left
+ * out ([MetadataBlock.EmbeddedMedia]), and a photo whose extras cannot be left out is refused.
+ * When dates or device details are removed, the copy is also renamed ("photo-1.jpg"), because
+ * camera file names such as PXL_20260612_174207123.jpg carry both.
  *
  * RAW files are never rewritten: with [ShareCleanChoice.includeRawPreviews] their embedded JPEG
  * preview is shared instead, stripped of everything but its orientation.
@@ -108,7 +122,7 @@ class ShareCleaner(
             photos.forEachIndexed { index, ref ->
                 ensureActive()
                 val directory = store.newDirectory().also(created::add)
-                when (val outcome = cleanOne(ref, choice, directory)) {
+                when (val outcome = cleanOne(ref, index, choice, directory)) {
                     is CleanedFile -> files += outcome
                     is Refusal -> {
                         directory.deleteRecursively()
@@ -125,10 +139,11 @@ class ShareCleaner(
         ShareCleanResult(files, refusals)
     }
 
-    /** A [CleanedFile] in [directory], or why there is none. */
-    private fun cleanOne(ref: PhotoRef, choice: ShareCleanChoice, directory: File): CleanOutcome {
+    /** A [CleanedFile] in [directory] for the [index]th photo of the share, or why there is none. */
+    private fun cleanOne(ref: PhotoRef, index: Int, choice: ShareCleanChoice, directory: File): CleanOutcome {
         val name = ref.displayName?.takeIf { it.isNotBlank() } ?: UNTITLED
         fun refuse(reason: RefusalReason) = Refusal(name, reason)
+        val neutralName = neutralName(index)
 
         val source = open(ref)
         val report = try {
@@ -142,19 +157,23 @@ class ShareCleaner(
         }
         val format = report.format
         return when {
-            format.isRaw -> if (choice.includeRawPreviews) cleanRawPreview(name, source, report, directory) else refuse(RefusalReason.RawLeftOut)
+            format.isRaw -> if (choice.includeRawPreviews) cleanRawPreview(name, neutralName, source, report, directory) else refuse(RefusalReason.RawLeftOut)
             format == ImageFormat.Unknown || !runCatching { writer().canWrite(format) }.getOrDefault(false) ->
                 refuse(RefusalReason.Unsupported(format.displayName.takeUnless { format == ImageFormat.Unknown }))
             else -> {
-                val target = File(directory, fileNameFor(name, format, keepExtension = true))
                 val categories = choice.categories
+                val renamed = categories.any { it in NAME_REVEALS }
+                val target = File(directory, fileNameFor(if (renamed) neutralName else name, format, keepExtension = !renamed))
                 writeAndVerify(name, source, report, categories, MetadataChanges(), target, fromRawPreview = false)
             }
         }
     }
 
-    /** The JPEG preview inside a RAW file, with everything but its orientation removed. */
-    private fun cleanRawPreview(name: String, raw: ImageSource, rawReport: MetadataReport, directory: File): CleanOutcome {
+    /**
+     * The JPEG preview inside a RAW file, with everything but its orientation removed, named
+     * [copyName] since everything goes.
+     */
+    private fun cleanRawPreview(name: String, copyName: String, raw: ImageSource, rawReport: MetadataReport, directory: File): CleanOutcome {
         val preview = try {
             previews().extract(raw)
         } catch (e: CancellationException) {
@@ -162,7 +181,7 @@ class ShareCleaner(
         } catch (_: Exception) {
             null
         } ?: return Refusal(name, RefusalReason.NoRawPreview)
-        val target = File(directory, fileNameFor(name, ImageFormat.Jpeg, keepExtension = false))
+        val target = File(directory, fileNameFor(copyName, ImageFormat.Jpeg, keepExtension = false))
         val source = ByteArrayImageSource(preview.jpegBytes, target.name)
         val report = try {
             reader().read(source)
@@ -189,8 +208,18 @@ class ShareCleaner(
         target: File,
         fromRawPreview: Boolean,
     ): CleanOutcome {
+        // Data past the primary image goes; a type that cannot leave it out is not shared.
+        val extras = try {
+            EmbeddedExtras.find(source)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return Refusal(name, RefusalReason.Unreadable)
+        }
+        if (!EmbeddedExtras.canDrop(report.format, extras)) return Refusal(name, RefusalReason.EmbeddedExtras)
+        val dropExtras = if (extras.isEmpty()) MetadataChanges() else MetadataChanges(removeBlocks = setOf(MetadataBlock.EmbeddedMedia))
         try {
-            val changes = planner().plan(report, listOf(EditOperation.Strip(categories))).changes + extra
+            val changes = planner().plan(report, listOf(EditOperation.Strip(categories))).changes + extra + dropExtras
             if (changes.isEmpty) {
                 // Nothing the categories cover is in the file: the copy is the file itself.
                 source.open().use { input -> target.outputStream().use { input.copyTo(it) } }
@@ -216,6 +245,11 @@ class ShareCleaner(
             target.delete()
             return Refusal(name, RefusalReason.WriteFailed)
         }
+        val extrasLeft = runCatching { EmbeddedExtras.find(FileImageSource(target, target.name)) }.getOrNull()
+        if (extrasLeft == null || extrasLeft.isNotEmpty()) {
+            target.delete()
+            return Refusal(name, if (extrasLeft == null) RefusalReason.WriteFailed else RefusalReason.EmbeddedExtras)
+        }
         val leftovers = MetadataInventory.of(cleaned, categories)
         if (!leftovers.isEmpty) {
             target.delete()
@@ -228,6 +262,12 @@ class ShareCleaner(
         const val UNTITLED = "photo"
         const val ORIENTATION_TAG = 0x0112
         private const val MAX_NAME_LENGTH = 120
+
+        /** Categories whose removal the original file name would undo (capture time, phone or camera brand). */
+        private val NAME_REVEALS = setOf(StripCategory.All, StripCategory.Dates, StripCategory.DeviceInfo)
+
+        /** The name of the [index]th copy when the original name must not be shared. */
+        fun neutralName(index: Int) = "$UNTITLED-${index + 1}"
 
         /**
          * A safe file name for the copy of [name]: no path separators or control characters, not

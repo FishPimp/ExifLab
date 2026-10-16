@@ -52,12 +52,22 @@ interface EditHistoryDao {
     @Update
     suspend fun updateRecord(record: EditRecord)
 
-    /** Stores [record] and, for a restore, the [restored] record it put back, in one transaction. */
+    /** Stores [record] and, for a restore, the [restored] records it put back, in one transaction. */
     @Transaction
-    suspend fun updateRecords(record: EditRecord, restored: EditRecord?) {
+    suspend fun updateRecords(record: EditRecord, restored: List<EditRecord>) {
         updateRecord(record)
-        if (restored != null) updateRecord(restored)
+        restored.forEach { updateRecord(it) }
     }
+
+    /**
+     * Committed edits of the file [destinationUri] (the photo, copy or sidecar) made after
+     * [after], other than [exceptId]: what restoring an earlier edit of that file undoes too.
+     */
+    @Query(
+        "SELECT * FROM edit_records WHERE state = 'Committed' AND createdAt > :after AND id != :exceptId " +
+            "AND COALESCE(targetUri, photoUri) = :destinationUri ORDER BY createdAt",
+    )
+    suspend fun laterCommittedRecords(destinationUri: String, after: Long, exceptId: String): List<EditRecord>
 
     @Query("UPDATE edit_records SET backupPath = NULL WHERE backupPath IN (:paths)")
     suspend fun clearBackupPathsChunk(paths: List<String>)
@@ -67,6 +77,40 @@ interface EditHistoryDao {
     suspend fun clearBackupPaths(paths: Collection<String>) {
         paths.chunked(SQL_VARIABLE_CHUNK).forEach { clearBackupPathsChunk(it) }
     }
+
+    /**
+     * Forgets finished edits from before [before] that no longer have a backup, with the values
+     * they changed (a removed position, a serial number). Saves in progress and failed saves whose
+     * photo only its backup can fix are kept.
+     */
+    @Query(
+        "DELETE FROM edit_records WHERE createdAt < :before AND backupPath IS NULL AND state != 'Pending' " +
+            "AND NOT (state = 'Failed' AND error IN ('RollbackFailed', 'RecoveryFailed'))",
+    )
+    suspend fun deleteSettledRecordsBefore(before: Long): Int
+
+    /** Forgets every edit except saves in progress, see [deleteSettledRecordsBefore]. */
+    @Query("DELETE FROM edit_records WHERE state != 'Pending'")
+    suspend fun deleteAllSettledRecords(): Int
+
+    /** Batches from before [before] that no record and no running batch job refers to any more. */
+    @Query(
+        "DELETE FROM edit_batches WHERE createdAt < :before " +
+            "AND id NOT IN (SELECT batchId FROM edit_records WHERE batchId IS NOT NULL) " +
+            "AND id NOT IN (SELECT editBatchId FROM batch_jobs WHERE editBatchId IS NOT NULL AND state IN ('Queued', 'Running'))",
+    )
+    suspend fun deleteEmptyBatchesBefore(before: Long): Int
+
+    /**
+     * Files History may still write to: the photos and sidecars of edits that are saving, in
+     * effect or failed half-way (restoring them needs access). Copies never need it again.
+     */
+    @Query(
+        "SELECT photoUri FROM edit_records WHERE mode != 'Copy' AND state IN ('Pending', 'Committed', 'Failed') " +
+            "UNION SELECT targetUri FROM edit_records WHERE targetUri IS NOT NULL AND mode != 'Copy' " +
+            "AND state IN ('Pending', 'Committed', 'Failed')",
+    )
+    suspend fun urisHistoryMayWrite(): List<String>
 
     @Query("UPDATE edit_batches SET succeeded = succeeded + 1 WHERE id = :batchId")
     suspend fun countSucceeded(batchId: String)

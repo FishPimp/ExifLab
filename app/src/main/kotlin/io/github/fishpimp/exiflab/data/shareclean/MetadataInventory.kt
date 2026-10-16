@@ -21,7 +21,7 @@ enum class MetadataKind {
     Thumbnail,
     EditHistory,
 
-    /** Anything else [StripCategory.All] removes. */
+    /** Anything else [StripCategory.All] removes, and copies of EXIF or XMP that cannot be checked. */
     OtherMetadata,
 }
 
@@ -62,9 +62,12 @@ class MetadataInventory private constructor(
 
             for ((directory, tag) in tags) {
                 val inMakerNote = directory.group == DirectoryGroup.MakerNote
-                // MakerNote content goes with the MakerNotes category as a whole.
-                val sensitivity = tag.sensitivity.takeUnless { inMakerNote }
+                // MakerNote content goes with the MakerNotes category as a whole, except place names
+                // (Samsung LocalLocationName, Panasonic City): removing a location must not leave them behind.
+                val sensitivity = tag.sensitivity.takeUnless { inMakerNote && !(it == SensitivityCategory.Location && hasText(tag)) }
                 if (has(StripCategory.Location) && sensitivity == SensitivityCategory.Location) add(MetadataKind.Location, tag)
+                // ImageMagick's hex copies of EXIF and XMP are opaque: what they hold cannot be checked, so they never pass.
+                if (isRawProfile(directory, tag)) add(MetadataKind.OtherMetadata, tag)
                 if (has(StripCategory.DeviceIdentifiers)) {
                     if (sensitivity == SensitivityCategory.SerialNumber) add(MetadataKind.SerialNumbers, tag)
                     // Ids inside the XMP edit history (DerivedFrom, History, Ingredients) go with EditHistory.
@@ -130,6 +133,14 @@ class MetadataInventory private constructor(
         private val DATE_IPTC = listOf(30, 35, 37, 38, 47, 55, 60, 62, 63).map { 0x0200 or it }.toSet()
 
         private val COMMENT_DIRECTORIES = setOf("jpeg-comment", "png-text", "png-ztxt", "png-itxt")
+
+        private val RAW_PROFILES = listOf("Raw profile type exif", "Raw profile type APP1", "Raw profile type xmp")
+
+        private fun isRawProfile(directory: MetadataDirectory, tag: MetadataTag) =
+            directory.id in COMMENT_DIRECTORIES && RAW_PROFILES.any { tag.name.startsWith(it, ignoreCase = true) }
+
+        /** A value with at least one letter: vendors fill unused place fields with blanks, dashes or zeros. */
+        private fun hasText(tag: MetadataTag) = tag.displayValue.any(Char::isLetter) && !tag.displayValue.startsWith("Binary data")
 
         private fun isNestedMediaManagement(tag: MetadataTag) = tag.name.startsWith("xmpMM:") && tag.name !in TOP_LEVEL_MEDIA_IDS
 

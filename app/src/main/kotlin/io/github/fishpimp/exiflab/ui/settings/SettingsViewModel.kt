@@ -62,6 +62,9 @@ class SettingsViewModel(
 
     fun deleteAllBackups() = viewModelScope.launch { backups.deleteAll() }
 
+    /** Deletes the edit history with the values it holds, and the backups that go with it. */
+    fun clearHistory() = viewModelScope.launch { backups.clearHistory() }
+
     fun setLanguage(language: AppLanguage) {
         _language.value = language
         AppLanguage.apply(language)

@@ -17,6 +17,7 @@ import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.write.ImageDataMismatchException
 import io.github.fishpimp.exiflab.metadata.write.MetadataChanges
 import io.github.fishpimp.exiflab.metadata.write.UnsupportedEditException
+import io.github.fishpimp.exiflab.metadata.write.XmpSidecarWriter
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -64,7 +65,10 @@ class PhotoSaver(
     /**
      * Applies [changes] to [ref] and writes the result to [target], journaled in History with
      * [diff] (what the user sees changing) and [summary] (defaults to the changed field names).
-     * With a [batchId] the batch's success and failure counts are updated.
+     * With a [batchId] the batch's success and failure counts are updated. [datesFromFile] says
+     * the changes' dates were worked out from the photo's own (see
+     * [io.github.fishpimp.exiflab.metadata.edit.EditPlan.datesFromFile]); a sidecar that records
+     * its own capture date then rejects the save with [SaveRejection.SidecarHasDates].
      */
     suspend fun save(
         ref: PhotoRef,
@@ -73,8 +77,9 @@ class PhotoSaver(
         target: SaveTarget,
         batchId: String? = null,
         summary: String? = null,
+        datesFromFile: Boolean = false,
     ): SaveOutcome = withContext(ioDispatcher) {
-        val draft = Draft(ref, diff, summary ?: summarize(diff), batchId)
+        val draft = Draft(ref, diff, summary ?: summarize(diff), batchId, datesFromFile)
         val outcome = when (target) {
             SaveTarget.InPlace -> saveInPlace(draft, changes)
             is SaveTarget.Copy -> saveCopy(draft, changes, target.destinationUri)
@@ -87,7 +92,8 @@ class PhotoSaver(
     /**
      * Writes the backup of [recordId] back to its target, through the same journaled, verified
      * pipeline. The target's current state is backed up first, so the restore is itself a record
-     * that can be restored (undone). On success [recordId] becomes [EditState.Restored].
+     * that can be restored (undone). On success [recordId] becomes [EditState.Restored], and so
+     * do later edits of the same file, which the restore undid too.
      */
     suspend fun restoreOriginal(recordId: String, batchId: String? = null): SaveOutcome = withContext(ioDispatcher) {
         val photoUri = dao.record(recordId)?.photoUri ?: return@withContext SaveOutcome.Rejected(SaveRejection.NotFound)
@@ -193,10 +199,15 @@ class PhotoSaver(
         val ref = draft.ref
         val name = sidecarNaming().sidecarName(ref.displayName?.takeIf { it.isNotBlank() } ?: DEFAULT_PHOTO_NAME)
         return withPhotoLock(ref.uri) {
-            val target = destinationUri ?: run {
-                val parent = ref.parentDocumentUri ?: return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
+            val parent = ref.parentDocumentUri
+            val existing = destinationUri ?: parent?.let { runCatching { documents.findChild(it, name) }.getOrNull() }
+            if (draft.datesFromFile && existing != null && sidecarRecordsDates(existing)) {
+                return@withPhotoLock SaveOutcome.Rejected(SaveRejection.SidecarHasDates)
+            }
+            val target = existing ?: run {
+                parent ?: return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
                 try {
-                    documents.findChild(parent, name) ?: documents.createChild(parent, name, SIDECAR_MIME_TYPE)
+                    documents.createChild(parent, name, SIDECAR_MIME_TYPE)
                 } catch (_: Exception) {
                     // A read-only folder or a provider without create support: let the user pick a place.
                     return@withPhotoLock SaveOutcome.NeedsSidecarDestination(name)
@@ -210,6 +221,19 @@ class PhotoSaver(
                 NewContent.Written
             }
         }
+    }
+
+    /** True when the sidecar at [uri] records a capture date; a missing or empty one does not. */
+    private fun sidecarRecordsDates(uri: String): Boolean {
+        val bytes = try {
+            documents.openInput(uri).use { it.readBytes() }
+        } catch (_: FileNotFoundException) {
+            return false
+        } catch (_: Exception) {
+            // Unreadable now: the journaled save reports that properly.
+            return false
+        }
+        return XmpSidecarWriter.recordsCaptureDate(bytes)
     }
 
     private suspend fun restoreLocked(recordId: String, batchId: String?): SaveOutcome {
@@ -334,13 +358,26 @@ class PhotoSaver(
             if (after != expected) return@withContext rollback(journal, SaveError.VerificationFailed)
 
             val committed = journal.record.copy(state = EditState.Committed, completedAt = clock())
-            val restored = restores?.let { dao.record(it.id) }?.copy(state = EditState.Restored, completedAt = clock())
-            dao.updateRecords(committed, restored)
+            dao.updateRecords(committed, restores?.let { undoneBy(committed, it) }.orEmpty())
             countBatch(committed, success = true)
             SaveOutcome.Saved(committed.id, committed.mode, destination)
         } finally {
             temp.delete()
         }
+    }
+
+    /**
+     * The records the committed restore [restore] undid, marked [EditState.Restored]: [restored]
+     * itself and every later committed edit of the same file, whose changes the restore took out
+     * as well (History would otherwise show them in effect, and restoring one would bring back
+     * what this restore removed).
+     */
+    private suspend fun undoneBy(restore: EditRecord, restored: EditRecord): List<EditRecord> {
+        val now = clock()
+        val original = dao.record(restored.id) ?: return emptyList()
+        val later = dao.laterCommittedRecords(original.destinationUri, original.createdAt, restore.id)
+            .filter { it.id != original.id && it.createdAt < restore.createdAt }
+        return (listOf(original) + later).map { it.copy(state = EditState.Restored, completedAt = now) }
     }
 
     /** Nothing was changed: the record fails and its backup, now pointless, is deleted. */
@@ -398,8 +435,7 @@ class PhotoSaver(
             now == null -> finishRecovered(record, EditState.Failed, SaveError.RecoveryFailed)
             record.newSha256 != null && now.sha256 == record.newSha256 -> {
                 val committed = record.copy(state = EditState.Committed, completedAt = clock())
-                val restored = record.restoresRecordId?.let { dao.record(it) }?.copy(state = EditState.Restored, completedAt = clock())
-                dao.updateRecords(committed, restored)
+                dao.updateRecords(committed, record.restoresRecordId?.let { dao.record(it) }?.let { undoneBy(committed, it) }.orEmpty())
                 countBatch(committed, success = true)
             }
             now == pre -> finishRecovered(record, EditState.RolledBack, SaveError.Interrupted)
@@ -482,7 +518,7 @@ class PhotoSaver(
         }
     }
 
-    private class Draft(val ref: PhotoRef, val diff: List<FieldDiff>, val summary: String, val batchId: String?)
+    private class Draft(val ref: PhotoRef, val diff: List<FieldDiff>, val summary: String, val batchId: String?, val datesFromFile: Boolean)
 
     private enum class NewContent { Written, Absent }
 

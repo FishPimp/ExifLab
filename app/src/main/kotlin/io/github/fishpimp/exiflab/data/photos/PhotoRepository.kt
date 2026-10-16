@@ -29,17 +29,20 @@ class PhotoRepository(
 
     /**
      * Describes [uri] as a [PhotoRef]. Picker and document grants are persisted when the
-     * provider allows it, so recents keep working after a restart. Picker and shared photos are
-     * never writable; documents and folder files are writable when the provider supports writing
-     * and ExifLab holds a write grant.
+     * provider allows it and [persist] is true, so recents keep working after a restart; a photo
+     * that is only read once (another photo's values to copy) passes false, since Android limits
+     * how many grants an app keeps. Picker and shared photos are never writable; documents and
+     * folder files are writable when the provider supports writing and ExifLab holds a write grant.
      */
-    suspend fun resolve(uri: Uri, origin: PhotoOrigin): PhotoRef = withContext(ioDispatcher) {
+    suspend fun resolve(uri: Uri, origin: PhotoOrigin, persist: Boolean = true): PhotoRef = withContext(ioDispatcher) {
         mapAccessErrors(PhotoAccessError.ReadFailed) {
-            when (origin) {
-                PhotoOrigin.Picker -> resolver.tryPersistAccess(uri, includeWrite = false)
-                PhotoOrigin.Document -> resolver.tryPersistAccess(uri, includeWrite = true)
-                // Folder files are covered by the tree grant; shared URIs are not persistable.
-                PhotoOrigin.Folder, PhotoOrigin.Share -> Unit
+            if (persist) {
+                when (origin) {
+                    PhotoOrigin.Picker -> resolver.tryPersistAccess(uri, includeWrite = false)
+                    PhotoOrigin.Document -> resolver.tryPersistAccess(uri, includeWrite = true)
+                    // Folder files are covered by the tree grant; shared URIs are not persistable.
+                    PhotoOrigin.Folder, PhotoOrigin.Share -> Unit
+                }
             }
             val isDocument = DocumentsContract.isDocumentUri(appContext, uri)
             val info = if (isDocument) queryDocument(uri) else queryOpenable(uri)
@@ -82,6 +85,19 @@ class PhotoRepository(
             }
         }
         return if (refs.isNotEmpty()) OpenResult.Opened(refs) else OpenResult.Failed(firstError ?: PhotoAccessError.NotFound)
+    }
+
+    /**
+     * Opens photos another app shared with ExifLab (an intent's streams), see [open]. URIs the
+     * sender could only make ExifLab read with ExifLab's own access are left out first, see
+     * [withoutOwnAccess]; when nothing is left the result is [PhotoAccessError.PermissionDenied].
+     */
+    suspend fun openShared(uris: List<Uri>): OpenResult {
+        val allowed = withContext(ioDispatcher) {
+            uris.withoutOwnAccess(appContext.packageName, GrantSnapshot.read(resolver))
+        }
+        if (allowed.isEmpty()) return OpenResult.Failed(PhotoAccessError.PermissionDenied)
+        return open(allowed, PhotoOrigin.Share)
     }
 
     /** A re-openable byte source for the metadata engine, backed by the provider. */

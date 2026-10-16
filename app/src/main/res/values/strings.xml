@@ -314,7 +314,7 @@
     <string name="history_action_delete_backup">Delete backup</string>
     <string name="history_action_view_edit">View that edit</string>
     <string name="history_restore_title">Restore the original?</string>
-    <string name="history_restore_body">%1$s goes back to exactly how it was before this edit. Its current state is backed up first, so you can undo this.</string>
+    <string name="history_restore_body">%1$s goes back to exactly how it was before this edit, so later changes to it, also from other apps, are undone too. Its current state is backed up first, so you can undo this.</string>
     <string name="history_undo_restore_title">Undo the restore?</string>
     <string name="history_undo_restore_body">%1$s goes back to how it was before the restore. Its current state is backed up first.</string>
     <string name="history_delete_backup_title">Delete this backup?</string>
@@ -388,6 +388,11 @@
     <string name="settings_backup_delete_all_title">Delete all backups?</string>
     <string name="settings_backup_delete_all_confirm">This frees %1$s. You will no longer be able to restore the originals of photos you have already edited. Backups of saves in progress are kept.</string>
     <string name="settings_backup_delete_all_action">Delete all</string>
+    <string name="settings_history_clear">Clear edit history</string>
+    <string name="settings_history_clear_body">History keeps the values each edit changed, such as a location you removed. It is deleted with the backups, or now.</string>
+    <string name="settings_history_clear_title">Clear edit history?</string>
+    <string name="settings_history_clear_confirm">Every finished edit is removed from History, with the values it changed, and every backup is deleted. You will no longer be able to restore the originals of photos you have already edited. Saves in progress are kept.</string>
+    <string name="settings_history_clear_action">Clear</string>
 
     <string name="palette_lagoon">Lagoon</string>
     <string name="palette_citrus">Citrus</string>
@@ -407,11 +412,11 @@
     <string name="privacy_network_body">Only two features go online, and only while you use them. These are the only servers ExifLab ever contacts, and requests carry a map area or your search text, never your photos or their metadata.</string>
     <string name="privacy_network_tiles">Map tiles from OpenFreeMap, with OpenStreetMap data, when a map is shown</string>
     <string name="privacy_network_search">Place search by Photon (Komoot), when you search for a place</string>
-    <string name="privacy_network_offline">Offline mode in Settings turns both off.</string>
+    <string name="privacy_network_offline">Offline mode in Settings turns both off. Map tiles you viewed stay on the device for up to 30 days so maps load faster. Searches are never stored.</string>
     <string name="privacy_files_title">Only the files you choose</string>
     <string name="privacy_files_body">ExifLab can only open photos you pick, photos shared to it, and folders you grant access to. You can remove folder access at any time.</string>
     <string name="privacy_backups_title">Backups stay on your device</string>
-    <string name="privacy_backups_body">Before a photo is changed, the original is copied to ExifLab\'s private storage so you can restore it. Backups are deleted after 30 days, or when you uninstall the app.</string>
+    <string name="privacy_backups_body">Before a photo is changed, the original is copied to ExifLab\'s private storage so you can restore it. Backups are deleted after 30 days, or when you uninstall the app. History, which keeps the values an edit changed, goes with an edit\'s backup, and you can clear it in Settings.</string>
     <string name="privacy_permissions_title">Permissions</string>
     <string name="privacy_permissions_body">Photos and folders are opened through the system photo picker and folder access. Notifications show the progress of batch edits. Internet access is used for maps and place search only, and network status only to tell whether you are online. ExifLab never asks for your location.</string>
 
@@ -496,6 +501,7 @@
     <string name="share_clean_reason_unsupported_unknown">This file type can\'t be cleaned</string>
     <string name="share_clean_reason_unreadable">The photo couldn\'t be read</string>
     <string name="share_clean_reason_write_failed">The cleaned copy couldn\'t be made</string>
+    <string name="share_clean_reason_embedded_extras">Holds a video or other data besides the photo that can\'t be left out, so it isn\'t shared</string>
     <string name="share_clean_reason_still_contains">Still contained %1$s after cleaning, so it isn\'t shared</string>
     <plurals name="share_clean_too_many">
         <item quantity="one">Share clean takes %1$d photo at a time. Select fewer to continue.</item>
@@ -879,6 +885,7 @@
     <string name="edit_failure_rolled_back">The file was put back exactly as it was.</string>
     <string name="edit_failure_read_only">This photo can\'t be changed where it is. Save it as a copy instead.</string>
     <string name="edit_failure_use_sidecar">RAW files are never changed. Save to an XMP sidecar instead.</string>
+    <string name="edit_failure_sidecar_dates">The XMP sidecar already holds a capture time, which can differ from the RAW file\'s. Changing it from the RAW file\'s time would overwrite it, so nothing was saved. Set the time instead.</string>
     <string name="edit_failure_unsupported">ExifLab can\'t write this file type. Save to an XMP sidecar instead.</string>
     <string name="edit_failure_no_destination">No place was chosen for the sidecar, so nothing was saved.</string>
     <string name="edit_failure_no_plan">There is nothing ready to save yet.</string>
@@ -898,6 +905,10 @@
     <plurals name="batch_count_written">
         <item quantity="one">%d written</item>
         <item quantity="other">%d written</item>
+    </plurals>
+    <plurals name="batch_count_with_notes">
+        <item quantity="one">%d with changes its file type could not hold</item>
+        <item quantity="other">%d with changes their file type could not hold</item>
     </plurals>
     <plurals name="batch_count_skipped">
         <item quantity="one">%d skipped</item>
@@ -1012,6 +1023,10 @@
         <item quantity="one">%d photo has no capture date</item>
         <item quantity="other">%d photos have no capture date</item>
     </plurals>
+    <plurals name="batch_warning_other_zone">
+        <item quantity="one">%d photo already records a different UTC offset and keeps its time</item>
+        <item quantity="other">%d photos already record a different UTC offset and keep their time</item>
+    </plurals>
     <plurals name="batch_warning_unreadable">
         <item quantity="one">%d photo can\'t be read and will fail</item>
         <item quantity="other">%d photos can\'t be read and will fail</item>
@@ -1057,6 +1072,8 @@
     <string name="batch_reason_no_sidecar_place">no folder for the XMP sidecar</string>
     <string name="batch_reason_cancelled">cancelled before its turn</string>
     <string name="batch_reason_unreadable">the photo couldn\'t be read</string>
+    <string name="batch_reason_other_zone">already records a different UTC offset, so its time was kept</string>
+    <string name="batch_reason_sidecar_dates">its XMP sidecar already holds a capture time, so it was kept</string>
     <string name="batch_reason_plan_failed">the change couldn\'t be prepared for this photo</string>
     <string name="batch_reason_folder_unavailable">the copy couldn\'t be created in the chosen folder</string>
 

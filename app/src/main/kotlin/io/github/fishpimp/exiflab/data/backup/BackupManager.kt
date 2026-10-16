@@ -18,6 +18,10 @@ data class PruneResult(val deletedFiles: Int, val freedBytes: Long)
  * Keeps the backup folder in line with the edit journal and the user's retention setting:
  * prunes by age and size (see [BackupPruner]), removes files no record needs, and deletes
  * backups on request. Backups of saves in progress are never touched.
+ *
+ * History goes with the backups: an edit records the values it changed (the position a
+ * "Remove location" took out), so once its backup is gone and the retention period has passed,
+ * the record is deleted too, and [clearHistory] deletes all of it.
  */
 class BackupManager(
     private val dao: EditHistoryDao,
@@ -47,10 +51,12 @@ class BackupManager(
         withContext(ioDispatcher) {
             // List files before reading the journal: a backup created after this listing is not
             // seen at all, and one created before it belongs to a record that is already stored.
+            // Pending ids are read before the records: a save still pending then is protected, and
+            // one that committed before it is read stored its backup path first.
             val files = store.files()
             val partials = store.partialFiles()
-            val records = dao.recordsWithBackup()
             val pendingIds = dao.pendingRecordIds().toSet()
+            val records = dao.recordsWithBackup()
             val byPath = records.associateBy { it.backupPath!! }
             val sizes = files.associate { it.path to it.size }
 
@@ -66,8 +72,11 @@ class BackupManager(
             files.filter { it.path !in byPath && store.idOf(it.path) !in pendingIds }.forEach { remove(it.path, it.size) }
             partials.filter { store.idOf(it.path) !in pendingIds }.forEach { remove(it.path, it.size) }
 
-            // Records whose backup vanished from disk can no longer restore; forget the path.
-            val missing = records.filter { it.state != EditState.Pending && it.backupPath!! !in sizes }.map { it.backupPath!! }
+            // Records whose backup vanished from disk can no longer restore; forget the path. A
+            // backup written after the listing is not in it, so the disk has the final say.
+            val missing = records
+                .filter { it.state != EditState.Pending && it.backupPath!! !in sizes && !runCatching { store.exists(it.backupPath) }.getOrDefault(false) }
+                .map { it.backupPath!! }
 
             val candidates = records.mapNotNull { record ->
                 val path = record.backupPath!!
@@ -83,9 +92,31 @@ class BackupManager(
             val selected = BackupPruner.select(candidates, retention(), sizeCapBytes, clock())
             selected.forEach { remove(it, sizes[it] ?: 0L) }
             dao.clearBackupPaths(selected + missing)
+            retention().millis?.let { period ->
+                val cutoff = clock() - period
+                dao.deleteSettledRecordsBefore(cutoff)
+                dao.deleteEmptyBatchesBefore(cutoff)
+            }
             store.refreshUsage()
             PruneResult(deleted, freed)
         }
+    }
+
+    /**
+     * Deletes the edit history (every edit but saves in progress, with the values they changed)
+     * and, since an edit without its record cannot be restored, every backup but those of saves
+     * in progress.
+     */
+    suspend fun clearHistory(): PruneResult {
+        val result = deleteAll()
+        mutex.withLock {
+            withContext(ioDispatcher) {
+                dao.deleteAllSettledRecords()
+                // A batch created moments ago may be about to get its first record.
+                dao.deleteEmptyBatchesBefore(clock() - RECENT_BATCH_MS)
+            }
+        }
+        return result
     }
 
     /**
@@ -121,5 +152,9 @@ class BackupManager(
             if (gone) dao.updateRecord(record.copy(backupPath = null))
             gone
         }
+    }
+
+    private companion object {
+        const val RECENT_BATCH_MS = 10L * 60 * 1000
     }
 }

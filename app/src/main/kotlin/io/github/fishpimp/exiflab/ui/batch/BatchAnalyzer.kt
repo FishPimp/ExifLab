@@ -9,6 +9,7 @@ import io.github.fishpimp.exiflab.data.batch.BatchRouting
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
+import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import kotlinx.coroutines.CancellationException
@@ -44,7 +45,7 @@ enum class PreviewOutcome {
 /** A planner warning shared by [count] photos. [text] is the planner's (English) text unless the kind is known. */
 @Immutable
 data class WarningCount(val kind: Kind, val count: Int, val text: String? = null) {
-    enum class Kind { NoCaptureDate, Other }
+    enum class Kind { NoCaptureDate, OtherTimeZone, Other }
 }
 
 /** The first photo's planned changes, as an example of what every photo gets. */
@@ -177,8 +178,11 @@ class BatchAnalyzer(
     private fun skipReason(ref: PhotoRef, format: ImageFormat?, kind: BatchKind): BatchItemReason? =
         BatchRouting.route(ref, format, kind, canWrite, hasCopyFolder = true).reason
 
-    private fun warningKey(text: String): Pair<WarningCount.Kind, String?> =
-        if (text.startsWith(NO_CAPTURE_DATE_PREFIX)) WarningCount.Kind.NoCaptureDate to null else WarningCount.Kind.Other to text
+    private fun warningKey(text: String): Pair<WarningCount.Kind, String?> = when {
+        text.startsWith(NO_CAPTURE_DATE_PREFIX) -> WarningCount.Kind.NoCaptureDate to null
+        text == DefaultChangePlanner.OTHER_ZONE_WARNING -> WarningCount.Kind.OtherTimeZone to null
+        else -> WarningCount.Kind.Other to text
+    }
 
     private fun summarize(
         outcomes: Array<PreviewOutcome>,

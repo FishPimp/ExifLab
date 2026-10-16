@@ -25,6 +25,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.mapLatest
@@ -134,6 +135,20 @@ class FolderRepository(
             cursor?.close()
         }
     }.flowOn(ioDispatcher)
+
+    /** The tree URIs of the library's folders, whether their grants still hold or not. */
+    suspend fun grantedTreeUris(): Set<String> = store.items.first().mapTo(HashSet()) { it.treeUri }
+
+    /**
+     * Takes each library folder's grant again, which makes it the newest. Android drops the
+     * grants taken longest ago once an app holds too many, and a folder's grant would otherwise
+     * date from the day it was added. Folders whose grant is gone stay [FolderAccess.Lost].
+     */
+    suspend fun refreshGrants() = withContext(ioDispatcher) {
+        store.items.first().forEach { folder ->
+            runCatching { resolver.tryPersistAccess(folder.treeUri.toUri(), includeWrite = true) }
+        }
+    }
 
     private suspend fun grant(treeUri: Uri, replacing: String?): GrantedFolder = withContext(ioDispatcher) {
         val folder = mapAccessErrors(PhotoAccessError.ReadFailed) {

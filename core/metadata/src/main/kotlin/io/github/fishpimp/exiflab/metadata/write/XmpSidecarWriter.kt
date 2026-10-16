@@ -29,4 +29,30 @@ class XmpSidecarWriter : SidecarWriter {
         XmpPackets.apply(meta, changes.xmp)
         output.write(XmpPackets.serializeSidecar(meta))
     }
+
+    companion object {
+        /** XMP properties that hold when a photo was taken, as [Pair]s of namespace and name. */
+        private val CAPTURE_DATES = listOf(
+            "http://ns.adobe.com/exif/1.0/" to "DateTimeOriginal",
+            "http://ns.adobe.com/exif/1.0/" to "DateTimeDigitized",
+            "http://ns.adobe.com/xap/1.0/" to "CreateDate",
+            "http://ns.adobe.com/photoshop/1.0/" to "DateCreated",
+        )
+
+        /**
+         * True when [sidecar] records a capture date. Such a date wins over the RAW file's in
+         * other apps and may differ from it, so dates worked out from the RAW file's own
+         * ([io.github.fishpimp.exiflab.metadata.edit.EditPlan.datesFromFile]) must not replace it.
+         * An unreadable sidecar counts as recording one.
+         */
+        fun recordsCaptureDate(sidecar: ByteArray): Boolean {
+            if (sidecar.all { it.toInt().toChar().isWhitespace() }) return false
+            val meta = try {
+                XmpPackets.parse(sidecar)
+            } catch (_: Exception) {
+                return true
+            }
+            return CAPTURE_DATES.any { (namespace, name) -> runCatching { meta.doesPropertyExist(namespace, name) }.getOrDefault(false) }
+        }
+    }
 }

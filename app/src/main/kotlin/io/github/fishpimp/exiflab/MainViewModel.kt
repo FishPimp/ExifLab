@@ -9,7 +9,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import io.github.fishpimp.exiflab.data.batch.BatchNotifications
 import io.github.fishpimp.exiflab.data.photos.OpenResult
 import io.github.fishpimp.exiflab.data.photos.PhotoAccessError
-import io.github.fishpimp.exiflab.data.photos.PhotoOrigin
 import io.github.fishpimp.exiflab.data.photos.PhotoRepository
 import io.github.fishpimp.exiflab.data.photos.sharedStreamUris
 import io.github.fishpimp.exiflab.ui.navigation.ExternalOpen
@@ -97,7 +96,7 @@ class MainViewModel(private val photoRepository: PhotoRepository) : ViewModel() 
                 null
             }
             try {
-                when (val result = photoRepository.open(uris, PhotoOrigin.Share)) {
+                when (val result = photoRepository.openShared(uris)) {
                     is OpenResult.Opened -> _pendingOpen.value = ExternalOpen(System.nanoTime(), result.refs)
                     is OpenResult.Failed -> _failures.send(ShareFailure(result.error, closeApp = isLaunch))
                 }

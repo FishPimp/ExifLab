@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.metadata.edit
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.model.MetadataReport
 import io.github.fishpimp.exiflab.metadata.model.Rational
+import io.github.fishpimp.exiflab.metadata.model.SensitivityCategory
 import io.github.fishpimp.exiflab.metadata.summary.MetadataDates
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
 import io.github.fishpimp.exiflab.metadata.write.ExifValue
@@ -32,7 +33,17 @@ class DefaultChangePlanner : ChangePlanner {
         val state = WorkingMetadata(report)
         val steps = PlanSteps(state)
         for (operation in operations) steps.apply(operation)
-        return EditPlan(state.changes(), state.diff(), state.warnings.distinct())
+        val relative = operations.any { it is EditOperation.ShiftCaptureTime || it is EditOperation.ChangeTimeZone || it is EditOperation.SetUtcOffset }
+        val changes = state.changes()
+        return EditPlan(changes, state.diff(), state.warnings.distinct(), datesFromFile = relative && !changes.isEmpty)
+    }
+
+    companion object {
+        /**
+         * The [EditPlan.warnings] entry of a [EditOperation.ChangeTimeZone] that leaves a photo
+         * alone because its capture time records a UTC offset other than the camera zone's.
+         */
+        const val OTHER_ZONE_WARNING = "The photo already records a different UTC offset; its time was not converted"
     }
 }
 
@@ -69,7 +80,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         Modify(ExifIfd.Primary, ExifTags.DATE_TIME, ExifTags.SUB_SEC_TIME, ExifTags.OFFSET_TIME),
     }
 
-    private enum class DateRole { Original, Digitized, Modify }
+    private enum class DateRole(val exifSlot: ExifDateSlot) { Original(ExifDateSlot.Original), Digitized(ExifDateSlot.Digitized), Modify(ExifDateSlot.Modify) }
 
     private class XmpDateSlot(val name: XmpName, val role: DateRole)
 
@@ -77,6 +88,9 @@ internal class PlanSteps(private val state: WorkingMetadata) {
 
     private fun readExifDate(slot: ExifDateSlot): LocalDateTime? =
         MetadataDates.parseExif(state.exifRaw(slot.ifd, slot.dateTag), state.exifRaw(ExifIfd.Exif, slot.subSecTag))?.local
+
+    /** The UTC offset recorded for the slot's date (OffsetTime*), if any. */
+    private fun readExifOffset(slot: ExifDateSlot): ZoneOffset? = EditDates.parseOffset(state.exifRaw(ExifIfd.Exif, slot.offsetTag))
 
     /**
      * Writes [local] to the slot's date tag and its sub-seconds. With [dropStaleSubSeconds] an
@@ -142,7 +156,10 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             if (slot.role == DateRole.Modify && !operation.alsoModifyDate) continue
             val current = state.xmpValue(slot.name) ?: continue
             val parsed = EditDates.parseXmp(current)
-            val written = EditDates.xmpDateTime(local, offset ?: parsed?.offset, zulu = offset == null && parsed?.zulu == true)
+            // "Z" marks a value converted to UTC, not the zone of the wall time being set: the
+            // photo's own recorded offset, or none, describes [local] instead.
+            val kept = if (parsed?.zulu == true) readExifOffset(slot.role.exifSlot) ?: readExifOffset(ExifDateSlot.Original) else parsed?.offset
+            val written = EditDates.xmpDateTime(local, offset ?: kept)
             state.setXmp(slot.name, XmpShape.Simple, listOf(EditDates.formatXmp(written)))
         }
         for (slot in IPTC_DATES) {
@@ -225,7 +242,23 @@ internal class PlanSteps(private val state: WorkingMetadata) {
 
     private fun changeTimeZone(cameraZone: ZoneId, actualZone: ZoneId) {
         // Wall times are read in the camera's zone (a time in a DST gap moves forward, an ambiguous one takes the earlier offset).
-        fun convert(local: LocalDateTime): ZonedDateTime = ZonedDateTime.ofLocal(local, cameraZone, null).withZoneSameInstant(actualZone)
+        fun cameraTime(local: LocalDateTime): ZonedDateTime = ZonedDateTime.ofLocal(local, cameraZone, null)
+        fun convert(local: LocalDateTime): ZonedDateTime = cameraTime(local).withZoneSameInstant(actualZone)
+
+        // A value with a recorded offset is a known instant ("Z" included): it is only shown in the actual zone.
+        fun convert(local: LocalDateTime, recorded: ZoneOffset?): ZonedDateTime =
+            if (recorded == null) convert(local) else local.atOffset(recorded).atZoneSameInstant(actualZone)
+
+        // A capture time recorded with another offset was not taken by a clock set to the camera's
+        // zone (a phone that set itself, or a photo already converted): converting it would move it.
+        val capture = ExifDateSlot.entries.firstNotNullOfOrNull { slot -> readExifDate(slot)?.let { it to readExifOffset(slot) } }
+        if (capture != null) {
+            val (local, recorded) = capture
+            if (recorded != null && recorded != cameraTime(local).offset && recorded !in cameraZone.rules.getValidOffsets(local)) {
+                state.warnings += DefaultChangePlanner.OTHER_ZONE_WARNING
+                return
+            }
+        }
 
         val anchor = captureAnchor()
         var found = false
@@ -233,7 +266,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         for (slot in ExifDateSlot.entries) {
             val local = readExifDate(slot) ?: continue
             found = true
-            val converted = convert(local)
+            val converted = convert(local, readExifOffset(slot))
             writeExifDate(slot, converted.toLocalDateTime(), dropStaleSubSeconds = false)
             writeExifOffset(slot, converted.offset)
             wroteOffset = true
@@ -243,7 +276,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             val parsed = EditDates.parseXmp(state.xmpValue(slot.name)) ?: continue
             found = true
             val written = if (parsed.hasTime) {
-                val converted = convert(parsed.local)
+                val converted = convert(parsed.local, parsed.offset)
                 parsed.copy(local = converted.toLocalDateTime(), offset = converted.offset, zulu = false)
             } else {
                 parsed.copy(local = shiftDate(parsed.local.toLocalDate(), anchor) { convert(it).toLocalDateTime() }.atStartOfDay())
@@ -256,7 +289,7 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             val timeDate = date ?: anchor?.toLocalDate()
             when {
                 time != null && timeDate != null -> {
-                    val converted = convert(timeDate.atTime(time.first))
+                    val converted = convert(timeDate.atTime(time.first), time.second)
                     if (date != null) state.setIptc(slot.dateDataset, listOf(EditDates.formatIptcDate(converted.toLocalDate())))
                     state.setIptc(slot.timeDataset, listOf(EditDates.formatIptcTime(converted.toLocalTime(), converted.offset)))
                 }
@@ -282,7 +315,9 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             val parsed = EditDates.parseXmp(state.xmpValue(slot.name)) ?: continue
             if (!parsed.hasTime) continue
             found = true
-            state.setXmp(slot.name, XmpShape.Simple, listOf(EditDates.formatXmp(parsed.copy(offset = offset, zulu = false))))
+            // A "Z" value holds UTC, not the local time: it keeps its instant, shown at the new offset.
+            val local = if (parsed.zulu) parsed.local.atOffset(ZoneOffset.UTC).withOffsetSameInstant(offset).toLocalDateTime() else parsed.local
+            state.setXmp(slot.name, XmpShape.Simple, listOf(EditDates.formatXmp(parsed.copy(local = local, offset = offset, zulu = false))))
         }
         for (slot in IPTC_DATES) {
             val time = EditDates.parseIptcTime(state.iptcValues(slot.timeDataset)?.firstOrNull()) ?: continue
@@ -370,6 +405,9 @@ internal class PlanSteps(private val state: WorkingMetadata) {
         // A report with parse problems may not show a GPS IFD that is there, so it is dropped regardless.
         if (state.hasIfd(ExifIfd.Gps) || state.originalExif.keys.any { it.ifd == ExifIfd.Gps } || state.uncertain) state.dropIfd(ExifIfd.Gps)
         state.xmp.keys.filter { it.namespace == XmpNs.EXIF && it.name.startsWith("GPS") }.forEach(state::removeXmp)
+        // Vendor positions (DJI drone-dji:GpsLatitude, altitudes) and anything else XMP classifies as a location.
+        state.xmp.keys.filter { (includePlaceNames || it !in PLACE_XMP) && state.xmpSensitivity(it) == SensitivityCategory.Location }
+            .forEach(state::removeXmp)
         if (includePlaceNames) {
             PLACE_XMP.forEach(state::removeXmp)
             PLACE_IPTC.forEach { state.removeIptc(it) }
@@ -488,7 +526,10 @@ internal class PlanSteps(private val state: WorkingMetadata) {
             XmpName(XmpNs.IPTC_CORE, "Location"), XmpName(XmpNs.IPTC_CORE, "CountryCode"),
             XmpName(XmpNs.IPTC_EXT, "LocationCreated"), XmpName(XmpNs.IPTC_EXT, "LocationShown"),
         )
-        val PLACE_IPTC = listOf(IptcTags.CITY, IptcTags.SUB_LOCATION, IptcTags.PROVINCE_STATE, IptcTags.COUNTRY_CODE, IptcTags.COUNTRY_NAME)
+        val PLACE_IPTC = listOf(
+            IptcTags.CITY, IptcTags.SUB_LOCATION, IptcTags.PROVINCE_STATE, IptcTags.COUNTRY_CODE, IptcTags.COUNTRY_NAME,
+            IptcTags.CONTENT_LOCATION_CODE, IptcTags.CONTENT_LOCATION_NAME,
+        )
 
         /** Positions closer than this (degrees, about 1 cm) count as unchanged. */
         const val SAME_POSITION = 1e-7

@@ -52,6 +52,8 @@ class PlaceSearchRepositoryTest {
         assertThat(url.queryParameter("q")).isEqualTo("Stockholm")
         assertThat(url.queryParameter("limit")).isEqualTo("8")
         assertThat(url.queryParameterNames).doesNotContain("lang")
+        // The search text must not end up in an HTTP cache on disk.
+        assertThat(requests.single().cacheControl.noStore).isTrue()
     }
 
     @Test

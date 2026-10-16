@@ -2,7 +2,9 @@ package io.github.fishpimp.exiflab.metadata.write.sidecar
 
 import com.adobe.internal.xmp.XMPException
 import com.adobe.internal.xmp.XMPMeta
+import com.adobe.internal.xmp.options.IteratorOptions
 import com.adobe.internal.xmp.options.PropertyOptions
+import com.adobe.internal.xmp.properties.XMPPropertyInfo
 import io.github.fishpimp.exiflab.metadata.model.Rational
 import io.github.fishpimp.exiflab.metadata.write.ExifChange
 import io.github.fishpimp.exiflab.metadata.write.ExifIfd
@@ -54,11 +56,24 @@ internal class ExifToXmp(private val meta: XMPMeta) {
                 }
             }
         }
+        // Removing the GPS IFD pointer drops the whole GPS IFD; its XMP form is every exif:GPS* property.
+        // Done first, so GPS tags set in the same changes (a new location) are written afterwards.
+        if ((ExifIfd.Primary to GPS_IFD_POINTER) in removes) removeGpsProperties()
         for ((key, value) in sets) MAPPING[key]?.forEach { target -> write(target, value) }
         for (key in removes) MAPPING[key]?.forEach { target -> meta.deleteProperty(target.namespace, target.name) }
         if (touched(ExifIfd.Exif, FLASH)) flash()
         dates()
         gps()
+    }
+
+    private fun removeGpsProperties() {
+        val names = mutableListOf<String>()
+        val properties = meta.iterator(Ns.EXIF, null, IteratorOptions().setJustChildren(true).setOmitQualifiers(true))
+        while (properties.hasNext()) {
+            val path = (properties.next() as? XMPPropertyInfo)?.path ?: continue
+            if (path.substringAfter(':').startsWith("GPS")) names += path
+        }
+        names.forEach { meta.deleteProperty(Ns.EXIF, it) }
     }
 
     private fun touched(ifd: ExifIfd, vararg tags: Int) = tags.any { (ifd to it) in sets || (ifd to it) in removes }
@@ -187,6 +202,7 @@ internal class ExifToXmp(private val meta: XMPMeta) {
         private val DATE = Regex("""\d{4}-\d{2}-\d{2}""")
 
         private const val FLASH = 0x9209
+        private const val GPS_IFD_POINTER = 0x8825
         private const val GPS_VERSION = 0x0000
         private const val LATITUDE_REF = 0x0001
         private const val LATITUDE = 0x0002

@@ -121,6 +121,12 @@ enum class BatchItemReason {
 
     /** The save pipeline failed; see [BatchJobItem.saveError]. */
     SaveFailed,
+
+    /** Fix time zone: the photo records a UTC offset other than the camera zone's, so its time is already right. */
+    AlreadyHasOtherZone,
+
+    /** A relative date change for a photo whose sidecar records its own capture date, see [io.github.fishpimp.exiflab.data.save.SaveRejection.SidecarHasDates]. */
+    SidecarHasDates,
 }
 
 /**
@@ -130,6 +136,8 @@ enum class BatchItemReason {
  * @property recordId the History record of the save, once saved.
  * @property targetUri the copy or sidecar that was (or is being) written; for a copy it is set as
  *   soon as the empty document is created, so an interrupted run can clean it up.
+ * @property notes for a written photo, the changes its file type could not hold, one per line
+ *   (in English, from the writer); null when everything was stored.
  */
 @Entity(
     tableName = "batch_job_items",
@@ -156,7 +164,11 @@ data class BatchJobItem(
     val recordId: String? = null,
     val targetUri: String? = null,
     val finishedAt: Long? = null,
+    val notes: String? = null,
 ) {
+    /** The lines of [notes]. */
+    val noteLines: List<String> get() = notes?.lines()?.filter { it.isNotBlank() }.orEmpty()
+
     fun photoRef(): PhotoRef = PhotoRef(
         uri = photoUri,
         displayName = displayName,

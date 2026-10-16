@@ -101,6 +101,7 @@ fun RefusalReason.message(resources: Resources): String = when (this) {
             ?: resources.getString(R.string.share_clean_reason_unsupported_unknown)
     RefusalReason.Unreadable -> resources.getString(R.string.share_clean_reason_unreadable)
     RefusalReason.WriteFailed -> resources.getString(R.string.share_clean_reason_write_failed)
+    RefusalReason.EmbeddedExtras -> resources.getString(R.string.share_clean_reason_embedded_extras)
     is RefusalReason.StillContains -> resources.getString(
         R.string.share_clean_reason_still_contains,
         kinds.joinToString(LIST_SEPARATOR) { it.plainPhrase(resources) },

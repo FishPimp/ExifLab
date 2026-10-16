@@ -137,6 +137,13 @@ data class EditPlan(
     val diff: List<FieldDiff>,
     /** Problems the user should know about, e.g. "No capture date to shift". English. */
     val warnings: List<String> = emptyList(),
+    /**
+     * True when the dates in [changes] were worked out from the photo's own dates (a shift, a
+     * time zone fix, a UTC offset). Written to a sidecar that already records other dates (one
+     * corrected in Lightroom, or by an earlier shift) they would be wrong, see
+     * [io.github.fishpimp.exiflab.metadata.write.XmpSidecarWriter.recordsCaptureDate].
+     */
+    val datesFromFile: Boolean = false,
 )
 
 /** Plans [EditOperation]s against a file's current metadata. Pure and deterministic. */

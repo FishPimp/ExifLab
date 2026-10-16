@@ -3,6 +3,7 @@ package io.github.fishpimp.exiflab.metadata.write
 import com.adobe.internal.xmp.XMPMeta
 import com.adobe.internal.xmp.XMPMetaFactory
 import com.google.common.truth.Truth.assertThat
+import com.google.common.truth.Truth.assertWithMessage
 import io.github.fishpimp.exiflab.metadata.fixtures.Photos
 import io.github.fishpimp.exiflab.metadata.write.WriteFixtures.ascii
 import io.github.fishpimp.exiflab.metadata.write.WriteFixtures.rationals
@@ -20,6 +21,21 @@ class SidecarWriterTest {
     }
 
     private fun XMPMeta.text(namespace: String, name: String): String? = getPropertyString(namespace, name)
+
+    @Test fun tellsWhetherASidecarRecordsACaptureDate() {
+        fun packet(body: String) = (
+            "<x:xmpmeta xmlns:x=\"adobe:ns:meta/\"><rdf:RDF xmlns:rdf=\"http://www.w3.org/1999/02/22-rdf-syntax-ns#\">" +
+                "<rdf:Description rdf:about=\"\" xmlns:exif=\"http://ns.adobe.com/exif/1.0/\" xmlns:xmp=\"http://ns.adobe.com/xap/1.0/\" " +
+                "xmlns:crs=\"http://ns.adobe.com/camera-raw-settings/1.0/\" $body/></rdf:RDF></x:xmpmeta>"
+            ).toByteArray()
+
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("exif:DateTimeOriginal=\"2024-05-01T11:00:00\""))).isTrue()
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("xmp:CreateDate=\"2024-05-01T11:00:00\""))).isTrue()
+        assertThat(XmpSidecarWriter.recordsCaptureDate(packet("crs:Exposure2012=\"+0.50\""))).isFalse()
+        assertThat(XmpSidecarWriter.recordsCaptureDate("  \n".toByteArray())).isFalse()
+        // Unreadable: assume it does, rather than overwrite what may be there.
+        assertThat(XmpSidecarWriter.recordsCaptureDate("<x:xmpmeta".toByteArray())).isTrue()
+    }
 
     @Test fun mapsExifChangesToXmp() {
         val (text, meta) = sidecar(
@@ -147,6 +163,35 @@ class SidecarWriterTest {
         assertThat(meta.doesPropertyExist(EXIF, "GPSLatitude")).isFalse()
         assertThat(meta.doesPropertyExist(EXIF, "GPSLongitude")).isFalse()
         assertThat(meta.text(TIFF, "Make")).isEqualTo("Explicit")
+    }
+
+    @Test fun removingTheGpsIfdRemovesEveryGpsPropertyOfTheSidecar() {
+        val existing = """<x:xmpmeta xmlns:x="adobe:ns:meta/"><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+            <rdf:Description rdf:about="" xmlns:exif="http://ns.adobe.com/exif/1.0/" xmlns:xmp="http://ns.adobe.com/xap/1.0/"
+              exif:GPSLatitude="59,19.75N" exif:GPSLongitude="18,4.1167E" exif:GPSAltitude="125/10" exif:GPSAltitudeRef="0"
+              exif:GPSTimeStamp="2024-05-01T12:30:15Z" exif:GPSVersionID="2.3.0.0" exif:GPSMapDatum="WGS-84"
+              exif:FNumber="18/10" xmp:Rating="3"/></rdf:RDF></x:xmpmeta>"""
+        // What the planner makes of Remove location for a RAW file: the GPS IFD pointer goes.
+        val (_, meta) = sidecar(existing, MetadataChanges(exif = listOf(ExifChange.Remove(ExifIfd.Primary, 0x8825))))
+        for (name in listOf("GPSLatitude", "GPSLongitude", "GPSAltitude", "GPSAltitudeRef", "GPSTimeStamp", "GPSVersionID", "GPSMapDatum")) {
+            assertWithMessage(name).that(meta.doesPropertyExist(EXIF, name)).isFalse()
+        }
+        assertThat(meta.text(EXIF, "FNumber")).isEqualTo("18/10")
+        assertThat(meta.text(XMP, "Rating")).isEqualTo("3")
+
+        // A new location in the same changes replaces the old one rather than being removed with it.
+        val (_, moved) = sidecar(
+            existing,
+            MetadataChanges(
+                exif = listOf(
+                    ExifChange.Remove(ExifIfd.Primary, 0x8825),
+                    ascii(ExifIfd.Gps, 0x0001, "S"),
+                    set(ExifIfd.Gps, 0x0002, rationals(33L to 1L, 51L to 1L, 2160L to 100L)),
+                ),
+            ),
+        )
+        assertThat(moved.text(EXIF, "GPSLatitude")).isEqualTo("33,51.3600S")
+        assertThat(moved.doesPropertyExist(EXIF, "GPSLongitude")).isFalse()
     }
 
     @Test fun mapsIptcChangesAndHandlesXmpRemoval() {

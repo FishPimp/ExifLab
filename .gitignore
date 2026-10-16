@@ -12,6 +12,8 @@ build/
 *.aab
 *.keystore
 *.jks
+# Release signing secrets, see README.md.
+/keystore.properties
 
 # Agent worktrees
 /.claude/worktrees/

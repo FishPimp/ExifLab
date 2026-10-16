@@ -38,10 +38,18 @@ interface DocumentAccess {
     /** The display name the provider reports, when it reports one. */
     fun displayName(uri: String): String?
 
-    /** The child named [name] of the folder [parentDocumentUri] (a tree document URI), or null. */
+    /**
+     * The child named [name] of the folder [parentDocumentUri] (a tree document URI), or null.
+     * Shared storage ignores case, so "IMG_1.XMP" is found for "IMG_1.xmp"; an exact match wins.
+     */
     fun findChild(parentDocumentUri: String, name: String): String?
 
-    /** Creates an empty document named [name] in [parentDocumentUri]; returns its URI. */
+    /**
+     * Creates an empty document named [name] in [parentDocumentUri]; returns its URI. Throws
+     * [TargetUnavailableException] when the provider would only create it under another name
+     * (such as "IMG_1 (1).xmp" because "IMG_1.XMP" exists), which no other app would look for;
+     * an extension it appends to match [mimeType] is accepted.
+     */
     fun createChild(parentDocumentUri: String, name: String, mimeType: String): String
 }
 
@@ -127,19 +135,23 @@ class ContentResolverDocuments(private val resolver: ContentResolver) : Document
     override fun findChild(parentDocumentUri: String, name: String): String? {
         val parent = parentDocumentUri.toUri()
         if (parent.scheme == ContentResolver.SCHEME_FILE) {
-            return File(requireNotNull(parent.path), name).takeIf { it.isFile }?.toUri()?.toString()
+            val files = File(requireNotNull(parent.path)).listFiles()?.filter { it.isFile }.orEmpty()
+            val match = files.firstOrNull { it.name == name } ?: files.firstOrNull { it.name.equals(name, ignoreCase = true) }
+            return match?.toUri()?.toString()
         }
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(parent, DocumentsContract.getDocumentId(parent))
         val projection = arrayOf(DocumentsContract.Document.COLUMN_DOCUMENT_ID, DocumentsContract.Document.COLUMN_DISPLAY_NAME)
-        return resolver.query(children, projection, null, null, null)?.use { cursor ->
+        val id = resolver.query(children, projection, null, null, null)?.use { cursor ->
+            var other: String? = null
             while (cursor.moveToNext()) {
-                if (cursor.stringAt(DocumentsContract.Document.COLUMN_DISPLAY_NAME) == name) {
-                    val id = cursor.stringAt(DocumentsContract.Document.COLUMN_DOCUMENT_ID) ?: continue
-                    return@use DocumentsContract.buildDocumentUriUsingTree(parent, id).toString()
-                }
+                val childName = cursor.stringAt(DocumentsContract.Document.COLUMN_DISPLAY_NAME) ?: continue
+                val childId = cursor.stringAt(DocumentsContract.Document.COLUMN_DOCUMENT_ID) ?: continue
+                if (childName == name) return@use childId
+                if (other == null && childName.equals(name, ignoreCase = true)) other = childId
             }
-            null
+            other
         }
+        return id?.let { DocumentsContract.buildDocumentUriUsingTree(parent, it).toString() }
     }
 
     override fun createChild(parentDocumentUri: String, name: String, mimeType: String): String {
@@ -153,8 +165,14 @@ class ContentResolverDocuments(private val resolver: ContentResolver) : Document
             DocumentsContract.createDocument(resolver, parent, mimeType, name)
         } catch (e: Exception) {
             throw TargetUnavailableException("Cannot create $name", e)
+        } ?: throw TargetUnavailableException("Provider did not create $name")
+        // An extension the provider adds to match the MIME type is fine; a " (1)" for a name taken in another case is not.
+        val createdName = displayName(created.toString())
+        if (createdName != null && !createdName.startsWith(name, ignoreCase = true)) {
+            runCatching { DocumentsContract.deleteDocument(resolver, created) }
+            throw TargetUnavailableException("The provider renamed the new document")
         }
-        return created?.toString() ?: throw TargetUnavailableException("Provider did not create $name")
+        return created.toString()
     }
 
     private fun Cursor.stringAt(column: String): String? =

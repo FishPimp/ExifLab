@@ -1,7 +1,10 @@
 package io.github.fishpimp.exiflab.data.batch
 
 import io.github.fishpimp.exiflab.data.photos.PhotoRef
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.withContext
 import java.util.UUID
 
 /** Starts background processing of a job; WorkManager in the app, a fake in tests. */
@@ -12,12 +15,16 @@ fun interface BatchScheduling {
 /**
  * Batch jobs as the UI sees them: a selection becomes a [BatchJobState.Draft] (so navigation only
  * carries its id), the editor starts it, and the progress and summary screens observe it.
+ *
+ * @param inputs where shared photos are copied when their job starts, see [BatchInputStore].
  */
 class BatchJobRepository(
     private val dao: () -> BatchJobDao,
     private val scheduler: BatchScheduling,
+    private val inputs: BatchInputStore? = null,
     private val clock: () -> Long = System::currentTimeMillis,
     private val newId: () -> String = { UUID.randomUUID().toString() },
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     /** Stores [refs] (duplicates dropped, order kept) as a new draft and returns its id. */
     suspend fun createDraft(refs: List<PhotoRef>): String {
@@ -48,9 +55,16 @@ class BatchJobRepository(
 
     /**
      * Starts draft [id] with [operation], saving copies of read-only photos to [copyFolderUri]
-     * (or skipping them without one). False when the job was already started.
+     * (or skipping them without one). False when the job was already started. Shared photos are
+     * copied into the [inputs] first, because the share's access ends with the screen that got it.
      */
     suspend fun start(id: String, operation: BatchOperation, title: String, copyFolderUri: String?): Boolean {
+        val store = inputs
+        if (store != null && dao().job(id)?.state == BatchJobState.Draft) {
+            val items = dao().items(id)
+            val staged = withContext(ioDispatcher) { store.stage(id, items) }
+            staged.zip(items).forEach { (new, old) -> if (new != old) dao().updateItem(new) }
+        }
         val started = dao().start(id, BatchOperation.encode(operation), title, copyFolderUri) > 0
         if (started) scheduler.enqueue(id)
         return started
@@ -59,8 +73,12 @@ class BatchJobRepository(
     /** Asks the worker to stop after the photos in progress. */
     suspend fun cancel(id: String) = dao().requestCancel(id)
 
-    /** Re-enqueues jobs a crash or update left queued or running; WorkManager keeps work it still has. */
+    /**
+     * Re-enqueues jobs a crash or update left queued or running; WorkManager keeps work it still
+     * has. Copies of shared photos left by jobs that ended (or are gone) are deleted.
+     */
     suspend fun resumeUnfinished() {
+        inputs?.let { store -> withContext(ioDispatcher) { store.releaseJobsUnless { id -> dao().job(id)?.state?.isDone == false } } }
         dao().activeJobs().forEach { scheduler.enqueue(it.id) }
     }
 

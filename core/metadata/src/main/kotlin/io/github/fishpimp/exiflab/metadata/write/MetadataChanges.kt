@@ -115,6 +115,14 @@ enum class MetadataBlock {
     IccProfile,
     /** JPEG COM comments and PNG text chunks (tEXt, zTXt, non-XMP iTXt). */
     Comments,
+
+    /**
+     * What a copy for sharing leaves out besides metadata, see [EmbeddedExtras]: everything after a
+     * JPEG's primary image (Motion Photo video, vendor trailers, MPF secondary images such as Ultra
+     * HDR gain maps) with its MPF index and the XMP that points at it, and bytes after a PNG's IEND.
+     * The image data digest then covers the primary image only. Other formats ignore it.
+     */
+    EmbeddedMedia,
 }
 
 /**

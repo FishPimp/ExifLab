@@ -306,7 +306,7 @@
     <string name="history_action_delete_backup">Radera säkerhetskopian</string>
     <string name="history_action_view_edit">Visa den redigeringen</string>
     <string name="history_restore_title">Återställa originalet?</string>
-    <string name="history_restore_body">%1$s återställs exakt som den var före den här redigeringen. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</string>
+    <string name="history_restore_body">%1$s återställs exakt som den var före den här redigeringen, så senare ändringar av den, även från andra appar, tas också bort. Den nuvarande versionen säkerhetskopieras först, så att du kan ångra.</string>
     <string name="history_undo_restore_title">Ångra återställningen?</string>
     <string name="history_undo_restore_body">%1$s blir som den var före återställningen. Den nuvarande versionen säkerhetskopieras först.</string>
     <string name="history_delete_backup_title">Radera säkerhetskopian?</string>
@@ -376,6 +376,11 @@
     <string name="settings_backup_delete_all_title">Radera alla säkerhetskopior?</string>
     <string name="settings_backup_delete_all_confirm">Det frigör %1$s. Du kan inte längre återställa originalen till bilder som du redan har redigerat. Säkerhetskopior för pågående sparningar behålls.</string>
     <string name="settings_backup_delete_all_action">Radera alla</string>
+    <string name="settings_history_clear">Rensa redigeringshistoriken</string>
+    <string name="settings_history_clear_body">Historiken sparar värdena som varje redigering ändrade, till exempel en plats som du tog bort. Den raderas tillsammans med säkerhetskopiorna, eller nu.</string>
+    <string name="settings_history_clear_title">Rensa redigeringshistoriken?</string>
+    <string name="settings_history_clear_confirm">Alla avslutade redigeringar tas bort från historiken, med värdena de ändrade, och alla säkerhetskopior raderas. Du kan inte längre återställa originalen till bilder som du redan har redigerat. Pågående sparningar behålls.</string>
+    <string name="settings_history_clear_action">Rensa</string>
 
     <string name="palette_lagoon">Lagun</string>
     <string name="palette_citrus">Citrus</string>
@@ -395,11 +400,11 @@
     <string name="privacy_network_body">Bara två funktioner går ut på nätet, och bara medan du använder dem. Det här är de enda servrar som ExifLab någonsin kontaktar, och förfrågningarna innehåller ett kartområde eller din söktext, aldrig dina bilder eller deras metadata.</string>
     <string name="privacy_network_tiles">Kartbilder från OpenFreeMap, med data från OpenStreetMap, när en karta visas</string>
     <string name="privacy_network_search">Platssökning från Photon (Komoot), när du söker efter en plats</string>
-    <string name="privacy_network_offline">Offlineläget i Inställningar stänger av båda.</string>
+    <string name="privacy_network_offline">Offlineläget i Inställningar stänger av båda. Kartbilder som du har visat sparas på enheten i upp till 30 dagar så att kartor laddas snabbare. Sökningar sparas aldrig.</string>
     <string name="privacy_files_title">Bara filerna du väljer</string>
     <string name="privacy_files_body">ExifLab kan bara öppna bilder som du väljer, bilder som delas till appen och mappar som du ger åtkomst till. Du kan ta bort mappåtkomsten när som helst.</string>
     <string name="privacy_backups_title">Säkerhetskopior stannar på enheten</string>
-    <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen.</string>
+    <string name="privacy_backups_body">Innan en bild ändras kopieras originalet till ExifLabs privata lagring så att du kan återställa det. Säkerhetskopior raderas efter 30 dagar, eller när du avinstallerar appen. Historiken, som sparar värdena en redigering ändrade, försvinner med redigeringens säkerhetskopia, och du kan rensa den i Inställningar.</string>
     <string name="privacy_permissions_title">Behörigheter</string>
     <string name="privacy_permissions_body">Bilder och mappar öppnas via systemets bildväljare och mappåtkomst. Aviseringar visar förloppet för batchredigeringar. Internet används bara för kartor och platssökning, och nätverksstatus bara för att se om du är ansluten. ExifLab ber aldrig om din plats.</string>
 
@@ -484,6 +489,7 @@
     <string name="share_clean_reason_unsupported_unknown">Den här filtypen kan inte rensas</string>
     <string name="share_clean_reason_unreadable">Bilden kunde inte läsas</string>
     <string name="share_clean_reason_write_failed">Den rensade kopian kunde inte göras</string>
+    <string name="share_clean_reason_embedded_extras">Innehåller en video eller annan data utöver bilden som inte kan utelämnas, så den delas inte</string>
     <string name="share_clean_reason_still_contains">Innehöll fortfarande %1$s efter rensningen, så den delas inte</string>
     <plurals name="share_clean_too_many">
         <item quantity="one">Dela rensad tar %1$d bild åt gången. Markera färre för att fortsätta.</item>
@@ -862,6 +868,7 @@
     <string name="edit_failure_rolled_back">Filen återställdes exakt som den var.</string>
     <string name="edit_failure_read_only">Fotot kan inte ändras där det ligger. Spara det som en kopia i stället.</string>
     <string name="edit_failure_use_sidecar">RAW-filer ändras aldrig. Spara i en XMP-sidofil i stället.</string>
+    <string name="edit_failure_sidecar_dates">XMP-sidofilen har redan en tidpunkt för när bilden togs, som kan skilja sig från RAW-filens. En ändring utifrån RAW-filens tid skulle skriva över den, så inget sparades. Ange tiden i stället.</string>
     <string name="edit_failure_unsupported">ExifLab kan inte skriva den här filtypen. Spara i en XMP-sidofil i stället.</string>
     <string name="edit_failure_no_destination">Ingen plats valdes för sidofilen, så inget sparades.</string>
     <string name="edit_failure_no_plan">Det finns inget färdigt att spara än.</string>
@@ -881,6 +888,10 @@
     <plurals name="batch_count_written">
         <item quantity="one">%d skriven</item>
         <item quantity="other">%d skrivna</item>
+    </plurals>
+    <plurals name="batch_count_with_notes">
+        <item quantity="one">%d med ändringar som filtypen inte kunde lagra</item>
+        <item quantity="other">%d med ändringar som filtypen inte kunde lagra</item>
     </plurals>
     <plurals name="batch_count_skipped">
         <item quantity="one">%d överhoppad</item>
@@ -995,6 +1006,10 @@
         <item quantity="one">%d foto saknar fotodatum</item>
         <item quantity="other">%d foton saknar fotodatum</item>
     </plurals>
+    <plurals name="batch_warning_other_zone">
+        <item quantity="one">%d bild har redan en annan UTC-förskjutning och behåller sin tid</item>
+        <item quantity="other">%d bilder har redan en annan UTC-förskjutning och behåller sin tid</item>
+    </plurals>
     <plurals name="batch_warning_unreadable">
         <item quantity="one">%d foto kan inte läsas och kommer att misslyckas</item>
         <item quantity="other">%d foton kan inte läsas och kommer att misslyckas</item>
@@ -1040,6 +1055,8 @@
     <string name="batch_reason_no_sidecar_place">ingen mapp för XMP-sidofilen</string>
     <string name="batch_reason_cancelled">avbröts innan det var dess tur</string>
     <string name="batch_reason_unreadable">fotot kunde inte läsas</string>
+    <string name="batch_reason_other_zone">har redan en annan UTC-förskjutning, så tiden behölls</string>
+    <string name="batch_reason_sidecar_dates">dess XMP-sidofil har redan en tidpunkt för när bilden togs, så den behölls</string>
     <string name="batch_reason_plan_failed">ändringen kunde inte förberedas för det här fotot</string>
     <string name="batch_reason_folder_unavailable">kopian kunde inte skapas i den valda mappen</string>
 

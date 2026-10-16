@@ -12,6 +12,7 @@ import io.github.fishpimp.exiflab.data.save.SaveOutcome
 import io.github.fishpimp.exiflab.data.save.SaveTarget
 import io.github.fishpimp.exiflab.metadata.ImageFormat
 import io.github.fishpimp.exiflab.metadata.edit.ChangePlanner
+import io.github.fishpimp.exiflab.metadata.edit.DefaultChangePlanner
 import io.github.fishpimp.exiflab.metadata.edit.EditOperation
 import io.github.fishpimp.exiflab.metadata.edit.EditPlan
 import io.github.fishpimp.exiflab.metadata.edit.FieldDiff
@@ -64,6 +65,7 @@ internal object BatchPhotos {
 internal class BatchFakePlanner : ChangePlanner {
     override fun plan(report: MetadataReport, operations: List<EditOperation>): EditPlan {
         if (report.fileName.orEmpty().startsWith("same")) return EditPlan(MetadataChanges(), emptyList(), listOf("There is no capture date to shift"))
+        if (report.fileName.orEmpty().startsWith("zone")) return EditPlan(MetadataChanges(), emptyList(), listOf(DefaultChangePlanner.OTHER_ZONE_WARNING))
         return EditPlan(
             changes = MetadataChanges(removeBlocks = setOf(MetadataBlock.Xmp)),
             diff = listOf(FieldDiff("Artist", DirectoryGroup.Exif, null, "Maja")),
@@ -73,7 +75,7 @@ internal class BatchFakePlanner : ChangePlanner {
 
 /**
  * The save pipeline as the runner sees it. Writes nothing; photos named "fail*" fail after
- * journaling. Tracks how many saves run at once.
+ * journaling, and "notes*" are saved with writer notes. Tracks how many saves run at once.
  */
 internal class FakeBatchSaving(
     private val writable: Set<ImageFormat> = setOf(ImageFormat.Jpeg, ImageFormat.Png, ImageFormat.WebP),
@@ -120,7 +122,8 @@ internal class FakeBatchSaving(
                 failedCount++
                 return SaveOutcome.Failed(record.id, SaveError.WriteFailed)
             }
-            return SaveOutcome.Saved(record.id, mode, destination)
+            val skipped = if (ref.displayName.orEmpty().startsWith("notes")) listOf("IPTC", "MakerNote moved") else emptyList()
+            return SaveOutcome.Saved(record.id, mode, destination, skipped)
         } finally {
             active.decrementAndGet()
         }

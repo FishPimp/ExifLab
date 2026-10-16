@@ -438,7 +438,7 @@ class EditViewModel(
                     SaveRejection.ReadOnly -> SaveOptions(listOf(SaveMode.Copy), SaveReason.ReadOnly)
                     SaveRejection.UseSidecar -> SaveOptions(listOf(SaveMode.Sidecar), SaveReason.Raw)
                     SaveRejection.UnsupportedFormat -> SaveOptions(listOf(SaveMode.Sidecar), SaveReason.UnsupportedFormat)
-                    SaveRejection.NotRestorable, SaveRejection.NotFound -> null
+                    SaveRejection.NotRestorable, SaveRejection.NotFound, SaveRejection.SidecarHasDates -> null
                 }
                 local.update { it.copy(save = SaveState.Failed(SaveFailure.Rejected(outcome.reason)), saveOptionsOverride = override ?: it.saveOptionsOverride) }
             }
@@ -574,7 +574,7 @@ class EditViewModel(
                     notices = graph.savedEditNotices,
                     resolveCopy = { uri -> photos.resolve(uri.toUri(), PhotoOrigin.Document) },
                     readOtherPhoto = { uri ->
-                        val other = photos.resolve(uri.toUri(), PhotoOrigin.Picker)
+                        val other = photos.resolve(uri.toUri(), PhotoOrigin.Picker, persist = false)
                         withContext(Dispatchers.IO) { reader.read(photos.imageSource(other)) }
                     },
                     searchPlaces = { queries -> graph.placeSearchRepository.searchAsYouType(queries) },

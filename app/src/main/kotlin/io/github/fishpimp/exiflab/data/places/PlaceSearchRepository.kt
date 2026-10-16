@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
+import okhttp3.CacheControl
 import okhttp3.Call
 import okhttp3.HttpUrl
 import okhttp3.Request
@@ -43,7 +44,12 @@ class PlaceSearchRepository(
         if (text.length < MIN_QUERY_LENGTH) return PlaceSearchResult.Success(emptyList())
         if (isOffline()) return PlaceSearchResult.Failure(PlaceSearchError.Offline)
 
-        val request = Request.Builder().url(searchUrl(text, photonLanguage(appLanguage()))).get().build()
+        // The URL holds the search text: never keep the answer on disk.
+        val request = Request.Builder()
+            .url(searchUrl(text, photonLanguage(appLanguage())))
+            .cacheControl(CacheControl.Builder().noStore().build())
+            .get()
+            .build()
         return withContext(ioDispatcher) {
             try {
                 client.newCall(request).await().use { response ->

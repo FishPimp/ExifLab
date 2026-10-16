@@ -25,10 +25,16 @@ import java.util.zip.DataFormatException
 import java.util.zip.Inflater
 
 /**
- * Rewrites the metadata chunks of a PNG: eXIf (written before the first IDAT), the XMP iTXt
- * chunk (XML:com.adobe.xmp), text chunks (tEXt, zTXt, other iTXt; removal only) and iCCP
- * (removal only). Every other chunk, image data included, is copied byte for byte with its CRC,
- * as are any bytes after IEND. PNG has no place for IPTC-IIM; such changes are reported as skipped.
+ * Rewrites the metadata chunks of a PNG: eXIf (written before the first IDAT), the XMP text
+ * chunk (keyword XML:com.adobe.xmp, in iTXt, zTXt or tEXt; written back as one iTXt), text chunks
+ * (tEXt, zTXt, other iTXt; removal only) and iCCP (removal only). Every other chunk, image data
+ * included, is copied byte for byte with its CRC, as are any bytes after IEND (unless
+ * [MetadataBlock.EmbeddedMedia] is removed). PNG has no place for IPTC-IIM; such changes are
+ * reported as skipped.
+ *
+ * ImageMagick keeps EXIF and XMP as hex text chunks ("Raw profile type exif", "APP1", "xmp").
+ * When EXIF (or XMP) is edited they are folded into the eXIf (or iTXt) chunk, serving as its
+ * starting point when the file has no native one, and dropped, so no stale copy survives an edit.
  */
 internal class PngWriter {
     private enum class Kind { Exif, Xmp, Text, Icc, Image, End, Other }
@@ -53,15 +59,16 @@ internal class PngWriter {
 
         val editExif = ExifEditor.affects(changes)
         val exifChunk = chunks.firstOrNull { it.kind == Kind.Exif }
-        val newExif = if (editExif) exifChunkData(exifChunk, changes, skipped) else null
+        val newExif = if (editExif) exifChunkData(chunks, exifChunk, changes, skipped) else null
 
         val editXmp = XmpPackets.affects(changes)
         val xmpChunk = chunks.firstOrNull { it.kind == Kind.Xmp }
         val newXmp = if (editXmp) xmpChunkData(chunks, changes) else null
 
         val dropKeywords = buildSet {
-            if (MetadataBlock.Exif in remove) addAll(listOf("Raw profile type exif", "Raw profile type APP1"))
-            if (MetadataBlock.Xmp in remove) add("Raw profile type xmp")
+            // Edited EXIF or XMP replaces ImageMagick's copies; left alone they would contradict it (or keep removed GPS).
+            if (MetadataBlock.Exif in remove || editExif) addAll(RAW_EXIF_KEYWORDS)
+            if (MetadataBlock.Xmp in remove || editXmp) add(RAW_XMP_KEYWORD)
             if (MetadataBlock.Iptc in remove || MetadataBlock.PhotoshopResources in remove) addAll(listOf("Raw profile type iptc", "Raw profile type 8bim"))
             if (MetadataBlock.IccProfile in remove) addAll(listOf("Raw profile type icc", "Raw profile type icm"))
         }
@@ -97,7 +104,8 @@ internal class PngWriter {
                 is Item.New -> out.write(chunk(item.type, item.data))
             }
         }
-        copyToEnd(source, end, out)
+        // Bytes after IEND are copied unless the copy is to leave out what follows the image.
+        if (MetadataBlock.EmbeddedMedia !in remove) copyToEnd(source, end, out)
     }
 
     /** Returns the chunks up to and including IEND, and the offset just after IEND. */
@@ -121,11 +129,13 @@ internal class PngWriter {
                 "tEXt", "zTXt", "iTXt" -> {
                     val prefix = source.bytesAt(dataOffset, minOf(length, KEYWORD_PREFIX))
                     keyword = prefix.indexOf(0).let { if (it >= 0) String(prefix, 0, it, Charsets.ISO_8859_1) else null }
-                    if (type == ITXT && keyword == XMP_KEYWORD) Kind.Xmp else Kind.Text
+                    // Writers other than libpng's iTXt convention also store XMP in zTXt or tEXt.
+                    if (keyword == XMP_KEYWORD) Kind.Xmp else Kind.Text
                 }
                 else -> Kind.Other
             }
-            val data = if (kind == Kind.Exif || kind == Kind.Xmp) source.bytesAt(dataOffset, length) else null
+            val loaded = kind == Kind.Exif || kind == Kind.Xmp || (kind == Kind.Text && keyword in RAW_PROFILE_KEYWORDS)
+            val data = if (loaded) source.bytesAt(dataOffset, length) else null
             // The chunk must be complete, CRC included.
             source.bytesAt(dataOffset + length + 3, 1)
             chunks += Chunk(type, position, length, data, kind, keyword)
@@ -134,9 +144,15 @@ internal class PngWriter {
         }
     }
 
-    private fun exifChunkData(chunk: Chunk?, changes: MetadataChanges, skipped: MutableList<String>): ByteArray? {
-        val original = chunk?.data?.takeIf { MetadataBlock.Exif !in changes.removeBlocks }?.let { data ->
-            val tiff = if (data.startsWith(EXIF_PREFIX)) data.copyOfRange(EXIF_PREFIX.size, data.size) else data
+    private fun exifChunkData(chunks: List<Chunk>, chunk: Chunk?, changes: MetadataChanges, skipped: MutableList<String>): ByteArray? {
+        val data = when {
+            MetadataBlock.Exif in changes.removeBlocks -> null
+            chunk != null -> chunk.data
+            // No eXIf chunk: ImageMagick's hex copy is the EXIF the file has.
+            else -> chunks.firstOrNull { it.kind == Kind.Text && it.keyword in RAW_EXIF_KEYWORDS }?.let { rawProfile(it) }
+        }
+        val original = data?.let {
+            val tiff = if (it.startsWith(EXIF_PREFIX)) it.copyOfRange(EXIF_PREFIX.size, it.size) else it
             TiffParser.parse(tiff, skipped)
         }
         val edited = ExifEditor.apply(original, changes, jpeg = null, skipped) ?: return null
@@ -146,8 +162,12 @@ internal class PngWriter {
     private fun xmpChunkData(chunks: List<Chunk>, changes: MetadataChanges): ByteArray? {
         var meta: XMPMeta? = null
         if (MetadataBlock.Xmp !in changes.removeBlocks) {
-            for (chunk in chunks.filter { it.kind == Kind.Xmp }) {
-                val packet = XmpPackets.parse(itxtText(chunk.data!!))
+            val packets = chunks.filter { it.kind == Kind.Xmp }.map { xmpText(it) }.ifEmpty {
+                // No XMP chunk: ImageMagick's hex copy is the XMP the file has.
+                listOfNotNull(chunks.firstOrNull { it.kind == Kind.Text && it.keyword == RAW_XMP_KEYWORD }?.let { rawProfile(it) })
+            }
+            for (bytes in packets) {
+                val packet = XmpPackets.parse(bytes)
                 val main = meta
                 if (main == null) {
                     meta = packet
@@ -168,19 +188,56 @@ internal class PngWriter {
         return header.toByteArray() + XmpPackets.serialize(edited)
     }
 
-    /** The text of an iTXt chunk, inflated when compressed. */
-    private fun itxtText(data: ByteArray): ByteArray {
-        fun damaged(): Nothing = throw UnsupportedEditException("The PNG XMP chunk is damaged")
+    /** The XMP packet of an XMP text chunk. */
+    private fun xmpText(chunk: Chunk): ByteArray = chunkText(chunk) { throw UnsupportedEditException("The PNG XMP chunk is damaged") }
+
+    /** The text of a tEXt, zTXt or iTXt chunk, inflated when compressed; [damaged] when it cannot be read. */
+    private fun chunkText(chunk: Chunk, damaged: () -> Nothing): ByteArray {
+        val data = chunk.data!!
         val keywordEnd = data.indexOf(0)
-        if (keywordEnd < 0 || keywordEnd + 3 > data.size) damaged()
-        val compressed = data[keywordEnd + 1].toInt() == 1
-        val languageEnd = data.indexOf(0, keywordEnd + 3).takeIf { it >= 0 } ?: damaged()
-        val translatedEnd = data.indexOf(0, languageEnd + 1).takeIf { it >= 0 } ?: damaged()
-        val text = data.copyOfRange(translatedEnd + 1, data.size)
-        if (!compressed) return text
+        if (keywordEnd < 0) damaged()
+        return when (chunk.type) {
+            "tEXt" -> data.copyOfRange(keywordEnd + 1, data.size)
+            // Keyword, NUL, compression method (0, deflate), compressed text.
+            "zTXt" -> if (keywordEnd + 2 <= data.size && data[keywordEnd + 1].toInt() == 0) {
+                inflate(data.copyOfRange(keywordEnd + 2, data.size), damaged)
+            } else {
+                damaged()
+            }
+            else -> {
+                if (keywordEnd + 3 > data.size) damaged()
+                val compressed = data[keywordEnd + 1].toInt() == 1
+                val languageEnd = data.indexOf(0, keywordEnd + 3).takeIf { it >= 0 } ?: damaged()
+                val translatedEnd = data.indexOf(0, languageEnd + 1).takeIf { it >= 0 } ?: damaged()
+                val text = data.copyOfRange(translatedEnd + 1, data.size)
+                if (compressed) inflate(text, damaged) else text
+            }
+        }
+    }
+
+    /**
+     * The bytes of an ImageMagick "Raw profile type" chunk: its text is a newline, the profile
+     * name, the byte count and the bytes in hex over several lines.
+     */
+    private fun rawProfile(chunk: Chunk): ByteArray {
+        fun damaged(): Nothing = throw UnsupportedEditException("The PNG text chunk '${chunk.keyword}' is damaged and cannot be edited safely")
+        val tokens = String(chunkText(chunk, ::damaged), Charsets.ISO_8859_1).trim().split(WHITESPACE)
+        if (tokens.size < 2) damaged()
+        val length = tokens[1].toIntOrNull()?.takeIf { it in 0..MAX_XMP } ?: damaged()
+        val hex = tokens.drop(2).joinToString("")
+        if (hex.length < length * 2) damaged()
+        return ByteArray(length) { i ->
+            val high = Character.digit(hex[i * 2], 16)
+            val low = Character.digit(hex[i * 2 + 1], 16)
+            if (high < 0 || low < 0) damaged()
+            ((high shl 4) or low).toByte()
+        }
+    }
+
+    private fun inflate(compressed: ByteArray, damaged: () -> Nothing): ByteArray {
         val inflater = Inflater()
         try {
-            inflater.setInput(text)
+            inflater.setInput(compressed)
             val out = ByteArrayOutputStream()
             val buffer = ByteArray(16 * 1024)
             while (!inflater.finished()) {
@@ -203,11 +260,18 @@ internal class PngWriter {
     }
 
     companion object {
+        /** The offset just after the IEND chunk. */
+        internal fun imageEnd(source: SeekableSource): Long = PngWriter().scan(source).second
+
         private val SIGNATURE = byteArrayOf(0x89.toByte(), 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A)
         private val EXIF_PREFIX = "Exif\u0000\u0000".latin1()
         private const val EXIF = "eXIf"
         private const val ITXT = "iTXt"
         private const val XMP_KEYWORD = "XML:com.adobe.xmp"
+        private val RAW_EXIF_KEYWORDS = setOf("Raw profile type exif", "Raw profile type APP1")
+        private const val RAW_XMP_KEYWORD = "Raw profile type xmp"
+        private val RAW_PROFILE_KEYWORDS = RAW_EXIF_KEYWORDS + RAW_XMP_KEYWORD
+        private val WHITESPACE = Regex("\\s+")
         private const val KEYWORD_PREFIX = 80
         private const val MAX_XMP = 64 * 1024 * 1024
 

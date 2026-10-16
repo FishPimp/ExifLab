@@ -338,7 +338,7 @@ class BatchEditViewModel(
                     jobs = graph.batchJobs,
                     analyzer = BatchAnalyzer(readReport = read, planner = { Editing.planner }, canWrite = graph.writeEngine::canWrite),
                     readReport = read,
-                    readOtherPhoto = { uri -> read(photos.resolve(uri.toUri(), PhotoOrigin.Picker)) },
+                    readOtherPhoto = { uri -> read(photos.resolve(uri.toUri(), PhotoOrigin.Picker, persist = false)) },
                     resolveFolder = { treeUri ->
                         withContext(Dispatchers.IO) {
                             val tree = treeUri.toUri()

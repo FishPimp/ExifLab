@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.DeleteSweep
+import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +48,7 @@ internal fun LazyListScope.editingAndBackupSettings(
     onBackupRetention: (BackupRetention) -> Unit,
     onSidecarNaming: (SidecarNaming) -> Unit,
     onDeleteAllBackups: () -> Unit,
+    onClearHistory: () -> Unit = {},
 ) {
     item { SectionHeader(stringResource(R.string.settings_section_editing)) }
     item {
@@ -73,11 +75,12 @@ internal fun LazyListScope.editingAndBackupSettings(
             backups = backups,
             onBackupRetention = onBackupRetention,
             onDeleteAllBackups = onDeleteAllBackups,
+            onClearHistory = onClearHistory,
         )
     }
 }
 
-/** Storage used, the retention choice and "Delete all backups" with its confirmation. */
+/** Storage used, the retention choice, "Delete all backups" and "Clear edit history", each with its confirmation. */
 @Composable
 fun BackupSettingsGroup(
     retention: BackupRetention,
@@ -85,12 +88,14 @@ fun BackupSettingsGroup(
     onBackupRetention: (BackupRetention) -> Unit,
     onDeleteAllBackups: () -> Unit,
     modifier: Modifier = Modifier,
+    onClearHistory: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val used = backups.usedBytes
     val usedText = used?.let { Formatter.formatShortFileSize(context, it) }
     val capText = Formatter.formatShortFileSize(context, backups.sizeCapBytes)
     var confirmDelete by rememberSaveable { mutableStateOf(false) }
+    var confirmClear by rememberSaveable { mutableStateOf(false) }
 
     GroupSurface(modifier) {
         ListRow(
@@ -142,6 +147,31 @@ fun BackupSettingsGroup(
             },
             icon = Icons.Rounded.DeleteSweep,
             onClick = if (hasBackups) ({ confirmDelete = true }) else null,
+        )
+        ListRow(
+            title = stringResource(R.string.settings_history_clear),
+            supporting = stringResource(R.string.settings_history_clear_body),
+            icon = Icons.Rounded.History,
+            onClick = { confirmClear = true },
+        )
+    }
+
+    if (confirmClear) {
+        AlertDialog(
+            onDismissRequest = { confirmClear = false },
+            icon = { Icon(Icons.Rounded.History, contentDescription = null) },
+            title = { Text(stringResource(R.string.settings_history_clear_title)) },
+            text = { Text(stringResource(R.string.settings_history_clear_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmClear = false
+                        onClearHistory()
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                ) { Text(stringResource(R.string.settings_history_clear_action)) }
+            },
+            dismissButton = { TextButton(onClick = { confirmClear = false }) { Text(stringResource(R.string.action_cancel)) } },
         )
     }
 

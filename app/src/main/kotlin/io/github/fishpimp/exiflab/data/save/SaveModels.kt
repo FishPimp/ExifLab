@@ -35,6 +35,13 @@ enum class SaveRejection {
 
     /** No such record. */
     NotFound,
+
+    /**
+     * The photo's sidecar already records a capture date, which can differ from the RAW file's
+     * (corrected in another app, or by an earlier shift). Dates worked out from the RAW file's own
+     * would replace it with the wrong time; setting the time outright works.
+     */
+    SidecarHasDates,
 }
 
 /** Result of [PhotoSaver.save], [PhotoSaver.restoreOriginal] and recovery. */
