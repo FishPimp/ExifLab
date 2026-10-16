@@ -19,6 +19,8 @@ import io.github.fishpimp.exiflab.ui.selection.PhotoSelection
 import io.github.fishpimp.exiflab.ui.selection.PhotoSelectionHolder
 import io.github.fishpimp.exiflab.ui.selection.SelectionActions
 import io.github.fishpimp.exiflab.ui.selection.actions
+import io.github.fishpimp.exiflab.ui.selection.exitSelectionWhenStarted
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
@@ -81,7 +83,12 @@ class FolderViewModel(
         return selection.value.selectedIn(photos)
     }
 
-    /** Stores the selected photos as a batch draft and asks to open the editor on [kind]. */
+    private var draftWatch: Job? = null
+
+    /**
+     * Stores the selected photos as a batch draft and asks to open the editor on [kind]. The
+     * selection stays until the batch starts, so backing out of the editor keeps it.
+     */
     fun startBatch(kind: BatchKind) {
         val jobs = batchJobs ?: return
         val photos = (state.value as? FolderUiState.Loaded)?.listing?.photos ?: return
@@ -89,7 +96,8 @@ class FolderViewModel(
         if (selected.isEmpty()) return
         viewModelScope.launch {
             val id = jobs.createDraft(selected)
-            selectionHolder.update { it.exit() }
+            draftWatch?.cancel()
+            draftWatch = viewModelScope.exitSelectionWhenStarted(selectionHolder, jobs, id)
             batchEvents.send(Route.BatchEdit(id, kind))
         }
     }

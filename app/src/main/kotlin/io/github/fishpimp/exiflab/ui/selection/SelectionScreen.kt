@@ -45,6 +45,7 @@ import io.github.fishpimp.exiflab.ui.export.ExportViewModel
 import io.github.fishpimp.exiflab.ui.navigation.Route
 import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanSheetHost
 import io.github.fishpimp.exiflab.ui.shareclean.shareCleanViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,14 +158,20 @@ class SelectionViewModel(private val refs: List<PhotoRef>, private val batchJobs
     val selectionActions: SelectionActions = holder.actions { refs.map { it.uri } }
     val batchEditRequests: Flow<Route.BatchEdit> = batchEvents.receiveAsFlow()
 
-    /** Stores the selected photos as a batch draft and asks to open the editor on [kind]. */
+    private var draftWatch: Job? = null
+
+    /**
+     * Stores the selected photos as a batch draft and asks to open the editor on [kind]. The
+     * selection stays until the batch starts, so backing out of the editor keeps it.
+     */
     fun startBatch(kind: BatchKind) {
         val jobs = batchJobs ?: return
         val selected = selection.value.selectedIn(refs)
         if (selected.isEmpty()) return
         viewModelScope.launch {
             val id = jobs.createDraft(selected)
-            holder.update { it.exit() }
+            draftWatch?.cancel()
+            draftWatch = viewModelScope.exitSelectionWhenStarted(holder, jobs, id)
             batchEvents.send(Route.BatchEdit(id, kind))
         }
     }
