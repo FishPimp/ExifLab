@@ -15,8 +15,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,8 +32,12 @@ import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Deselect
 import androidx.compose.material.icons.rounded.FileDownload
 import androidx.compose.material.icons.rounded.Lock
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.RadioButtonUnchecked
 import androidx.compose.material.icons.rounded.SelectAll
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FloatingToolbarDefaults
 import androidx.compose.material3.HorizontalFloatingToolbar
 import androidx.compose.material3.Icon
@@ -48,8 +55,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -67,7 +76,9 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntRect
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.round
 import androidx.compose.ui.unit.toSize
@@ -80,11 +91,10 @@ import io.github.fishpimp.exiflab.ui.batch.labelRes
 import io.github.fishpimp.exiflab.ui.components.FormatBadge
 import io.github.fishpimp.exiflab.ui.components.PhotoThumbnail
 import io.github.fishpimp.exiflab.ui.components.photoDescription
-import io.github.fishpimp.exiflab.ui.shareclean.ShareCleanIconButton
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlin.math.max
 import kotlin.math.min
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 
 /**
  * A photo grid cell that supports multi-select: a tap opens the photo, a long press (or the
@@ -264,6 +274,9 @@ fun Modifier.dragToSelect(
  * tooltips (their names are also their TalkBack labels). Disabled while nothing is selected.
  * [onShareClean] adds "Share clean" for the selected photos after the batch edits.
  *
+ * Actions that don't fit the window's width (a 360dp phone, a large display size) move into a
+ * "More options" menu, where they are listed with their names.
+ *
  * @param onExport exports the selection's metadata; the button is left out when null.
  */
 @Composable
@@ -275,40 +288,97 @@ fun BatchActionsToolbar(
     onShareClean: (() -> Unit)? = null,
     onExport: (() -> Unit)? = null,
 ) {
+    val actions = buildList {
+        BatchKind.entries.forEach { kind -> add(ToolbarItem(kind.icon, stringResource(kind.labelRes)) { onAction(kind) }) }
+        if (onExport != null) add(ToolbarItem(Icons.Rounded.FileDownload, stringResource(R.string.export_action), onClick = onExport))
+        if (onShareClean != null) add(ToolbarItem(Icons.Rounded.Share, stringResource(R.string.share_clean_action), startsGroup = true, onClick = onShareClean))
+    }
     AnimatedVisibility(
         visible = visible,
         enter = slideInVertically { it } + fadeIn(),
         exit = slideOutVertically { it } + fadeOut(),
         modifier = modifier,
     ) {
-        HorizontalFloatingToolbar(
-            expanded = true,
-            colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
-            modifier = Modifier.padding(FloatingToolbarDefaults.ScreenOffset),
-        ) {
-            BatchKind.entries.forEach { kind ->
-                ToolbarAction(icon = kind.icon, label = stringResource(kind.labelRes), enabled = enabled) { onAction(kind) }
-            }
-            if (onExport != null) {
-                ToolbarAction(icon = Icons.Rounded.FileDownload, label = stringResource(R.string.export_action), enabled = enabled, onClick = onExport)
-            }
-            if (onShareClean != null) {
-                VerticalDivider(Modifier.height(24.dp).padding(horizontal = 4.dp).align(Alignment.CenterVertically))
-                ShareCleanIconButton(onClick = onShareClean, enabled = enabled, tooltipAbove = true)
+        BoxWithConstraints {
+            val padding = FloatingToolbarDefaults.ContentPadding
+            val room = maxWidth - FloatingToolbarDefaults.ScreenOffset * 2 -
+                padding.calculateStartPadding(LayoutDirection.Ltr) - padding.calculateEndPadding(LayoutDirection.Ltr)
+            val inline = toolbarActionsThatFit(actions, room)
+            val overflow = actions.drop(inline)
+            HorizontalFloatingToolbar(
+                expanded = true,
+                colors = FloatingToolbarDefaults.vibrantFloatingToolbarColors(),
+                modifier = Modifier.padding(FloatingToolbarDefaults.ScreenOffset),
+            ) {
+                actions.take(inline).forEachIndexed { index, item ->
+                    if (item.startsGroup && index > 0) {
+                        VerticalDivider(Modifier.height(24.dp).padding(horizontal = ToolbarDividerPadding).align(Alignment.CenterVertically))
+                    }
+                    ToolbarAction(item.icon, item.label, enabled, onClick = item.onClick)
+                }
+                if (overflow.isNotEmpty()) ToolbarOverflow(overflow, enabled)
             }
         }
     }
 }
 
+/** One toolbar action; [startsGroup] puts a divider before it. */
+private class ToolbarItem(val icon: ImageVector, val label: String, val startsGroup: Boolean = false, val onClick: () -> Unit)
+
+private val ToolbarButtonSize = 48.dp
+private val ToolbarDividerPadding = 4.dp
+private val ToolbarDividerWidth = ToolbarDividerPadding * 2 + 1.dp
+
+/**
+ * How many of [actions] fit inline in [room], keeping a slot for the "More options" button when
+ * some don't. At least one stays inline.
+ */
+private fun toolbarActionsThatFit(actions: List<ToolbarItem>, room: Dp): Int {
+    fun width(count: Int, withMore: Boolean): Dp {
+        val dividers = actions.take(count).withIndex().count { (index, item) -> item.startsGroup && index > 0 }
+        return ToolbarButtonSize * (count + if (withMore) 1 else 0) + ToolbarDividerWidth * dividers
+    }
+    if (width(actions.size, withMore = false) <= room) return actions.size
+    return (actions.size - 1 downTo 1).firstOrNull { width(it, withMore = true) <= room } ?: 1
+}
+
+/** An icon button whose name shows as a tooltip on long-press and hover, and is its TalkBack label. */
 @Composable
-private fun ToolbarAction(icon: ImageVector, label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun ToolbarAction(
+    icon: ImageVector,
+    label: String,
+    enabled: Boolean,
+    tooltipAt: TooltipAnchorPosition = TooltipAnchorPosition.Above,
+    onClick: () -> Unit,
+) {
     TooltipBox(
-        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
+        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(tooltipAt),
         tooltip = { PlainTooltip { Text(label) } },
         state = rememberTooltipState(),
     ) {
         IconButton(onClick = onClick, enabled = enabled) {
             Icon(icon, contentDescription = label)
+        }
+    }
+}
+
+/** "More options": the actions that didn't fit, as a menu with their names. */
+@Composable
+private fun ToolbarOverflow(items: List<ToolbarItem>, enabled: Boolean) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        ToolbarAction(Icons.Rounded.MoreVert, stringResource(R.string.photo_more_options), enabled) { open = true }
+        DropdownMenu(expanded = open && enabled, onDismissRequest = { open = false }) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item.label) },
+                    leadingIcon = { Icon(item.icon, contentDescription = null) },
+                    onClick = {
+                        open = false
+                        item.onClick()
+                    },
+                )
+            }
         }
     }
 }
@@ -322,21 +392,14 @@ val SelectionBottomPadding = 120.dp
  */
 @Composable
 fun RowScope.SelectionBarActions(selection: PhotoSelection, actions: SelectionActions, total: Int, enterSelectsAll: Boolean) {
+    val below = TooltipAnchorPosition.Below
     if (selection.active) {
-        IconButton(onClick = actions.onSelectAll, enabled = selection.count < total) {
-            Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.selection_select_all))
-        }
-        IconButton(onClick = actions.onClear, enabled = selection.count > 0) {
-            Icon(Icons.Rounded.Deselect, contentDescription = stringResource(R.string.selection_clear))
-        }
+        ToolbarAction(Icons.Rounded.SelectAll, stringResource(R.string.selection_select_all), selection.count < total, below, actions.onSelectAll)
+        ToolbarAction(Icons.Rounded.Deselect, stringResource(R.string.selection_clear), selection.count > 0, below, actions.onClear)
     } else if (enterSelectsAll) {
-        IconButton(onClick = actions.onSelectAll) {
-            Icon(Icons.Rounded.SelectAll, contentDescription = stringResource(R.string.selection_select_all))
-        }
+        ToolbarAction(Icons.Rounded.SelectAll, stringResource(R.string.selection_select_all), enabled = true, below, actions.onSelectAll)
     } else {
-        IconButton(onClick = actions.onEnter) {
-            Icon(Icons.Rounded.Checklist, contentDescription = stringResource(R.string.selection_start))
-        }
+        ToolbarAction(Icons.Rounded.Checklist, stringResource(R.string.selection_start), enabled = true, below, actions.onEnter)
     }
 }
 

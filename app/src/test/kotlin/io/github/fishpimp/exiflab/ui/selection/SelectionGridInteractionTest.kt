@@ -7,6 +7,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -76,5 +77,50 @@ class SelectionGridInteractionTest {
 
         compose.onNodeWithContentDescription("Stop selecting").performClick()
         assertThat(holder.state.value.active).isFalse()
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h800dp-xxhdpi")
+    fun `on a 360dp phone the actions that don't fit are in More options, with their names`() {
+        val shared = mutableListOf<Unit>()
+        val exported = mutableListOf<Unit>()
+        compose.setContent {
+            ExifLabTheme(dynamicColor = false) {
+                SelectionContent(
+                    refs = photos,
+                    onBack = {},
+                    onOpenPhoto = {},
+                    selection = PhotoSelection(active = true, selected = setOf(photos[0].uri)),
+                    onShareClean = { shared += Unit },
+                    onExport = { exported += Unit },
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Strip metadata").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Share clean").assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Share clean").performClick()
+        assertThat(shared).hasSize(1)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Export").performClick()
+        assertThat(exported).hasSize(1)
+    }
+
+    @Test
+    fun `with room for every action there is no More options`() {
+        compose.setContent {
+            ExifLabTheme(dynamicColor = false) {
+                SelectionContent(
+                    refs = photos,
+                    onBack = {},
+                    onOpenPhoto = {},
+                    selection = PhotoSelection(active = true, selected = setOf(photos[0].uri)),
+                    onShareClean = {},
+                )
+            }
+        }
+        compose.onNodeWithContentDescription("Share clean").assertIsDisplayed()
+        compose.onNodeWithContentDescription("More options").assertDoesNotExist()
     }
 }
